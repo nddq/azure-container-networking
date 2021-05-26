@@ -93,6 +93,11 @@ func (iptMgr *IptablesManager) InitNpmChains() error {
 		metrics.SendErrorLogAndMetric(util.IptmID, "Error: failed to add AZURE-NPM chain to FORWARD chain. %s", err.Error())
 	}
 
+	// (TODO) need a review of all chains to make sure we are not adding duplicate rules.
+	// NPM should not add multiple TO/FROM rules along with DROPs in PORT chains,
+	// we can get away with adding a single TO/FORM rule and DROP in each of the PORT chains,
+	// and have DROP rules checked at the very bottom of all rules in a particular direction are
+	// evaluated
 	if err = iptMgr.AddAllRulesToChains(); err != nil {
 		return err
 	}
