@@ -50,19 +50,8 @@ func main() {
 		// metrics.SendErrorLogAndMetric(util.IptmID, "[BulkUpdateIPtables] Error: failed to get iptables-save command output with err: %s", err.Error())
 		fmt.Println(err.Error())
 	}
-	// ruleLineByte := []byte("-p tcp -m set --match-set azure-npm-926814778 src -m set --match-set azure-npm-2107662311 src -m set --match-set azure-npm-2574419033 src -m set --match-set azure-npm-2608925630 dst -m set --match-set azure-npm-2107662311 dst -m set --match-set azure-npm-1797209395 dst -m tcp --dport 80 -m comment --comment 'ALLOW-ns-purpose:development-AND-app:webapp-AND-role:frontend-AND-TCP-PORT-80-TO-app:webapp-AND-role:backend-IN-ns-development' -j MARK --set-xmark 0x2000/0xffffffff")
-	// rule := parseRuleFromLine(ruleLineByte)
-
-	// printRule(*rule)
 	ipTableObj := parser.CreateIptablesObject(tableName, iptableBuffer.Bytes())
 
-	// printRule(ipTableObj.Chains["AZURE-NPM-INGRESS-PORT"].Rules[0])
 	ipTableObj.PrintIptable()
-
-	// -A AZURE-NPM-INGRESS-PORT -p tcp -m set --match-set azure-npm-926814778 src
-	// -m set --match-set azure-npm-2107662311 src -m set --match-set azure-npm-2574419033 src
-	// -m set --match-set azure-npm-2608925630 dst -m set --match-set azure-npm-2107662311 dst
-	// -m set --match-set azure-npm-1797209395 dst -m tcp --dport 80
-	// -m comment --comment "ALLOW-ns-purpose:development-AND-app:webapp-AND-role:frontend-AND-TCP-PORT-80-TO-app:webapp-AND-role:backend-IN-ns-development" -j MARK --set-xmark 0x2000/0xffffffff
 
 }

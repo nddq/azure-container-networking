@@ -83,7 +83,33 @@ func (t *Iptables) PrintIptable() {
 
 func (t *Iptables) printIptableChains() {
 	for k, v := range t.Chains {
-		fmt.Printf("IPTABLE CHAIN - %v\n", k)
-		fmt.Printf("IPTABLE RULES - %+v\n", v)
+		fmt.Printf("	IPTABLE CHAIN NAME - %v\n", k)
+		t.printIptableChainRules(v)
 	}
+}
+
+func (t *Iptables) printIptableChainRules(chain *IptablesChain) {
+	for k, v := range chain.Rules {
+		fmt.Printf("		RULE %v\n", k)
+		fmt.Printf("			RULE'S PROTOCOL - %v\n", v.Protocol)
+		t.printIptableRuleModules(v.Modules)
+		t.printIptableRuleTarget(v.Target)
+
+	}
+}
+
+func (t *Iptables) printIptableRuleModules(m_list []*Module) {
+	fmt.Printf("			RULE'S MODULES\n")
+	for i, v := range m_list {
+		fmt.Printf("				Module %v\n", i)
+		fmt.Printf("					Verb - %v\n", v.Verb)
+		fmt.Printf("					OptionValueMap - %+v\n", v.OptionValueMap)
+	}
+}
+
+func (t *Iptables) printIptableRuleTarget(target *Target) {
+	fmt.Printf("			RULE'S TARGET\n")
+	fmt.Printf("					NAME - %v\n", target.Name)
+	fmt.Printf("					Option - %v\n", target.Option)
+	fmt.Printf("					Value - %v\n", target.Value)
 }
