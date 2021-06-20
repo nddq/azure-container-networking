@@ -12,7 +12,7 @@ type Parser struct {
 }
 
 // CreateIptableObject create a Go object from specified iptable
-func CreateIptablesObject(tableName string, byteArray []byte) *iptable.Iptables {
+func ParseIptablesObject(tableName string, byteArray []byte) *iptable.Iptables {
 	p := &Parser{}
 	iptables := &iptable.Iptables{
 		Name:   tableName,
@@ -128,7 +128,7 @@ func (p *Parser) parseChainNameFromRule(byteArray []byte) (string, int) {
 	return string(byteArray[start:end]), end + 1
 }
 
-// parseRuleFromLine creates an iptable rule object from parsed rule line
+// parseRuleFromLine creates an iptable rule object from parsed rule line with chain name excluded from the byte array
 func (p *Parser) parseRuleFromLine(byteArray []byte) *iptable.IptablesRule {
 	iptableRule := &iptable.IptablesRule{}
 	nextIndex := 0
@@ -139,7 +139,8 @@ func (p *Parser) parseRuleFromLine(byteArray []byte) *iptable.IptablesRule {
 		}
 		start := spaceIndex + nextIndex            //offset start index
 		flag := string(byteArray[nextIndex:start]) // can be -m, -,j -p
-		if flag == util.IptablesProtFlag {
+		switch flag {
+		case util.IptablesProtFlag:
 			spaceIndex1 := bytes.Index(byteArray[start+1:], util.SpaceBytes)
 			if spaceIndex1 == -1 {
 				panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(byteArray)))
@@ -148,20 +149,21 @@ func (p *Parser) parseRuleFromLine(byteArray []byte) *iptable.IptablesRule {
 			protocol := string(byteArray[start+1 : end])
 			iptableRule.Protocol = protocol
 			nextIndex = end + 1
-		} else if flag == util.IptablesJumpFlag {
+		case util.IptablesJumpFlag:
 			//parse target with format -j target (option) (value)
 			target := &iptable.Target{}
 			n := p.parseTarget(start+1, target, byteArray)
 			iptableRule.Target = target
 			nextIndex = n
-
-		} else {
+		case util.IptablesModuleFlag:
 			// parse module with -m verb {--option {value}}
 			module := &iptable.Module{}
 			module.OptionValueMap = make(map[string][]string)
 			n := p.parseModule(start+1, module, byteArray)
 			iptableRule.Modules = append(iptableRule.Modules, module)
 			nextIndex = n
+		default:
+			continue
 		}
 	}
 	return iptableRule
@@ -210,8 +212,8 @@ func (p *Parser) parseOptionAndValue(nextIndex int, module *iptable.Module, curO
 	v := string(byteArray[nextIndex : nextIndex+spaceIndex])
 	if v[:2] == "--" {
 		//this is an option
-		module.OptionValueMap[v] = make([]string, 0)
-		currentOption = v
+		module.OptionValueMap[v[2:]] = make([]string, 0)
+		currentOption = v[2:]
 	} else if len(v) == 2 && v[0] == '-' {
 		// this is a new verb
 		return nextIndex
