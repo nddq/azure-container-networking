@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/Azure/azure-container-networking/hack/dataplaneParser/iptable"
@@ -11,28 +12,6 @@ import (
 )
 
 type Converter struct {
-}
-
-type IptableResponse struct {
-	Name   string `json:"name"`
-	Chains []struct {
-		Name  string `json:"name"`
-		Rules []struct {
-			Protocol string `json:"protocol"`
-			Target   struct {
-				Name   string `json:"name"`
-				Option string `json:"option"`
-				Value  string `json:"value"`
-			} `json:"target"`
-			Modules []struct {
-				Verb           string `json:"verb"`
-				OptionValueMap []struct {
-					Option string   `json:"option"`
-					Values []string `json:"values"`
-				} `json:"optionValueMap"`
-			} `json:"modules"`
-		} `json:"rules"`
-	} `json:"chains"`
 }
 
 type RuleResponse struct {
@@ -58,10 +37,34 @@ const (
 	INGRESS
 )
 
-// ConvertIptablesObject converts iptable object to JSON
-func (c *Converter) ConvertIptablesObject(iptableObj *iptable.Iptables) IptableResponse {
-	res := &IptableResponse{}
-	return *res
+// ConvertIptablesObject returns a JSON object of an iptable go oject
+func (c *Converter) ConvertIptablesObject(iptableObj *iptable.Iptables) []byte {
+	// iptableJson, err := json.Marshal(iptableObj)
+	iptableJson, err := json.MarshalIndent(iptableObj, "", "    ") // pretty print
+	if err != nil {
+		log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
+	}
+	return iptableJson
+}
+
+// GetRulesFromIptable returns a list of JSON rule object of an iptable
+func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
+	ret := make([][]byte, 0)
+	p := &parser.Parser{}
+	ipTableObj := p.ParseIptablesObject(tableName, iptableBuffer)
+	for _, v := range ipTableObj.Chains {
+		chainRules := c.getRulesFromChain(v)
+		for _, v := range chainRules {
+			// r, err := json.Marshal(v)
+			r, err := json.MarshalIndent(v, "", "    ") //pretty print
+			if err != nil {
+				fmt.Println(err)
+				return nil
+			}
+			ret = append(ret, r)
+		}
+	}
+	return ret
 }
 
 func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *RuleResponse) {
@@ -134,23 +137,4 @@ func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []
 
 	}
 	return rules
-}
-
-func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
-	ret := make([][]byte, 0)
-	p := &parser.Parser{}
-	ipTableObj := p.ParseIptablesObject(tableName, iptableBuffer)
-	for _, v := range ipTableObj.Chains {
-		chainRules := c.getRulesFromChain(v)
-		for _, v := range chainRules {
-			// r, err := json.Marshal(v)
-			r, err := json.MarshalIndent(v, "", "    ") //pretty print
-			if err != nil {
-				fmt.Println(err)
-				return nil
-			}
-			ret = append(ret, r)
-		}
-	}
-	return ret
 }

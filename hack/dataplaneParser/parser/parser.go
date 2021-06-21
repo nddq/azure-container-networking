@@ -199,8 +199,8 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *iptable.Target
 		if v[0] == '-' {
 			if v[1] == '-' {
 				//this is an option
-				target.OptionValueMap[v[2:]] = make([]string, 0)
 				currentOption = v[2:]
+				target.OptionValueMap[currentOption] = make([]string, 0)
 				nextIndex = nextIndex + spaceIndex + 1
 				// recursively parsing options and their value until a new flag is encounter
 				return p.parseTargetOptionAndValue(nextIndex, target, currentOption, byteArray)
@@ -254,8 +254,8 @@ func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *iptable.Module
 		if v[0] == '-' {
 			if v[1] == '-' {
 				//this is an option
-				module.OptionValueMap[v[2:]] = make([]string, 0)
 				currentOption = v[2:]
+				module.OptionValueMap[currentOption] = make([]string, 0)
 				nextIndex = nextIndex + spaceIndex + 1
 				// recursively parsing options and their value until a new flag is encounter
 				return p.parseModuleOptionAndValue(nextIndex, module, currentOption, byteArray)

@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/exec"
 
+	converter "github.com/Azure/azure-container-networking/hack/dataplaneConverter"
 	"github.com/Azure/azure-container-networking/hack/dataplaneParser/iptable"
-	"github.com/Azure/azure-container-networking/hack/dataplaneParser/parser"
 	"github.com/Azure/azure-container-networking/log"
 	"github.com/Azure/azure-container-networking/npm/util"
 )
@@ -50,11 +50,11 @@ func main() {
 		// metrics.SendErrorLogAndMetric(util.IptmID, "[BulkUpdateIPtables] Error: failed to get iptables-save command output with err: %s", err.Error())
 		fmt.Println(err.Error())
 	}
-	p := &parser.Parser{}
-	iptableObj := p.ParseIptablesObject(tableName, iptableBuffer)
-	iptableObj.PrintIptable()
+	// p := &parser.Parser{}
+	// iptableObj := p.ParseIptablesObject(tableName, iptableBuffer)
 
-	// c := &converter.Converter{}
-	// ipTableRulesJsonList := c.GetRulesFromIptable(tableName, iptableBuffer)
-	// fmt.Printf("%s\n", ipTableRulesJsonList)
+	c := &converter.Converter{}
+	ipTableRulesJsonList := c.GetRulesFromIptable(tableName, iptableBuffer)
+	fmt.Printf("%s\n", ipTableRulesJsonList)
+	// fmt.Printf("%s\n", c.ConvertIptablesObject(iptableObj))
 }
