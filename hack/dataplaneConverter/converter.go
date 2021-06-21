@@ -59,12 +59,12 @@ const (
 )
 
 // ConvertIptablesObject converts iptable object to JSON
-func ConvertIptablesObject(iptableObj *iptable.Iptables) IptableResponse {
+func (c *Converter) ConvertIptablesObject(iptableObj *iptable.Iptables) IptableResponse {
 	res := &IptableResponse{}
 	return *res
 }
 
-func GetModulesFromRule(m_list []*iptable.Module, ruleRes *RuleResponse) {
+func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *RuleResponse) {
 	ruleRes.SrcList = make([]string, 0)
 	ruleRes.DstList = make([]string, 0)
 	ruleRes.UnsortedIpset = make(map[string]string)
@@ -99,7 +99,7 @@ func GetModulesFromRule(m_list []*iptable.Module, ruleRes *RuleResponse) {
 	}
 }
 
-func GetRuleDirection(iptableChainObjName string) Direction {
+func (c *Converter) getRuleDirection(iptableChainObjName string) Direction {
 	if strings.Contains(iptableChainObjName, "EGRESS") {
 		return EGRESS
 	} else if strings.Contains(iptableChainObjName, "INGRESS") {
@@ -109,7 +109,7 @@ func GetRuleDirection(iptableChainObjName string) Direction {
 	}
 }
 
-func GetRulesFromChain(iptableChainObj *iptable.IptablesChain) []*RuleResponse {
+func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []*RuleResponse {
 	rules := make([]*RuleResponse, 0)
 	for _, v := range iptableChainObj.Rules {
 		rule := &RuleResponse{}
@@ -124,23 +124,24 @@ func GetRulesFromChain(iptableChainObj *iptable.IptablesChain) []*RuleResponse {
 			// ignore other targets
 			continue
 		}
-		direction := GetRuleDirection(iptableChainObj.Name)
+		direction := c.getRuleDirection(iptableChainObj.Name)
 		if direction > 0 {
 			rule.Direction = fmt.Sprint(direction)
 		}
 
-		GetModulesFromRule(v.Modules, rule)
+		c.getModulesFromRule(v.Modules, rule)
 		rules = append(rules, rule)
 
 	}
 	return rules
 }
 
-func GetRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
+func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
 	ret := make([][]byte, 0)
-	ipTableObj := parser.ParseIptablesObject(tableName, iptableBuffer.Bytes())
+	p := &parser.Parser{}
+	ipTableObj := p.ParseIptablesObject(tableName, iptableBuffer)
 	for _, v := range ipTableObj.Chains {
-		chainRules := GetRulesFromChain(v)
+		chainRules := c.getRulesFromChain(v)
 		for _, v := range chainRules {
 			// r, err := json.Marshal(v)
 			r, err := json.MarshalIndent(v, "", "    ") //pretty print

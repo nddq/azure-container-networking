@@ -12,11 +12,10 @@ type Parser struct {
 }
 
 // CreateIptableObject create a Go object from specified iptable
-func ParseIptablesObject(tableName string, byteArray []byte) *iptable.Iptables {
-	p := &Parser{}
+func (p *Parser) ParseIptablesObject(tableName string, iptableBuffer *bytes.Buffer) *iptable.Iptables {
 	iptables := &iptable.Iptables{
 		Name:   tableName,
-		Chains: p.parseIptablesChainObject(tableName, byteArray),
+		Chains: p.parseIptablesChainObject(tableName, iptableBuffer.Bytes()),
 	}
 	return iptables
 }
@@ -210,22 +209,27 @@ func (p *Parser) parseOptionAndValue(nextIndex int, module *iptable.Module, curO
 		return nextIndex
 	}
 	v := string(byteArray[nextIndex : nextIndex+spaceIndex])
-	if v[:2] == "--" {
-		//this is an option
-		module.OptionValueMap[v[2:]] = make([]string, 0)
-		currentOption = v[2:]
-	} else if len(v) == 2 && v[0] == '-' {
-		// this is a new verb
-		return nextIndex
-	} else {
-		//this is a value
-		if currentOption == "" {
-			panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(byteArray)))
+	if len(v) >= 2 {
+		if v[0] == '-' {
+			if v[1] == '-' {
+				//this is an option
+				module.OptionValueMap[v[2:]] = make([]string, 0)
+				currentOption = v[2:]
+				nextIndex = nextIndex + spaceIndex + 1
+				// recursively parsing options and their value until a new verb is encounter
+				return p.parseOptionAndValue(nextIndex, module, currentOption, byteArray)
+			} else {
+				// this is a new verb
+				return nextIndex
+			}
 		}
-		module.OptionValueMap[currentOption] = append(module.OptionValueMap[currentOption], v)
 	}
+	//this is a value
+	if currentOption == "" {
+		panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(byteArray)))
+	}
+	module.OptionValueMap[currentOption] = append(module.OptionValueMap[currentOption], v)
 	nextIndex = nextIndex + spaceIndex + 1
-	// recursively parsing options and their value until a new verb is encounter
 	return p.parseOptionAndValue(nextIndex, module, currentOption, byteArray)
 
 }
