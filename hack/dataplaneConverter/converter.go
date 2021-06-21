@@ -125,7 +125,7 @@ func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []
 			continue
 		}
 		direction := c.getRuleDirection(iptableChainObj.Name)
-		if direction > 0 {
+		if direction >= 0 {
 			rule.Direction = fmt.Sprint(direction)
 		}
 

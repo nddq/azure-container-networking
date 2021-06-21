@@ -151,11 +151,12 @@ func (p *Parser) parseRuleFromLine(byteArray []byte) *iptable.IptablesRule {
 		case util.IptablesJumpFlag:
 			//parse target with format -j target (option) (value)
 			target := &iptable.Target{}
+			target.OptionValueMap = make(map[string][]string)
 			n := p.parseTarget(start+1, target, byteArray)
 			iptableRule.Target = target
 			nextIndex = n
 		case util.IptablesModuleFlag:
-			// parse module with -m verb {--option {value}}
+			// parse module with format -m verb {--option {value}}
 			module := &iptable.Module{}
 			module.OptionValueMap = make(map[string][]string)
 			n := p.parseModule(start+1, module, byteArray)
@@ -178,18 +179,44 @@ func (p *Parser) parseTarget(nextIndex int, target *iptable.Target, byteArray []
 	}
 	targetName := string(byteArray[nextIndex : nextIndex+spaceIndex])
 	target.Name = targetName
-	start := nextIndex + spaceIndex + 1
-	spaceIndex = bytes.Index(byteArray[start:], util.SpaceBytes)
+	return p.parseTargetOptionAndValue(nextIndex+spaceIndex+1, target, "", byteArray)
+}
+
+func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *iptable.Target, curOption string, byteArray []byte) int {
+	spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
+	currentOption := curOption
 	if spaceIndex == -1 {
-		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(byteArray)))
+		if currentOption == "" {
+			panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(byteArray)))
+		}
+		v := string(byteArray[nextIndex:]) // TODO: assume that target is always at the end of each rule line
+		target.OptionValueMap[currentOption] = append(target.OptionValueMap[currentOption], v)
+		nextIndex = nextIndex + spaceIndex + 1
+		return nextIndex
 	}
-	end := start + spaceIndex
-	targetOption := string(byteArray[start:end])
-	target.Option = targetOption
-	start = end + 1
-	end = len(byteArray) - 1
-	target.Value = string(byteArray[start:end])
-	return end + 1
+	v := string(byteArray[nextIndex : nextIndex+spaceIndex])
+	if len(v) >= 2 {
+		if v[0] == '-' {
+			if v[1] == '-' {
+				//this is an option
+				target.OptionValueMap[v[2:]] = make([]string, 0)
+				currentOption = v[2:]
+				nextIndex = nextIndex + spaceIndex + 1
+				// recursively parsing options and their value until a new flag is encounter
+				return p.parseTargetOptionAndValue(nextIndex, target, currentOption, byteArray)
+			} else {
+				// this is a new flag
+				return nextIndex
+			}
+		}
+	}
+	//this is a value
+	if currentOption == "" {
+		panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(byteArray)))
+	}
+	target.OptionValueMap[currentOption] = append(target.OptionValueMap[currentOption], v)
+	nextIndex = nextIndex + spaceIndex + 1
+	return p.parseTargetOptionAndValue(nextIndex, target, currentOption, byteArray)
 }
 
 func (p *Parser) parseModule(nextIndex int, module *iptable.Module, byteArray []byte) int {
@@ -199,13 +226,27 @@ func (p *Parser) parseModule(nextIndex int, module *iptable.Module, byteArray []
 	}
 	verb := string(byteArray[nextIndex : nextIndex+spaceIndex])
 	module.Verb = verb
-	return p.parseOptionAndValue(nextIndex+spaceIndex+1, module, "", byteArray)
+	return p.parseModuleOptionAndValue(nextIndex+spaceIndex+1, module, "", byteArray)
 }
 
-func (p *Parser) parseOptionAndValue(nextIndex int, module *iptable.Module, curOption string, byteArray []byte) int {
+func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *iptable.Module, curOption string, byteArray []byte) int {
+	// TODO: Assume that options and values don't locate at the end of a line
 	spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
 	currentOption := curOption
 	if spaceIndex == -1 {
+		v := string(byteArray[nextIndex:])
+		if len(v) > 1 && v[:2] == "--" {
+			// option with no value at end of line
+			module.OptionValueMap[v[2:]] = make([]string, 0)
+			nextIndex = nextIndex + spaceIndex + 1
+			return nextIndex
+		}
+		// else this is a value at end of line
+		if currentOption == "" {
+			panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(byteArray)))
+		}
+		module.OptionValueMap[currentOption] = append(module.OptionValueMap[currentOption], v)
+		nextIndex = nextIndex + spaceIndex + 1
 		return nextIndex
 	}
 	v := string(byteArray[nextIndex : nextIndex+spaceIndex])
@@ -216,10 +257,10 @@ func (p *Parser) parseOptionAndValue(nextIndex int, module *iptable.Module, curO
 				module.OptionValueMap[v[2:]] = make([]string, 0)
 				currentOption = v[2:]
 				nextIndex = nextIndex + spaceIndex + 1
-				// recursively parsing options and their value until a new verb is encounter
-				return p.parseOptionAndValue(nextIndex, module, currentOption, byteArray)
+				// recursively parsing options and their value until a new flag is encounter
+				return p.parseModuleOptionAndValue(nextIndex, module, currentOption, byteArray)
 			} else {
-				// this is a new verb
+				// this is a new flag
 				return nextIndex
 			}
 		}
@@ -230,6 +271,6 @@ func (p *Parser) parseOptionAndValue(nextIndex int, module *iptable.Module, curO
 	}
 	module.OptionValueMap[currentOption] = append(module.OptionValueMap[currentOption], v)
 	nextIndex = nextIndex + spaceIndex + 1
-	return p.parseOptionAndValue(nextIndex, module, currentOption, byteArray)
+	return p.parseModuleOptionAndValue(nextIndex, module, currentOption, byteArray)
 
 }

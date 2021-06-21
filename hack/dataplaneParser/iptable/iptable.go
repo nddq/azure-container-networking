@@ -33,9 +33,8 @@ type Module struct {
 }
 
 type Target struct {
-	Name   string
-	Option string
-	Value  string
+	Name           string
+	OptionValueMap map[string][]string
 }
 
 func grabIptablesFileLock(f *os.File) error {
@@ -110,6 +109,5 @@ func (t *Iptables) printIptableRuleModules(m_list []*Module) {
 func (t *Iptables) printIptableRuleTarget(target *Target) {
 	fmt.Printf("			RULE'S TARGET\n")
 	fmt.Printf("					NAME - %v\n", target.Name)
-	fmt.Printf("					Option - %v\n", target.Option)
-	fmt.Printf("					Value - %v\n", target.Value)
+	fmt.Printf("					OptionValueMap - %+v\n", target.OptionValueMap)
 }
