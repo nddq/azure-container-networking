@@ -52,6 +52,7 @@ func main() {
 	}
 	// p := &parser.Parser{}
 	// iptableObj := p.ParseIptablesObject(tableName, iptableBuffer)
+	// iptableObj.PrintIptable()
 
 	c := &converter.Converter{}
 	ipTableRulesJsonList := c.GetRulesFromIptable(tableName, iptableBuffer)

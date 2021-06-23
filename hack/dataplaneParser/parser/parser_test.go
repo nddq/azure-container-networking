@@ -1,26 +1,94 @@
 package parser
 
 import (
+	"bytes"
+	"fmt"
+	"io/ioutil"
 	"reflect"
 	"testing"
 
 	"github.com/Azure/azure-container-networking/hack/dataplaneParser/iptable"
 )
 
-func TestParseIptablesChainObject(t *testing.T) {
+func TestParseIptablesObject(t *testing.T) {
+	var (
+		iptableBuffer = bytes.NewBuffer(nil)
+		tableName     = "filter"
+	)
 
+	byteArray, err := ioutil.ReadFile("testIptable")
+	if err != nil {
+		fmt.Print(err)
+	}
+	for _, b := range byteArray {
+		iptableBuffer.WriteByte(b)
+	}
+
+	p := &Parser{}
+	p.ParseIptablesObject(tableName, iptableBuffer)
 }
 
 func TestParseLine(t *testing.T) {
+	type test struct {
+		input    string
+		expected []byte
+	}
 
-}
+	p := &Parser{}
 
-func TestParseChainNameFromRule(t *testing.T) {
+	testL1 := "-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT"                // line with no left or right space
+	testL2 := "      -A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT"          // line with left space
+	testL3 := "-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT       "         // line with right space
+	testL4 := "        -A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT       " // line with left and right space
+
+	expectByteArray := []byte("-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT")
+
+	tests := []test{
+		{input: testL1, expected: expectByteArray},
+		{input: testL2, expected: expectByteArray},
+		{input: testL3, expected: expectByteArray},
+		{input: testL4, expected: expectByteArray},
+	}
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			actualLine, _ := p.parseLine(0, []byte(tc.input))
+			if equal := bytes.Compare(expectByteArray, actualLine); equal != 0 {
+				t.Errorf("expected '%+v', got '%+v'", tc.expected, actualLine)
+			}
+		})
+	}
 
 }
 
 func TestParseRuleFromLine(t *testing.T) {
+	type test struct {
+		input    string
+		expected *iptable.IptablesRule
+	}
+	p := &Parser{}
 
+	m1 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-806075013", "dst"}}}
+	m2 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-3260345197", "src"}}}
+	m3 := &iptable.Module{Verb: "tcp", OptionValueMap: map[string][]string{"dport": {"8000"}}}
+	m4 := &iptable.Module{Verb: "comment", OptionValueMap: map[string][]string{"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"}}}
+
+	modules := []*iptable.Module{m1, m2, m3, m4}
+
+	testR1 := &iptable.IptablesRule{Protocol: "tcp",
+		Target:  &iptable.Target{Name: "MARK", OptionValueMap: map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}},
+		Modules: modules}
+
+	tests := []test{
+		{input: "-p tcp -m set --match-set azure-npm-806075013 dst -m set --match-set azure-npm-3260345197 src -m tcp --dport 8000 -m comment --comment ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy -j MARK --set-xmark 0x2000/0xffffffff", expected: testR1},
+	}
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			actualRule := p.parseRuleFromLine([]byte(tc.input))
+			if !reflect.DeepEqual(tc.expected, actualRule) {
+				t.Errorf("expected '%+v', got '%+v'", tc.expected, actualRule)
+			}
+		})
+	}
 }
 
 func TestParseTarget(t *testing.T) {

@@ -89,6 +89,7 @@ func (p *Parser) parseLine(readIndex int, byteArray []byte) ([]byte, int) {
 	}
 	leftLineIndex := curReadIndex
 	rightLineIndex := -1
+	lastNonWhiteSpaceIndex := leftLineIndex
 
 	for ; curReadIndex < len(byteArray); curReadIndex++ {
 		if byteArray[curReadIndex] == ' ' {
@@ -105,11 +106,12 @@ func (p *Parser) parseLine(readIndex int, byteArray []byte) ([]byte, int) {
 			}
 			return byteArray[leftLineIndex:rightLineIndex], curReadIndex + 1
 		} else {
+			lastNonWhiteSpaceIndex = curReadIndex
 			rightLineIndex = -1
 		}
 
 	}
-	return nil, curReadIndex
+	return byteArray[leftLineIndex : lastNonWhiteSpaceIndex+1], curReadIndex // line with right spaces
 }
 
 // parseChainNameFromRule gets the chain name from given rule line
