@@ -16,7 +16,7 @@ func TestParseIptablesObject(t *testing.T) {
 		tableName     = "filter"
 	)
 
-	byteArray, err := ioutil.ReadFile("testIptable")
+	byteArray, err := ioutil.ReadFile("../../testIptable")
 	if err != nil {
 		fmt.Print(err)
 	}

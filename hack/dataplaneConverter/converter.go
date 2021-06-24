@@ -22,19 +22,13 @@ type RuleResponse struct {
 	DPort         string            `json:"dport"`
 	SPort         string            `json:"sport"`
 	Allowed       bool              `json:"allowed"`
-	Direction     string            `json:"direction"`
-	UnsortedIpset map[string]string `json:"unsortedIpset"` //key: ipset name, value: src,dst or dst,dst
-}
-
-type Direction int
-
-func (d Direction) String() string {
-	return [...]string{"EGRESS", "INGRESS"}[d]
+	Direction     iptable.Direction `json:"direction"`
+	UnsortedIpset map[string]string `json:"unsortedIpset"` // key: ipset name, value: src,dst or dst,dst
 }
 
 const (
-	EGRESS Direction = iota
-	INGRESS
+	EGRESS  iptable.Direction = "EGRESS"
+	INGRESS iptable.Direction = "INGRESS"
 )
 
 // ConvertIptablesObject returns a JSON object of an iptable go oject
@@ -65,6 +59,43 @@ func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.B
 		}
 	}
 	return ret
+}
+
+func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []*RuleResponse {
+	rules := make([]*RuleResponse, 0)
+	for _, v := range iptableChainObj.Rules {
+		rule := &RuleResponse{}
+		rule.Chain = iptableChainObj.Name
+		rule.Protocol = v.Protocol
+		switch v.Target.Name {
+		case "MARK":
+			rule.Allowed = true
+		case "DROP":
+			rule.Allowed = false
+		default:
+			// ignore other targets
+			continue
+		}
+		direction := c.getRuleDirection(iptableChainObj.Name)
+		if direction != "" {
+			rule.Direction = direction
+		}
+
+		c.getModulesFromRule(v.Modules, rule)
+		rules = append(rules, rule)
+
+	}
+	return rules
+}
+
+func (c *Converter) getRuleDirection(iptableChainObjName string) iptable.Direction {
+	if strings.Contains(iptableChainObjName, "EGRESS") {
+		return EGRESS
+	} else if strings.Contains(iptableChainObjName, "INGRESS") {
+		return INGRESS
+	} else {
+		return ""
+	}
 }
 
 func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *RuleResponse) {
@@ -100,41 +131,4 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *RuleRe
 			continue
 		}
 	}
-}
-
-func (c *Converter) getRuleDirection(iptableChainObjName string) Direction {
-	if strings.Contains(iptableChainObjName, "EGRESS") {
-		return EGRESS
-	} else if strings.Contains(iptableChainObjName, "INGRESS") {
-		return INGRESS
-	} else {
-		return -1
-	}
-}
-
-func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []*RuleResponse {
-	rules := make([]*RuleResponse, 0)
-	for _, v := range iptableChainObj.Rules {
-		rule := &RuleResponse{}
-		rule.Chain = iptableChainObj.Name
-		rule.Protocol = v.Protocol
-		switch v.Target.Name {
-		case "MARK":
-			rule.Allowed = true
-		case "DROP":
-			rule.Allowed = false
-		default:
-			// ignore other targets
-			continue
-		}
-		direction := c.getRuleDirection(iptableChainObj.Name)
-		if direction >= 0 {
-			rule.Direction = fmt.Sprint(direction)
-		}
-
-		c.getModulesFromRule(v.Modules, rule)
-		rules = append(rules, rule)
-
-	}
-	return rules
 }
