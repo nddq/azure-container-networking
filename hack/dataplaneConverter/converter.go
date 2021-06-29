@@ -9,22 +9,23 @@ import (
 
 	"github.com/Azure/azure-container-networking/hack/dataplaneParser/iptable"
 	"github.com/Azure/azure-container-networking/hack/dataplaneParser/parser"
+	"google.golang.org/protobuf/proto"
 )
 
 type Converter struct {
 }
 
-type RuleResponse struct {
-	Chain         string            `json:"chain"`
-	SrcList       []string          `json:"srcList"`
-	DstList       []string          `json:"dstList"`
-	Protocol      string            `json:"protocol"`
-	DPort         string            `json:"dport"`
-	SPort         string            `json:"sport"`
-	Allowed       bool              `json:"allowed"`
-	Direction     iptable.Direction `json:"direction"`
-	UnsortedIpset map[string]string `json:"unsortedIpset"` // key: ipset name, value: src,dst or dst,dst
-}
+// type RuleResponse struct {
+// 	Chain         string            `json:"chain"`
+// 	SrcList       []string          `json:"srcList"`
+// 	DstList       []string          `json:"dstList"`
+// 	Protocol      string            `json:"protocol"`
+// 	DPort         string            `json:"dport"`
+// 	SPort         string            `json:"sport"`
+// 	Allowed       bool              `json:"allowed"`
+// 	Direction     iptable.Direction `json:"direction"`
+// 	UnsortedIpset map[string]string `json:"unsortedIpset"` // key: ipset name, value: src,dst or dst,dst
+// }
 
 const (
 	EGRESS  iptable.Direction = "EGRESS"
@@ -49,8 +50,8 @@ func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.B
 	for _, v := range ipTableObj.Chains {
 		chainRules := c.getRulesFromChain(v)
 		for _, v := range chainRules {
-			// r, err := json.Marshal(v)
-			r, err := json.MarshalIndent(v, "", "    ") //pretty print
+			fmt.Println(v)
+			r, err := proto.Marshal(v)
 			if err != nil {
 				fmt.Println(err)
 				return nil
@@ -78,7 +79,7 @@ func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []
 		}
 		direction := c.getRuleDirection(iptableChainObj.Name)
 		if direction != "" {
-			rule.Direction = direction
+			rule.Direction = string(direction)
 		}
 
 		c.getModulesFromRule(v.Modules, rule)

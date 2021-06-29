@@ -22,3 +22,5 @@ ipam-*.xml
 *.test
 
 controller-gen
+hack/http
+hack/main.go

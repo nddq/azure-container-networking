@@ -55,7 +55,7 @@ func main() {
 	// iptableObj.PrintIptable()
 
 	c := &converter.Converter{}
-	ipTableRulesJsonList := c.GetRulesFromIptable(tableName, iptableBuffer)
-	fmt.Printf("%s\n", ipTableRulesJsonList)
+	ipTableRulesProtoBuffList := c.GetRulesFromIptable(tableName, iptableBuffer)
+	fmt.Printf("%s\n", ipTableRulesProtoBuffList)
 	// fmt.Printf("%s\n", c.ConvertIptablesObject(iptableObj))
 }
