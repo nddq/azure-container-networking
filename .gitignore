@@ -24,3 +24,4 @@ ipam-*.xml
 controller-gen
 hack/http
 hack/main.go
+build/tools/bin
