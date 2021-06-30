@@ -7,13 +7,13 @@ import (
 	"os/exec"
 
 	converter "github.com/Azure/azure-container-networking/hack/dataplaneConverter"
-	"github.com/Azure/azure-container-networking/hack/dataplaneParser/iptable"
 	"github.com/Azure/azure-container-networking/log"
+	"github.com/Azure/azure-container-networking/npm/iptm"
 	"github.com/Azure/azure-container-networking/npm/util"
 )
 
 func SaveIntoBuffer(tableName string, buffer *bytes.Buffer) error {
-	l, err := iptable.GrabIptablesLocks()
+	l, err := iptm.GrabIptablesLocks()
 	if err != nil {
 		return err
 	}

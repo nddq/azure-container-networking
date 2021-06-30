@@ -12,4 +12,8 @@ message RuleResponse {
     string Direction = 8;
     map<string, string> UnsortedIpset = 9;
   }
+
+  message RuleResponseList {
+    repeated RuleResponse RuleList = 1;
+  }
   

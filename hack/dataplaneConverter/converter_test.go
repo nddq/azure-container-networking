@@ -29,23 +29,22 @@ func TestGetRulesFromIptable(t *testing.T) {
 }
 
 func TestGetRulesFromChain(t *testing.T) {
-	iptableChain := &iptable.IptablesChain{}
-	iptableChain.Rules = make([]*iptable.IptablesRule, 0)
+	iptableChain := iptable.NewIptablesChain("", nil, make([]*iptable.IptablesRule, 0))
 
-	m1 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-806075013", "dst"}}}
-	m2 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-3260345197", "src"}}}
-	m3 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-1468440115", "dst,dst"}}}
-	m4 := &iptable.Module{Verb: "tcp", OptionValueMap: map[string][]string{"dport": {"8000"}}}
-	m5 := &iptable.Module{Verb: "comment", OptionValueMap: map[string][]string{"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"}}}
+	m1 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}})
+	m2 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-3260345197", "src"}})
+	m3 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-1468440115", "dst,dst"}})
+	m4 := iptable.NewModule("tcp", map[string][]string{"dport": {"8000"}})
+	m5 := iptable.NewModule("comment", map[string][]string{"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"}})
 
 	modules := []*iptable.Module{m1, m2, m3, m4, m5}
 
-	r1 := &iptable.IptablesRule{Protocol: "tcp",
-		Target:  &iptable.Target{Name: "MARK", OptionValueMap: map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}},
-		Modules: modules}
+	r1 := iptable.NewIptablesRule("tcp", iptable.NewTarget("MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}), modules)
 
-	iptableChain.Rules = append(iptableChain.Rules, r1)
-	iptableChain.Name = "AZURE-NPM-INGRESS-PORT"
+	chainRule := iptableChain.Rules()
+	chainRule = append(chainRule, r1)
+	iptableChain.SetRules(chainRule)
+	iptableChain.SetName("AZURE-NPM-INGRESS-PORT")
 
 	expectedReponsesArr := []*RuleResponse{{Chain: "AZURE-NPM-INGRESS-PORT",
 		SrcList:       []string{"azure-npm-3260345197"},

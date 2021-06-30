@@ -3,18 +3,17 @@ package converter
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 
 	"github.com/Azure/azure-container-networking/hack/dataplaneParser/iptable"
 	"github.com/Azure/azure-container-networking/hack/dataplaneParser/parser"
-	"google.golang.org/protobuf/proto"
 )
 
 type Converter struct {
 }
 
+// JSON
 // type RuleResponse struct {
 // 	Chain         string            `json:"chain"`
 // 	SrcList       []string          `json:"srcList"`
@@ -43,32 +42,24 @@ func (c *Converter) ConvertIptablesObject(iptableObj *iptable.Iptables) []byte {
 }
 
 // GetRulesFromIptable returns a list of JSON rule object of an iptable
-func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
-	ret := make([][]byte, 0)
+func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) *RuleResponseList {
 	p := &parser.Parser{}
 	ipTableObj := p.ParseIptablesObject(tableName, iptableBuffer)
-	for _, v := range ipTableObj.Chains {
+	ruleResList := &RuleResponseList{}
+	for _, v := range ipTableObj.Chains() {
 		chainRules := c.getRulesFromChain(v)
-		for _, v := range chainRules {
-			fmt.Println(v)
-			r, err := proto.Marshal(v)
-			if err != nil {
-				fmt.Println(err)
-				return nil
-			}
-			ret = append(ret, r)
-		}
+		ruleResList.RuleList = append(ruleResList.RuleList, chainRules...)
 	}
-	return ret
+	return ruleResList
 }
 
 func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []*RuleResponse {
 	rules := make([]*RuleResponse, 0)
-	for _, v := range iptableChainObj.Rules {
+	for _, v := range iptableChainObj.Rules() {
 		rule := &RuleResponse{}
-		rule.Chain = iptableChainObj.Name
-		rule.Protocol = v.Protocol
-		switch v.Target.Name {
+		rule.Chain = iptableChainObj.Name()
+		rule.Protocol = v.Protocol()
+		switch v.Target().Name() {
 		case "MARK":
 			rule.Allowed = true
 		case "DROP":
@@ -77,12 +68,12 @@ func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []
 			// ignore other targets
 			continue
 		}
-		direction := c.getRuleDirection(iptableChainObj.Name)
+		direction := c.getRuleDirection(iptableChainObj.Name())
 		if direction != "" {
 			rule.Direction = string(direction)
 		}
 
-		c.getModulesFromRule(v.Modules, rule)
+		c.getModulesFromRule(v.Modules(), rule)
 		rules = append(rules, rule)
 
 	}
@@ -104,10 +95,10 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *RuleRe
 	ruleRes.DstList = make([]string, 0)
 	ruleRes.UnsortedIpset = make(map[string]string)
 	for _, m := range m_list {
-		switch m.Verb {
+		switch m.Verb() {
 		case "set":
 			//set module
-			OptionValueMap := m.OptionValueMap
+			OptionValueMap := m.OptionValueMap()
 			ipsetName := OptionValueMap["match-set"][0]
 			ipsetOrigin := OptionValueMap["match-set"][1]
 			if len(ipsetOrigin) > 3 {
@@ -121,7 +112,7 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *RuleRe
 		case "tcp":
 			// tcp module TODO: other protocol
 			OptionValueMap := m.OptionValueMap
-			for k, v := range OptionValueMap {
+			for k, v := range OptionValueMap() {
 				if k == "dport" {
 					ruleRes.DPort = v[0]
 				} else {

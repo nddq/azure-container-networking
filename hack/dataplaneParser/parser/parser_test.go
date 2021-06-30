@@ -67,16 +67,14 @@ func TestParseRuleFromLine(t *testing.T) {
 	}
 	p := &Parser{}
 
-	m1 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-806075013", "dst"}}}
-	m2 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-3260345197", "src"}}}
-	m3 := &iptable.Module{Verb: "tcp", OptionValueMap: map[string][]string{"dport": {"8000"}}}
-	m4 := &iptable.Module{Verb: "comment", OptionValueMap: map[string][]string{"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"}}}
+	m1 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}})
+	m2 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-3260345197", "src"}})
+	m3 := iptable.NewModule("tcp", map[string][]string{"dport": {"8000"}})
+	m4 := iptable.NewModule("comment", map[string][]string{"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"}})
 
 	modules := []*iptable.Module{m1, m2, m3, m4}
 
-	testR1 := &iptable.IptablesRule{Protocol: "tcp",
-		Target:  &iptable.Target{Name: "MARK", OptionValueMap: map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}},
-		Modules: modules}
+	testR1 := iptable.NewIptablesRule("tcp", iptable.NewTarget("MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}), modules)
 
 	tests := []test{
 		{input: "-p tcp -m set --match-set azure-npm-806075013 dst -m set --match-set azure-npm-3260345197 src -m tcp --dport 8000 -m comment --comment ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy -j MARK --set-xmark 0x2000/0xffffffff", expected: testR1},
@@ -98,18 +96,16 @@ func TestParseTarget(t *testing.T) {
 	}
 	p := &Parser{}
 
-	testT1 := &iptable.Target{Name: "MARK", OptionValueMap: map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}} // target with option and value
-	testT2 := &iptable.Target{Name: "RETURN", OptionValueMap: map[string][]string{}}                                 // target with no option or value
+	testT1 := iptable.NewTarget("MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}) // target with option and value
+	testT2 := iptable.NewTarget("RETURN", map[string][]string{})                                 // target with no option or value
 
 	tests := []test{
 		{input: "MARK --set-xmark 0x2000/0xffffffff", expected: testT1},
 		{input: "RETURN", expected: testT2},
 	}
 	for _, tc := range tests {
-		actualTarget := &iptable.Target{}
-		actualTarget.OptionValueMap = make(map[string][]string)
+		actualTarget := iptable.NewTarget("", make(map[string][]string))
 		t.Run(tc.input, func(t *testing.T) {
-
 			p.parseTarget(0, actualTarget, []byte(tc.input))
 			if !reflect.DeepEqual(tc.expected, actualTarget) {
 				t.Errorf("expected '%+v', got '%+v'", tc.expected, actualTarget)
@@ -127,10 +123,9 @@ func TestParseModule(t *testing.T) {
 
 	p := &Parser{}
 
-	testM1 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-806075013", "dst"}}}                      // single option
-	testM2 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"match-set": {"azure-npm-806075013", "dst"}, "packets-gt": {"0"}}} // multiple options
-	testM3 := &iptable.Module{Verb: "set", OptionValueMap: map[string][]string{"return-nomatch": {}}}                                             // option with no values
-
+	testM1 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}})                      // single option
+	testM2 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}, "packets-gt": {"0"}}) // multiple options
+	testM3 := iptable.NewModule("set", map[string][]string{"return-nomatch": {}})                                             // option with no values
 	tests := []test{
 		{input: "set --match-set azure-npm-806075013 dst", expected: testM1},
 		{input: "set --match-set azure-npm-806075013 dst --packets-gt 0", expected: testM2},
@@ -138,10 +133,8 @@ func TestParseModule(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		actualModule := &iptable.Module{}
-		actualModule.OptionValueMap = make(map[string][]string)
+		actualModule := iptable.NewModule("", make(map[string][]string))
 		t.Run(tc.input, func(t *testing.T) {
-
 			p.parseModule(0, actualModule, []byte(tc.input))
 			if !reflect.DeepEqual(tc.expected, actualModule) {
 				t.Errorf("expected '%+v', got '%+v'", tc.expected, actualModule)
