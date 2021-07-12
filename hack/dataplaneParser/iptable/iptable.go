@@ -163,8 +163,6 @@ func (t *Target) SetOptionValueMap(optionvaluemap map[string][]string) {
 	t.optionValueMap = optionvaluemap
 }
 
-type Direction string
-
 // for debugging
 func (t *Iptables) PrintIptable() {
 	fmt.Printf("IPTABLE NAME - %v\n", t.Name())

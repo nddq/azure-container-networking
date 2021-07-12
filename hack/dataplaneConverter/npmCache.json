@@ -1,0 +1,1150 @@
+{
+    "Exec": {},
+    "NodeName": "aks-nodepool1-39148300-vmss000000",
+    "NsMap": {
+        "all-namespaces": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {
+                    "all-namespaces": {},
+                    "ns-addonmanager.kubernetes.io/mode": {},
+                    "ns-addonmanager.kubernetes.io/mode:Reconcile": {},
+                    "ns-control-plane": {},
+                    "ns-control-plane:true": {},
+                    "ns-kubernetes.io/cluster-service": {},
+                    "ns-kubernetes.io/cluster-service:true": {},
+                    "ns-namespace:dev": {},
+                    "ns-namespace:test0": {},
+                    "ns-namespace:test1": {},
+                    "ns-project:myproject": {},
+                    "ns-purpose": {},
+                    "ns-purpose:development": {},
+                    "ns-purpose:production": {}
+                },
+                "SetMap": {
+                    "allow-backend-to-frontend-on-port-53-policy-in-ns-testnamespace-1out": {},
+                    "allow-backend-to-frontend-on-port-8000-policy-in-ns-testnamespace-0in": {},
+                    "allow-multiple-labels-to-multiple-labels-in-ns-acn-0in": {},
+                    "allow-ns-dev-to-app-frontend-in-ns-testnamespace-0in": {},
+                    "app": {},
+                    "app:backdoor": {},
+                    "app:backend": {},
+                    "app:frontend": {},
+                    "app:k8s": {},
+                    "app:konnectivity-agent": {},
+                    "app:nginx": {},
+                    "app:server": {},
+                    "app:webapp": {},
+                    "backend-policy-in-ns-development-0in": {},
+                    "binary:cns": {},
+                    "deny-all-policy-in-ns-testnamespace-0in": {},
+                    "group:container": {},
+                    "k0": {},
+                    "k1:v0": {},
+                    "k1:v1": {},
+                    "k8s-app": {},
+                    "k8s-app:coredns-autoscaler": {},
+                    "k8s-app:kube-dns": {},
+                    "k8s-app:metrics-server": {},
+                    "k8s-example-policy-in-ns-default-0in": {},
+                    "k8s-example-policy-in-ns-default-0out": {},
+                    "kube-system": {},
+                    "kubernetes.io/cluster-service": {},
+                    "kubernetes.io/cluster-service:true": {},
+                    "namedport:dns": {},
+                    "namedport:dns-tcp": {},
+                    "namedport:metrics": {},
+                    "namedport:serve-80": {},
+                    "ns-acn": {},
+                    "ns-dangerous": {},
+                    "ns-default": {},
+                    "ns-development": {},
+                    "ns-kube-node-lease": {},
+                    "ns-kube-public": {},
+                    "ns-kube-system": {},
+                    "ns-production": {},
+                    "ns-test": {},
+                    "ns-testnamespace": {},
+                    "ns-unsafe": {},
+                    "pod-template-hash": {},
+                    "pod-template-hash:599949fd86": {},
+                    "pod-template-hash:6799fc88d8": {},
+                    "pod-template-hash:76c97c8599": {},
+                    "pod-template-hash:77c8679d7d": {},
+                    "program:cni": {},
+                    "role": {},
+                    "role:backend": {},
+                    "role:db": {},
+                    "role:frontend": {},
+                    "team:acn": {},
+                    "team:aks": {},
+                    "version": {},
+                    "version:v20": {}
+                }
+            }
+        },
+        "ns-acn": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-dangerous": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-default": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-development": {
+            "LabelsMap": {
+                "purpose": "development"
+            },
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-kube-node-lease": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-kube-public": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-kube-system": {
+            "LabelsMap": {
+                "addonmanager.kubernetes.io/mode": "Reconcile",
+                "control-plane": "true",
+                "kubernetes.io/cluster-service": "true"
+            },
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-production": {
+            "LabelsMap": {
+                "purpose": "production"
+            },
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-test": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-testnamespace": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        },
+        "ns-unsafe": {
+            "LabelsMap": {},
+            "SetMap": {},
+            "IpsMgr": {
+                "ListMap": {},
+                "SetMap": {}
+            }
+        }
+    },
+    "PodMap": {
+        "default/nginx-6799fc88d8-99tfx": {
+            "Name": "nginx-6799fc88d8-99tfx",
+            "Namespace": "default",
+            "PodIP": "10.240.0.140",
+            "Labels": {
+                "app": "nginx",
+                "pod-template-hash": "6799fc88d8"
+            },
+            "ContainerPorts": [],
+            "Phase": "Running"
+        },
+        "default/nginx-6799fc88d8-h989j": {
+            "Name": "nginx-6799fc88d8-h989j",
+            "Namespace": "default",
+            "PodIP": "10.240.1.215",
+            "Labels": {
+                "app": "nginx",
+                "pod-template-hash": "6799fc88d8"
+            },
+            "ContainerPorts": [],
+            "Phase": "Running"
+        },
+        "default/nginx-6799fc88d8-lh4j8": {
+            "Name": "nginx-6799fc88d8-lh4j8",
+            "Namespace": "default",
+            "PodIP": "10.240.1.29",
+            "Labels": {
+                "app": "nginx",
+                "pod-template-hash": "6799fc88d8"
+            },
+            "ContainerPorts": [],
+            "Phase": "Running"
+        },
+        "development/backend": {
+            "Name": "backend",
+            "Namespace": "development",
+            "PodIP": "10.240.1.212",
+            "Labels": {
+                "app": "webapp",
+                "role": "backend"
+            },
+            "ContainerPorts": [
+                {
+                    "containerPort": 80,
+                    "protocol": "TCP"
+                }
+            ],
+            "Phase": "Running"
+        },
+        "development/frontend": {
+            "Name": "frontend",
+            "Namespace": "development",
+            "PodIP": "10.240.0.172",
+            "Labels": {
+                "app": "webapp",
+                "role": "frontend"
+            },
+            "ContainerPorts": [],
+            "Phase": "Running"
+        },
+        "kube-system/coredns-76c97c8599-srkkl": {
+            "Name": "coredns-76c97c8599-srkkl",
+            "Namespace": "kube-system",
+            "PodIP": "10.240.1.20",
+            "Labels": {
+                "k8s-app": "kube-dns",
+                "kubernetes.io/cluster-service": "true",
+                "pod-template-hash": "76c97c8599",
+                "version": "v20"
+            },
+            "ContainerPorts": [
+                {
+                    "name": "dns",
+                    "containerPort": 53,
+                    "protocol": "UDP"
+                },
+                {
+                    "name": "dns-tcp",
+                    "containerPort": 53,
+                    "protocol": "TCP"
+                },
+                {
+                    "name": "metrics",
+                    "containerPort": 9153,
+                    "protocol": "TCP"
+                }
+            ],
+            "Phase": "Running"
+        },
+        "kube-system/coredns-76c97c8599-zzxlt": {
+            "Name": "coredns-76c97c8599-zzxlt",
+            "Namespace": "kube-system",
+            "PodIP": "10.240.0.89",
+            "Labels": {
+                "k8s-app": "kube-dns",
+                "kubernetes.io/cluster-service": "true",
+                "pod-template-hash": "76c97c8599",
+                "version": "v20"
+            },
+            "ContainerPorts": [
+                {
+                    "name": "dns",
+                    "containerPort": 53,
+                    "protocol": "UDP"
+                },
+                {
+                    "name": "dns-tcp",
+                    "containerPort": 53,
+                    "protocol": "TCP"
+                },
+                {
+                    "name": "metrics",
+                    "containerPort": 9153,
+                    "protocol": "TCP"
+                }
+            ],
+            "Phase": "Running"
+        },
+        "kube-system/coredns-autoscaler-599949fd86-m5jlm": {
+            "Name": "coredns-autoscaler-599949fd86-m5jlm",
+            "Namespace": "kube-system",
+            "PodIP": "10.240.2.111",
+            "Labels": {
+                "k8s-app": "coredns-autoscaler",
+                "pod-template-hash": "599949fd86"
+            },
+            "ContainerPorts": [],
+            "Phase": "Running"
+        },
+        "kube-system/metrics-server-77c8679d7d-6d4qp": {
+            "Name": "metrics-server-77c8679d7d-6d4qp",
+            "Namespace": "kube-system",
+            "PodIP": "10.240.1.176",
+            "Labels": {
+                "k8s-app": "metrics-server",
+                "pod-template-hash": "77c8679d7d"
+            },
+            "ContainerPorts": [],
+            "Phase": "Running"
+        }
+    },
+    "RawNpMap": {
+        "acn/allow-multiple-labels-to-multiple-labels": {
+            "metadata": {
+                "name": "allow-multiple-labels-to-multiple-labels",
+                "namespace": "acn",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/acn/networkpolicies/allow-multiple-labels-to-multiple-labels",
+                "uid": "4b96c511-45b9-4ab2-8050-c84a440c11f8",
+                "resourceVersion": "8003296",
+                "generation": 1,
+                "creationTimestamp": "2021-07-09T20:55:06Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"allow-multiple-labels-to-multiple-labels\",\"namespace\":\"acn\"},\"spec\":{\"ingress\":[{\"from\":[{\"podSelector\":{\"matchLabels\":{\"program\":\"cni\",\"team\":\"acn\"}}},{\"podSelector\":{\"matchLabels\":{\"binary\":\"cns\",\"group\":\"container\"}}}]}],\"podSelector\":{\"matchLabels\":{\"app\":\"k8s\",\"team\":\"aks\"}},\"policyTypes\":[\"Ingress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:55:06Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {},
+                                        "f:team": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "k8s",
+                        "team": "aks"
+                    }
+                },
+                "ingress": [
+                    {
+                        "from": [
+                            {
+                                "podSelector": {
+                                    "matchLabels": {
+                                        "program": "cni",
+                                        "team": "acn"
+                                    }
+                                }
+                            },
+                            {
+                                "podSelector": {
+                                    "matchLabels": {
+                                        "binary": "cns",
+                                        "group": "container"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "policyTypes": [
+                    "Ingress"
+                ]
+            }
+        },
+        "dangerous/allow-backdoor-policy": {
+            "metadata": {
+                "name": "allow-backdoor-policy",
+                "namespace": "dangerous",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/dangerous/networkpolicies/allow-backdoor-policy",
+                "uid": "19631e56-3d2f-442f-bc48-a79acffe3310",
+                "resourceVersion": "8003291",
+                "generation": 1,
+                "creationTimestamp": "2021-07-09T20:55:06Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"allow-backdoor-policy\",\"namespace\":\"dangerous\"},\"spec\":{\"ingress\":[{\"from\":[]}],\"podSelector\":{\"matchLabels\":{\"app\":\"backdoor\"}},\"policyTypes\":[\"Ingress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:55:06Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "backdoor"
+                    }
+                },
+                "ingress": [
+                    {}
+                ],
+                "policyTypes": [
+                    "Ingress"
+                ]
+            }
+        },
+        "default/k8s-example-policy": {
+            "metadata": {
+                "name": "k8s-example-policy",
+                "namespace": "default",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/default/networkpolicies/k8s-example-policy",
+                "uid": "3e1439b0-d394-4442-a9a1-620a66fc377d",
+                "resourceVersion": "8003301",
+                "generation": 6,
+                "creationTimestamp": "2021-07-09T20:53:49Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"k8s-example-policy\",\"namespace\":\"default\"},\"spec\":{\"egress\":[{\"ports\":[{\"port\":5978,\"protocol\":\"TCP\"}],\"to\":[{\"ipBlock\":{\"cidr\":\"10.0.0.0/24\",\"except\":[\"10.0.0.1/32\"]}}]}],\"ingress\":[{\"from\":[{\"ipBlock\":{\"cidr\":\"172.17.0.0/16\",\"except\":[\"172.17.1.0/24\"]}},{\"namespaceSelector\":{\"matchLabels\":{\"project\":\"myproject\"}}},{\"podSelector\":{\"matchLabels\":{\"role\":\"frontend\"}}}],\"ports\":[{\"port\":6379,\"protocol\":\"TCP\"}]}],\"podSelector\":{\"matchLabels\":{\"role\":\"db\"}},\"policyTypes\":[\"Ingress\",\"Egress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:53:49Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:egress": {},
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:role": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "role": "db"
+                    }
+                },
+                "ingress": [
+                    {
+                        "ports": [
+                            {
+                                "protocol": "TCP",
+                                "port": 6379
+                            }
+                        ],
+                        "from": [
+                            {
+                                "ipBlock": {
+                                    "cidr": "172.17.0.0/16",
+                                    "except": [
+                                        "172.17.1.0/24"
+                                    ]
+                                }
+                            },
+                            {
+                                "namespaceSelector": {
+                                    "matchLabels": {
+                                        "project": "myproject"
+                                    }
+                                }
+                            },
+                            {
+                                "podSelector": {
+                                    "matchLabels": {
+                                        "role": "frontend"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "egress": [
+                    {
+                        "ports": [
+                            {
+                                "protocol": "TCP",
+                                "port": 5978
+                            }
+                        ],
+                        "to": [
+                            {
+                                "ipBlock": {
+                                    "cidr": "10.0.0.0/24",
+                                    "except": [
+                                        "10.0.0.1/32"
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "policyTypes": [
+                    "Ingress",
+                    "Egress"
+                ]
+            }
+        },
+        "development/backend-policy": {
+            "metadata": {
+                "name": "backend-policy",
+                "namespace": "development",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/development/networkpolicies/backend-policy",
+                "uid": "9f4263e7-cc07-4130-89bd-9f08907e6511",
+                "resourceVersion": "1735837",
+                "generation": 2,
+                "creationTimestamp": "2021-06-10T19:41:12Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"backend-policy\",\"namespace\":\"development\"},\"spec\":{\"ingress\":[{\"from\":[{\"namespaceSelector\":{\"matchLabels\":{\"purpose\":\"development\"}},\"podSelector\":{\"matchLabels\":{\"app\":\"webapp\",\"role\":\"frontend\"}}}],\"ports\":[{\"port\":80,\"protocol\":\"TCP\"}]}],\"podSelector\":{\"matchLabels\":{\"app\":\"webapp\",\"role\":\"backend\"}}}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-06-10T19:41:12Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {},
+                                        "f:role": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "webapp",
+                        "role": "backend"
+                    }
+                },
+                "ingress": [
+                    {
+                        "ports": [
+                            {
+                                "protocol": "TCP",
+                                "port": 80
+                            }
+                        ],
+                        "from": [
+                            {
+                                "podSelector": {
+                                    "matchLabels": {
+                                        "app": "webapp",
+                                        "role": "frontend"
+                                    }
+                                },
+                                "namespaceSelector": {
+                                    "matchLabels": {
+                                        "purpose": "development"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "policyTypes": [
+                    "Ingress"
+                ]
+            }
+        },
+        "kube-system/konnectivity-agent": {
+            "metadata": {
+                "name": "konnectivity-agent",
+                "namespace": "kube-system",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/kube-system/networkpolicies/konnectivity-agent",
+                "uid": "1e48218a-cbca-4659-b93e-1606f5614651",
+                "resourceVersion": "465",
+                "generation": 1,
+                "creationTimestamp": "2021-06-02T18:41:13Z",
+                "labels": {
+                    "addonmanager.kubernetes.io/mode": "Reconcile"
+                },
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"labels\":{\"addonmanager.kubernetes.io/mode\":\"Reconcile\"},\"name\":\"konnectivity-agent\",\"namespace\":\"kube-system\"},\"spec\":{\"egress\":[{}],\"podSelector\":{\"matchLabels\":{\"app\":\"konnectivity-agent\"}},\"policyTypes\":[\"Egress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-06-02T18:41:13Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                },
+                                "f:labels": {
+                                    ".": {},
+                                    "f:addonmanager.kubernetes.io/mode": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:egress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "konnectivity-agent"
+                    }
+                },
+                "egress": [
+                    {}
+                ],
+                "policyTypes": [
+                    "Egress"
+                ]
+            }
+        },
+        "test/named-port-ingress-rule": {
+            "metadata": {
+                "name": "named-port-ingress-rule",
+                "namespace": "test",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/test/networkpolicies/named-port-ingress-rule",
+                "uid": "50b03205-1f93-4a90-b2b4-77adb678f13f",
+                "resourceVersion": "8003306",
+                "generation": 1,
+                "creationTimestamp": "2021-07-09T20:55:07Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"named-port-ingress-rule\",\"namespace\":\"test\"},\"spec\":{\"ingress\":[{\"ports\":[{\"port\":\"serve-80\",\"protocol\":\"TCP\"}]}],\"podSelector\":{\"matchLabels\":{\"app\":\"server\"}},\"policyTypes\":[\"Ingress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:55:07Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "server"
+                    }
+                },
+                "ingress": [
+                    {
+                        "ports": [
+                            {
+                                "protocol": "TCP",
+                                "port": "serve-80"
+                            }
+                        ]
+                    }
+                ],
+                "policyTypes": [
+                    "Ingress"
+                ]
+            }
+        },
+        "testnamespace/allow-all-to-app-frontend": {
+            "metadata": {
+                "name": "allow-all-to-app-frontend",
+                "namespace": "testnamespace",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/testnamespace/networkpolicies/allow-all-to-app-frontend",
+                "uid": "7cfa453f-de2b-49a8-b7a6-3fa422073dcb",
+                "resourceVersion": "8003124",
+                "generation": 1,
+                "creationTimestamp": "2021-07-09T20:54:12Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"allow-all-to-app-frontend\",\"namespace\":\"testnamespace\"},\"spec\":{\"ingress\":[{}],\"podSelector\":{\"matchLabels\":{\"app\":\"frontend\"}},\"policyTypes\":[\"Ingress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:54:12Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "frontend"
+                    }
+                },
+                "ingress": [
+                    {}
+                ],
+                "policyTypes": [
+                    "Ingress"
+                ]
+            }
+        },
+        "testnamespace/allow-backend-to-frontend-on-port-53-policy": {
+            "metadata": {
+                "name": "allow-backend-to-frontend-on-port-53-policy",
+                "namespace": "testnamespace",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/testnamespace/networkpolicies/allow-backend-to-frontend-on-port-53-policy",
+                "uid": "89fe9c4d-9e9f-4053-88f1-bfc262df0188",
+                "resourceVersion": "8003126",
+                "generation": 1,
+                "creationTimestamp": "2021-07-09T20:54:12Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"allow-backend-to-frontend-on-port-53-policy\",\"namespace\":\"testnamespace\"},\"spec\":{\"egress\":[{\"ports\":[{\"port\":53,\"protocol\":\"TCP\"},{\"port\":53,\"protocol\":\"UDP\"}]},{\"to\":[{\"namespaceSelector\":{}}]}],\"podSelector\":{\"matchLabels\":{\"app\":\"frontend\"}},\"policyTypes\":[\"Egress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:54:12Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:egress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "frontend"
+                    }
+                },
+                "egress": [
+                    {
+                        "ports": [
+                            {
+                                "protocol": "TCP",
+                                "port": 53
+                            },
+                            {
+                                "protocol": "UDP",
+                                "port": 53
+                            }
+                        ]
+                    },
+                    {
+                        "to": [
+                            {
+                                "namespaceSelector": {}
+                            }
+                        ]
+                    }
+                ],
+                "policyTypes": [
+                    "Egress"
+                ]
+            }
+        },
+        "testnamespace/allow-backend-to-frontend-on-port-8000-policy": {
+            "metadata": {
+                "name": "allow-backend-to-frontend-on-port-8000-policy",
+                "namespace": "testnamespace",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/testnamespace/networkpolicies/allow-backend-to-frontend-on-port-8000-policy",
+                "uid": "57fd7172-cb51-4aa9-a407-10a86daff10a",
+                "resourceVersion": "8003289",
+                "generation": 4,
+                "creationTimestamp": "2021-07-09T20:54:12Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"allow-backend-to-frontend-on-port-8000-policy\",\"namespace\":\"testnamespace\"},\"spec\":{\"ingress\":[{\"from\":[{\"podSelector\":{\"matchLabels\":{\"app\":\"backend\"}}}],\"ports\":[{\"port\":null}]}],\"podSelector\":{\"matchLabels\":{\"app\":\"frontend\"}},\"policyTypes\":[\"Ingress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:54:12Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "frontend"
+                    }
+                },
+                "ingress": [
+                    {
+                        "ports": [
+                            {
+                                "protocol": "TCP"
+                            }
+                        ],
+                        "from": [
+                            {
+                                "podSelector": {
+                                    "matchLabels": {
+                                        "app": "backend"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "policyTypes": [
+                    "Ingress"
+                ]
+            }
+        },
+        "testnamespace/allow-ns-dev-to-app-frontend": {
+            "metadata": {
+                "name": "allow-ns-dev-to-app-frontend",
+                "namespace": "testnamespace",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/testnamespace/networkpolicies/allow-ns-dev-to-app-frontend",
+                "uid": "903470ad-2cda-4f9d-8785-89f49988d864",
+                "resourceVersion": "8003132",
+                "generation": 1,
+                "creationTimestamp": "2021-07-09T20:54:13Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"allow-ns-dev-to-app-frontend\",\"namespace\":\"testnamespace\"},\"spec\":{\"ingress\":[{\"from\":[{\"namespaceSelector\":{\"matchExpressions\":[{\"key\":\"namespace\",\"operator\":\"NotIn\",\"values\":[\"test0\",\"test1\"]}],\"matchLabels\":{\"namespace\":\"dev\"}}}]}],\"podSelector\":{\"matchLabels\":{\"app\":\"frontend\"}},\"policyTypes\":[\"Ingress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:54:13Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "frontend"
+                    }
+                },
+                "ingress": [
+                    {
+                        "from": [
+                            {
+                                "namespaceSelector": {
+                                    "matchLabels": {
+                                        "namespace": "dev"
+                                    },
+                                    "matchExpressions": [
+                                        {
+                                            "key": "namespace",
+                                            "operator": "NotIn",
+                                            "values": [
+                                                "test0",
+                                                "test1"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "policyTypes": [
+                    "Ingress"
+                ]
+            }
+        },
+        "testnamespace/deny-all-policy": {
+            "metadata": {
+                "name": "deny-all-policy",
+                "namespace": "testnamespace",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/testnamespace/networkpolicies/deny-all-policy",
+                "uid": "f99bc3a3-5763-45c8-be8a-c4ade47a69c8",
+                "resourceVersion": "8003308",
+                "generation": 18,
+                "creationTimestamp": "2021-07-09T20:54:11Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"deny-all-policy\",\"namespace\":\"testnamespace\"},\"spec\":{\"ingress\":[{\"from\":[{\"namespaceSelector\":{}}]}],\"podSelector\":{\"matchExpressions\":[{\"key\":\"k0\",\"operator\":\"DoesNotExist\",\"values\":[]},{\"key\":\"k1\",\"operator\":\"In\",\"values\":[\"v0\",\"v1\"]}],\"matchLabels\":{\"app\":\"frontend\"}},\"policyTypes\":[\"Ingress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:55:08Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:ingress": {},
+                                "f:podSelector": {
+                                    "f:matchExpressions": {},
+                                    "f:matchLabels": {
+                                        ".": {},
+                                        "f:app": {}
+                                    }
+                                },
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {
+                    "matchLabels": {
+                        "app": "frontend"
+                    },
+                    "matchExpressions": [
+                        {
+                            "key": "k0",
+                            "operator": "DoesNotExist"
+                        },
+                        {
+                            "key": "k1",
+                            "operator": "In",
+                            "values": [
+                                "v0",
+                                "v1"
+                            ]
+                        }
+                    ]
+                },
+                "ingress": [
+                    {
+                        "from": [
+                            {
+                                "namespaceSelector": {}
+                            }
+                        ]
+                    }
+                ],
+                "policyTypes": [
+                    "Ingress"
+                ]
+            }
+        },
+        "unsafe/deny-all-policy": {
+            "metadata": {
+                "name": "deny-all-policy",
+                "namespace": "unsafe",
+                "selfLink": "/apis/networking.k8s.io/v1/namespaces/unsafe/networkpolicies/deny-all-policy",
+                "uid": "94ef89d8-3671-4694-a22d-5e51bb320d34",
+                "resourceVersion": "8003303",
+                "generation": 1,
+                "creationTimestamp": "2021-07-09T20:55:07Z",
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"deny-all-policy\",\"namespace\":\"unsafe\"},\"spec\":{\"egress\":[],\"podSelector\":{},\"policyTypes\":[\"Egress\"]}}\n"
+                },
+                "managedFields": [
+                    {
+                        "manager": "kubectl-client-side-apply",
+                        "operation": "Update",
+                        "apiVersion": "networking.k8s.io/v1",
+                        "time": "2021-07-09T20:55:07Z",
+                        "fieldsType": "FieldsV1",
+                        "fieldsV1": {
+                            "f:metadata": {
+                                "f:annotations": {
+                                    ".": {},
+                                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                                }
+                            },
+                            "f:spec": {
+                                "f:policyTypes": {}
+                            }
+                        }
+                    }
+                ]
+            },
+            "spec": {
+                "podSelector": {},
+                "policyTypes": [
+                    "Egress"
+                ]
+            }
+        }
+    },
+    "ProcessedNpMap": {},
+    "TelemetryEnabled": true
+}

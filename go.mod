@@ -12,8 +12,8 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/libnetwork v0.8.0-dev.2.0.20210525090646-64b7a4574d14
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
-	github.com/golang/protobuf v1.4.1 // indirect
 	github.com/golang/mock v1.2.0
+	github.com/golang/protobuf v1.5.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0
@@ -43,8 +43,9 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.1.4 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/grpc v1.27.0
-	google.golang.org/protobuf v1.25.0
+	google.golang.org/protobuf v1.27.1
 	gotest.tools/v3 v3.0.2 // indirect
 	k8s.io/api v0.18.19
 	k8s.io/apiextensions-apiserver v0.18.2

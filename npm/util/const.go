@@ -148,6 +148,7 @@ const (
 	NamedPortIPSetPrefix string = "namedport:"
 
 	NamespacePrefix string = "ns-"
+	NegationPrefix  string = "not-"
 )
 
 //NPM telemetry constants.

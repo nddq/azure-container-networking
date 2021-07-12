@@ -156,10 +156,36 @@ func (p *Parser) parseRuleFromLine(byteArray []byte) *iptable.IptablesRule {
 			iptableRule.SetModules(modules)
 			nextIndex = n
 		default:
+			nextIndex = p.jumpToNextFlag(start+1, byteArray)
 			continue
 		}
 	}
 	return iptableRule
+}
+
+// handle unrecognized flags
+func (p *Parser) jumpToNextFlag(nextIndex int, byteArray []byte) int {
+	spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
+	if spaceIndex == -1 {
+		nextIndex = nextIndex + spaceIndex + 1
+		return nextIndex
+	}
+	v := string(byteArray[nextIndex : nextIndex+spaceIndex])
+	if len(v) >= 2 {
+		if v[0] == '-' {
+			if v[1] == '-' {
+				//this is an option
+				nextIndex = nextIndex + spaceIndex + 1
+				// recursively parsing unrecognized flag's options and their value until a new flag is encounter
+				return p.jumpToNextFlag(nextIndex, byteArray)
+			} else {
+				// this is a new flag
+				return nextIndex
+			}
+		}
+	}
+	nextIndex = nextIndex + spaceIndex + 1
+	return p.jumpToNextFlag(nextIndex, byteArray)
 }
 
 func (p *Parser) parseTarget(nextIndex int, target *iptable.Target, byteArray []byte) int {
@@ -220,10 +246,10 @@ func (p *Parser) parseModule(nextIndex int, module *iptable.Module, byteArray []
 	}
 	verb := string(byteArray[nextIndex : nextIndex+spaceIndex])
 	module.SetVerb(verb)
-	return p.parseModuleOptionAndValue(nextIndex+spaceIndex+1, module, "", byteArray)
+	return p.parseModuleOptionAndValue(nextIndex+spaceIndex+1, module, "", byteArray, true)
 }
 
-func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *iptable.Module, curOption string, byteArray []byte) int {
+func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *iptable.Module, curOption string, byteArray []byte, included bool) int {
 	// TODO: Assume that options and values don't locate at the end of a line
 	spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
 	currentOption := curOption
@@ -244,15 +270,24 @@ func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *iptable.Module
 		return nextIndex
 	}
 	v := string(byteArray[nextIndex : nextIndex+spaceIndex])
+	if v == "!" {
+		// negation to options
+		nextIndex = nextIndex + spaceIndex + 1
+		return p.parseModuleOptionAndValue(nextIndex, module, currentOption, byteArray, false)
+	}
+
 	if len(v) >= 2 {
 		if v[0] == '-' {
 			if v[1] == '-' {
 				//this is an option
 				currentOption = v[2:]
+				if !included {
+					currentOption = util.NegationPrefix + currentOption
+				}
 				module.OptionValueMap()[currentOption] = make([]string, 0)
 				nextIndex = nextIndex + spaceIndex + 1
 				// recursively parsing options and their value until a new flag is encounter
-				return p.parseModuleOptionAndValue(nextIndex, module, currentOption, byteArray)
+				return p.parseModuleOptionAndValue(nextIndex, module, currentOption, byteArray, true)
 			} else {
 				// this is a new flag
 				return nextIndex
@@ -265,6 +300,6 @@ func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *iptable.Module
 	}
 	module.OptionValueMap()[currentOption] = append(module.OptionValueMap()[currentOption], v)
 	nextIndex = nextIndex + spaceIndex + 1
-	return p.parseModuleOptionAndValue(nextIndex, module, currentOption, byteArray)
+	return p.parseModuleOptionAndValue(nextIndex, module, currentOption, byteArray, true)
 
 }
