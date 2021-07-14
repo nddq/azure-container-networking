@@ -22,5 +22,4 @@ ipam-*.xml
 *.test
 
 controller-gen
-npm/debugTools/http
 build/tools/bin

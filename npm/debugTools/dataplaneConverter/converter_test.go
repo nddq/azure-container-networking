@@ -26,7 +26,7 @@ func TestGetRulesFromIptable(t *testing.T) {
 	}
 
 	c := &Converter{}
-	c.GetRulesFromIptable(tableName, iptableBuffer)
+	c.GetJSONRulesFromIptable(tableName, iptableBuffer)
 }
 
 func TestGetRulesFromChain(t *testing.T) {
