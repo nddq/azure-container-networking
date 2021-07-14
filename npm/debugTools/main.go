@@ -43,37 +43,31 @@ func SaveIntoBuffer(tableName string, buffer *bytes.Buffer) error {
 }
 
 func main() {
-	// var (
-	// 	// If required, we can move this buffer one stage up
-	// 	// and built as required overtime
-	// 	iptableBuffer = bytes.NewBuffer(nil)
-	// 	tableName     = "filter"
-	// )
-	// // if err := SaveIntoBuffer(tableName, iptableBuffer); err != nil {
-	// // 	// metrics.SendErrorLogAndMetric(util.IptmID, "[BulkUpdateIPtables] Error: failed to get iptables-save command output with err: %s", err.Error())
-	// // 	fmt.Println(err.Error())
-	// // }
-	// byteArray, err := ioutil.ReadFile("dataplaneConverter/clusterIptableSave")
-	// if err != nil {
-	// 	fmt.Print(err)
+	var (
+		// If required, we can move this buffer one stage up
+		// and built as required overtime
+		iptableBuffer = bytes.NewBuffer(nil)
+		tableName     = "filter"
+	)
+	// if err := SaveIntoBuffer(tableName, iptableBuffer); err != nil {
+	// 	// metrics.SendErrorLogAndMetric(util.IptmID, "[BulkUpdateIPtables] Error: failed to get iptables-save command output with err: %s", err.Error())
+	// 	fmt.Println(err.Error())
 	// }
-	// for _, b := range byteArray {
-	// 	iptableBuffer.WriteByte(b)
-	// }
+	byteArray, err := ioutil.ReadFile("dataplaneConverter/clusterIptableSave")
+	if err != nil {
+		fmt.Print(err)
+	}
+	for _, b := range byteArray {
+		iptableBuffer.WriteByte(b)
+	}
 
-	// Parser
 	// p := &parser.Parser{}
 	// iptableObj := p.ParseIptablesObject(tableName, iptableBuffer)
 	// iptableObj.PrintIptable()
 
-	// Converter
-	// c := &converter.Converter{}
-	// ipTableRulesRes := c.GetJSONRulesFromIptable(tableName, iptableBuffer)
-	// fmt.Printf("%s\n", ipTableRulesRes)
+	c := &converter.Converter{}
+	ipTableRulesRes := c.GetRulesFromIptable(tableName, iptableBuffer)
+	fmt.Printf("%s\n", ipTableRulesRes)
 
-	// MetadataParser
-	p := &converter.Processor{}
-	src := "development/frontend"
-	dst := "development/backend"
-	p.GetNetworkTuple(src, dst)
+	// // fmt.Printf("%s\n", c.ConvertIptablesObject(iptableObj))
 }

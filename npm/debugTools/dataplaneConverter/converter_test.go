@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Azure/azure-container-networking/hack/dataplaneParser/iptable"
-	"github.com/Azure/azure-container-networking/hack/pb"
+	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
+	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 )
 
 func TestGetRulesFromIptable(t *testing.T) {
