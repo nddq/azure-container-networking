@@ -8,62 +8,32 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Azure/azure-container-networking/hack/dataplaneParser/iptable"
-	"github.com/Azure/azure-container-networking/hack/dataplaneParser/parser"
-	"github.com/Azure/azure-container-networking/hack/pb"
+	"github.com/Azure/azure-container-networking/npm"
+	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
+	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/parser"
+	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 	"github.com/Azure/azure-container-networking/npm/util"
 	"google.golang.org/protobuf/encoding/protojson"
+	networkingv1 "k8s.io/api/networking/v1"
+	utilexec "k8s.io/utils/exec"
 )
 
 type Converter struct {
 }
 
-// JSON
-// type RuleResponse struct {
-// 	Chain         string            `json:"chain"`
-// 	SrcList       []*SetInfo        `json:"srcList"`
-// 	DstList       []*SetInfo        `json:"dstList"`
-// 	Protocol      string            `json:"protocol"`
-// 	DPort         string            `json:"dport"`
-// 	SPort         string            `json:"sport"`
-// 	Allowed       bool              `json:"allowed"`
-// 	Direction     iptable.Direction `json:"direction"`
-// 	UnsortedIpset map[string]string `json:"unsortedIpset"` // key: ipset name, value: src,dst or dst,dst
-// }
-
-// type SetInfo struct {
-// 	Type          SetType  `json:"type"`
-// 	Name          string   `json:"name"`
-// 	HashedSetName string   `json:"hashedSetName"`
-// 	Contents      []string `json:"contents"`
-// 	Included      bool     `json:"included"`
-// }
-
-// type SetType string
-
-// const (
-// 	EGRESS                   iptable.Direction = "EGRESS"
-// 	INGRESS                  iptable.Direction = "INGRESS"
-// 	NAMESPACE                SetType           = "namespace"
-// 	KEYLABELOFNAMESPACE      SetType           = "keyLabelOfNamespace"
-// 	KEYVALUELABELOFNAMESPACE SetType           = "keyValueLabelOfNamespace"
-// 	KEYLABELOFPOD            SetType           = "keyLabelOfPod"
-// 	KEYVALUELABELOFPOD       SetType           = "keyValueLabelOfPod"
-// 	NAMEDPORTS               SetType           = "namedports"
-// )
-
 type NPMCache struct {
-	Exec             interface{}
+	Exec             utilexec.Interface
 	Nodename         string
-	NsMap            map[string]map[string]map[string]map[string]interface{}
-	PodMap           map[string]interface{}
-	RawNpMap         map[string]interface{}
-	ProcessedNpMap   map[string]interface{}
+	NsMap            map[string]*npm.Namespace
+	PodMap           map[string]*npm.NpmPod
+	RawNpMap         map[string]*networkingv1.NetworkPolicy
+	ProcessedNpMap   map[string]*networkingv1.NetworkPolicy
 	TelemetryEnabled bool
 }
 
 var ListMap map[string]string
 var SetMap map[string]string
+var RequiredChainsMap map[string]bool
 
 func (c *Converter) GetNpmCache() *NPMCache {
 	cachObj := &NPMCache{}
@@ -77,23 +47,11 @@ func (c *Converter) GetNpmCache() *NPMCache {
 	return cachObj
 }
 
-func (c *Converter) GetSetType(name string, m string) pb.SetType {
-	if m == "ListMap" { // labels of namespace
-		if strings.Contains(name, util.IpsetLabelDelimter) {
-			return pb.SetType_KEYVALUELABELOFNAMESPACE
-		}
-		return pb.SetType_KEYLABELOFNAMESPACE
-	} else {
-		if strings.HasPrefix(name, util.NamespacePrefix) {
-			return pb.SetType_NAMESPACE
-		}
-		if strings.HasPrefix(name, util.NamedPortIPSetPrefix) {
-			return pb.SetType_NAMEDPORTS
-		}
-		if strings.Contains(name, util.IpsetLabelDelimter) {
-			return pb.SetType_KEYVALUELABELOFPOD
-		}
-		return pb.SetType_KEYLABELOFPOD
+// initialize map of chain name that will be include in the result
+func (c *Converter) initRequiredChainMap() {
+	RequiredChainsMap = make(map[string]bool)
+	for _, chain := range RequiredChains {
+		RequiredChainsMap[chain] = true
 	}
 }
 
@@ -107,18 +65,38 @@ func (c *Converter) ConvertIptablesObject(iptableObj *iptable.Iptables) []byte {
 	return iptableJson
 }
 
-// GetRulesFromIptable returns a list of JSON rule object of an iptable
-func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
+// GetJSONRulesFromIptable returns a list of JSON rule object of an iptable
+func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
+	ruleResListJson := make([][]byte, 0)
+	m := protojson.MarshalOptions{
+		Indent:          "  ",
+		EmitUnpopulated: true,
+	}
+	pbRuleObj := c.GetProtobufRulesFromIptable(tableName, iptableBuffer)
+	for _, rule := range pbRuleObj {
+		ruleJson, err := m.Marshal(rule) // pretty print
+		if err != nil {
+			log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
+		}
+		ruleResListJson = append(ruleResListJson, ruleJson)
+	}
+	return ruleResListJson
+
+}
+
+// GetRulesFromIptable returns a list of protobuf rule object of an iptable
+func (c *Converter) GetProtobufRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) []*pb.RuleResponse {
 	p := &parser.Parser{}
 	npmCache := c.GetNpmCache()
 	ListMap = make(map[string]string)
 	SetMap = make(map[string]string)
+	c.initRequiredChainMap()
 
-	for k := range npmCache.NsMap["all-namespaces"]["IpsMgr"]["ListMap"] {
+	for k := range npmCache.NsMap["all-namespaces"].IpsMgr.ListMap {
 		hashedName := util.GetHashedName(k)
 		ListMap[hashedName] = k
 	}
-	for k := range npmCache.NsMap["all-namespaces"]["IpsMgr"]["SetMap"] {
+	for k := range npmCache.NsMap["all-namespaces"].IpsMgr.SetMap {
 		hashedName := util.GetHashedName(k)
 		SetMap[hashedName] = k
 	}
@@ -129,19 +107,8 @@ func (c *Converter) GetRulesFromIptable(tableName string, iptableBuffer *bytes.B
 		ruleResList = append(ruleResList, chainRules...)
 	}
 
-	ruleResListJson := make([][]byte, 0)
-	m := protojson.MarshalOptions{
-		Indent:          "  ",
-		EmitUnpopulated: true,
-	}
-	for _, rule := range ruleResList {
-		ruleJson, err := m.Marshal(rule) // pretty print
-		if err != nil {
-			log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
-		}
-		ruleResListJson = append(ruleResListJson, ruleJson)
-	}
-	return ruleResListJson
+	return ruleResList
+
 }
 
 func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []*pb.RuleResponse {
@@ -149,6 +116,9 @@ func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []
 	for _, v := range iptableChainObj.Rules() {
 		rule := &pb.RuleResponse{}
 		rule.Chain = iptableChainObj.Name()
+		if _, ok := RequiredChainsMap[rule.Chain]; !ok {
+			continue
+		}
 		rule.Protocol = v.Protocol()
 		switch v.Target().Name() {
 		case "MARK":
@@ -181,6 +151,26 @@ func (c *Converter) getRuleDirection(iptableChainObjName string) pb.Direction {
 	}
 }
 
+func (c *Converter) getSetType(name string, m string) pb.SetType {
+	if m == "ListMap" { // labels of namespace
+		if strings.Contains(name, util.IpsetLabelDelimter) {
+			return pb.SetType_KEYVALUELABELOFNAMESPACE
+		}
+		return pb.SetType_KEYLABELOFNAMESPACE
+	} else {
+		if strings.HasPrefix(name, util.NamespacePrefix) {
+			return pb.SetType_NAMESPACE
+		}
+		if strings.HasPrefix(name, util.NamedPortIPSetPrefix) {
+			return pb.SetType_NAMEDPORTS
+		}
+		if strings.Contains(name, util.IpsetLabelDelimter) {
+			return pb.SetType_KEYVALUELABELOFPOD
+		}
+		return pb.SetType_KEYLABELOFPOD
+	}
+}
+
 func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *pb.RuleResponse) {
 	ruleRes.SrcList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.DstList = make([]*pb.RuleResponse_SetInfo, 0)
@@ -199,10 +189,10 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *pb.Rul
 					infoObj.HashedSetName = ipsetHashedName
 					if v, ok := ListMap[ipsetHashedName]; ok {
 						infoObj.Name = v
-						infoObj.Type = c.GetSetType(v, "ListMap")
+						infoObj.Type = c.getSetType(v, "ListMap")
 					} else if v, ok := SetMap[ipsetHashedName]; ok {
 						infoObj.Name = v
-						infoObj.Type = c.GetSetType(v, "SetMap")
+						infoObj.Type = c.getSetType(v, "SetMap")
 					} else {
 						log.Fatalf("Set %v does not exist", ipsetHashedName)
 					}
@@ -222,10 +212,10 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *pb.Rul
 					infoObj.HashedSetName = ipsetHashedName
 					if v, ok := ListMap[ipsetHashedName]; ok {
 						infoObj.Name = v
-						infoObj.Type = c.GetSetType(v, "ListMap")
+						infoObj.Type = c.getSetType(v, "ListMap")
 					} else if v, ok := SetMap[ipsetHashedName]; ok {
 						infoObj.Name = v
-						infoObj.Type = c.GetSetType(v, "SetMap")
+						infoObj.Type = c.getSetType(v, "SetMap")
 					} else {
 						log.Fatalf("Set %v does not exist", ipsetHashedName)
 					}
@@ -241,6 +231,7 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *pb.Rul
 					}
 				default:
 					// todo add warning log
+					log.Printf("%v option have not been implemented\n", k)
 					continue
 				}
 
