@@ -77,7 +77,7 @@ func TestParseRuleFromLine(t *testing.T) {
 	testR1 := iptable.NewIptablesRule("tcp", iptable.NewTarget("MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}), modules)
 
 	tests := []test{
-		{input: "-p tcp -m set --match-set azure-npm-806075013 dst -m set --match-set azure-npm-3260345197 src -m tcp --dport 8000 -m comment --comment ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy -j MARK --set-xmark 0x2000/0xffffffff", expected: testR1},
+		{input: "-p tcp -d 10.0.153.59/32 -m set --match-set azure-npm-806075013 dst -m set --match-set azure-npm-3260345197 src -m tcp --dport 8000 -m comment --comment ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy -j MARK --set-xmark 0x2000/0xffffffff", expected: testR1},
 	}
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
@@ -123,12 +123,12 @@ func TestParseModule(t *testing.T) {
 
 	p := &Parser{}
 
-	testM1 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}})                      // single option
-	testM2 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}, "packets-gt": {"0"}}) // multiple options
-	testM3 := iptable.NewModule("set", map[string][]string{"return-nomatch": {}})                                             // option with no values
+	testM1 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}})                          // single option
+	testM2 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-806075013", "dst"}, "packets-gt": {"0"}}) // multiple options
+	testM3 := iptable.NewModule("set", map[string][]string{"return-nomatch": {}})                                                 // option with no values
 	tests := []test{
 		{input: "set --match-set azure-npm-806075013 dst", expected: testM1},
-		{input: "set --match-set azure-npm-806075013 dst --packets-gt 0", expected: testM2},
+		{input: "set ! --match-set azure-npm-806075013 dst --packets-gt 0", expected: testM2},
 		{input: "set --return-nomatch", expected: testM3},
 	}
 

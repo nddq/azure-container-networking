@@ -8,6 +8,7 @@ enum SetType {
   KEYLABELOFPOD = 3;
   KEYVALUELABELOFPOD = 4;
   NAMEDPORTS = 5;
+  NESTEDLABELOFPOD = 6;
 }
 
 enum Direction {
@@ -27,8 +28,8 @@ message RuleResponse {
     repeated SetInfo SrcList = 2;
     repeated SetInfo DstList = 3;
     string Protocol = 4;
-    string DPort = 5;
-    string SPort = 6;
+    int32 DPort = 5;
+    int32 SPort = 6;
     bool Allowed = 7;
     Direction Direction = 8;
     map<string, string> UnsortedIpset = 9;

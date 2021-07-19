@@ -15,6 +15,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               project: myproject
+            matchExpressions:
+              - key: project
+                operator: Exists
         - podSelector:
             matchLabels:
               role: frontend
@@ -34,5 +37,3 @@ spec:
       ports:
         - protocol: TCP
           port: 5978
-
-          

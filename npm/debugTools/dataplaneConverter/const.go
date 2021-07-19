@@ -1,5 +1,11 @@
 package converter
 
+import (
+	"github.com/Azure/azure-container-networking/npm"
+	networkingv1 "k8s.io/api/networking/v1"
+	utilexec "k8s.io/utils/exec"
+)
+
 var (
 	RequiredChains = []string{
 		"AZURE-NPM-INGRESS-DROPS",
@@ -10,3 +16,13 @@ var (
 		"AZURE-NPM-EGRESS-TO",
 	}
 )
+
+type NPMCache struct {
+	Exec             utilexec.Interface
+	Nodename         string
+	NsMap            map[string]*npm.Namespace
+	PodMap           map[string]*npm.NpmPod
+	RawNpMap         map[string]*networkingv1.NetworkPolicy
+	ProcessedNpMap   map[string]*networkingv1.NetworkPolicy
+	TelemetryEnabled bool
+}

@@ -6,40 +6,27 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"strings"
 
-	"github.com/Azure/azure-container-networking/npm"
 	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
 	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/parser"
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 	"github.com/Azure/azure-container-networking/npm/util"
 	"google.golang.org/protobuf/encoding/protojson"
-	networkingv1 "k8s.io/api/networking/v1"
-	utilexec "k8s.io/utils/exec"
 )
 
 type Converter struct {
+	ListMap           map[string]string
+	SetMap            map[string]string
+	RequiredChainsMap map[string]bool
 }
-
-type NPMCache struct {
-	Exec             utilexec.Interface
-	Nodename         string
-	NsMap            map[string]*npm.Namespace
-	PodMap           map[string]*npm.NpmPod
-	RawNpMap         map[string]*networkingv1.NetworkPolicy
-	ProcessedNpMap   map[string]*networkingv1.NetworkPolicy
-	TelemetryEnabled bool
-}
-
-var ListMap map[string]string
-var SetMap map[string]string
-var RequiredChainsMap map[string]bool
 
 func (c *Converter) GetNpmCache() *NPMCache {
 	cachObj := &NPMCache{}
 
 	// currently read from file
-	byteArray, err := ioutil.ReadFile("dataplaneConverter/npmCache.json")
+	byteArray, err := ioutil.ReadFile("testFiles/npmCache.json")
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -48,22 +35,35 @@ func (c *Converter) GetNpmCache() *NPMCache {
 }
 
 // initialize map of chain name that will be include in the result
-func (c *Converter) initRequiredChainMap() {
-	RequiredChainsMap = make(map[string]bool)
+func (c *Converter) initConverter() {
+	c.RequiredChainsMap = make(map[string]bool)
 	for _, chain := range RequiredChains {
-		RequiredChainsMap[chain] = true
+		c.RequiredChainsMap[chain] = true
 	}
+	c.ListMap = make(map[string]string)
+	c.SetMap = make(map[string]string)
+	npmCache := c.GetNpmCache()
+
+	for k := range npmCache.NsMap["all-namespaces"].IpsMgr.ListMap {
+		hashedName := util.GetHashedName(k)
+		c.ListMap[hashedName] = k
+	}
+	for k := range npmCache.NsMap["all-namespaces"].IpsMgr.SetMap {
+		hashedName := util.GetHashedName(k)
+		c.SetMap[hashedName] = k
+	}
+
 }
 
 // ConvertIptablesObject returns a JSON object of an iptable go oject
-func (c *Converter) ConvertIptablesObject(iptableObj *iptable.Iptables) []byte {
-	// iptableJson, err := json.Marshal(iptableObj)
-	iptableJson, err := json.MarshalIndent(iptableObj, "", "    ") // pretty print
-	if err != nil {
-		log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
-	}
-	return iptableJson
-}
+// func (c *Converter) ConvertIptablesObject(iptableObj *iptable.Iptables) []byte {
+// 	// iptableJson, err := json.Marshal(iptableObj)
+// 	iptableJson, err := json.MarshalIndent(iptableObj, "", "    ") // pretty print
+// 	if err != nil {
+// 		log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
+// 	}
+// 	return iptableJson
+// }
 
 // GetJSONRulesFromIptable returns a list of JSON rule object of an iptable
 func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
@@ -86,20 +86,8 @@ func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *byt
 
 // GetRulesFromIptable returns a list of protobuf rule object of an iptable
 func (c *Converter) GetProtobufRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) []*pb.RuleResponse {
+	c.initConverter()
 	p := &parser.Parser{}
-	npmCache := c.GetNpmCache()
-	ListMap = make(map[string]string)
-	SetMap = make(map[string]string)
-	c.initRequiredChainMap()
-
-	for k := range npmCache.NsMap["all-namespaces"].IpsMgr.ListMap {
-		hashedName := util.GetHashedName(k)
-		ListMap[hashedName] = k
-	}
-	for k := range npmCache.NsMap["all-namespaces"].IpsMgr.SetMap {
-		hashedName := util.GetHashedName(k)
-		SetMap[hashedName] = k
-	}
 	ipTableObj := p.ParseIptablesObject(tableName, iptableBuffer)
 	ruleResList := make([]*pb.RuleResponse, 0)
 	for _, v := range ipTableObj.Chains() {
@@ -116,7 +104,7 @@ func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) []
 	for _, v := range iptableChainObj.Rules() {
 		rule := &pb.RuleResponse{}
 		rule.Chain = iptableChainObj.Name()
-		if _, ok := RequiredChainsMap[rule.Chain]; !ok {
+		if _, ok := c.RequiredChainsMap[rule.Chain]; !ok {
 			continue
 		}
 		rule.Protocol = v.Protocol()
@@ -154,6 +142,9 @@ func (c *Converter) getRuleDirection(iptableChainObjName string) pb.Direction {
 func (c *Converter) getSetType(name string, m string) pb.SetType {
 	if m == "ListMap" { // labels of namespace
 		if strings.Contains(name, util.IpsetLabelDelimter) {
+			if strings.Count(name, util.IpsetLabelDelimter) > 1 {
+				return pb.SetType_NESTEDLABELOFPOD
+			}
 			return pb.SetType_KEYVALUELABELOFNAMESPACE
 		}
 		return pb.SetType_KEYLABELOFNAMESPACE
@@ -187,10 +178,10 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *pb.Rul
 					ipsetHashedName := v[0]
 					ipsetOrigin := v[1]
 					infoObj.HashedSetName = ipsetHashedName
-					if v, ok := ListMap[ipsetHashedName]; ok {
+					if v, ok := c.ListMap[ipsetHashedName]; ok {
 						infoObj.Name = v
 						infoObj.Type = c.getSetType(v, "ListMap")
-					} else if v, ok := SetMap[ipsetHashedName]; ok {
+					} else if v, ok := c.SetMap[ipsetHashedName]; ok {
 						infoObj.Name = v
 						infoObj.Type = c.getSetType(v, "SetMap")
 					} else {
@@ -210,10 +201,10 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *pb.Rul
 					ipsetHashedName := v[0]
 					ipsetOrigin := v[1]
 					infoObj.HashedSetName = ipsetHashedName
-					if v, ok := ListMap[ipsetHashedName]; ok {
+					if v, ok := c.ListMap[ipsetHashedName]; ok {
 						infoObj.Name = v
 						infoObj.Type = c.getSetType(v, "ListMap")
-					} else if v, ok := SetMap[ipsetHashedName]; ok {
+					} else if v, ok := c.SetMap[ipsetHashedName]; ok {
 						infoObj.Name = v
 						infoObj.Type = c.getSetType(v, "SetMap")
 					} else {
@@ -242,9 +233,22 @@ func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *pb.Rul
 			OptionValueMap := m.OptionValueMap
 			for k, v := range OptionValueMap() {
 				if k == "dport" {
-					ruleRes.DPort = v[0]
+					portNum, _ := strconv.ParseInt(v[0], 10, 32)
+					ruleRes.DPort = int32(portNum)
 				} else {
-					ruleRes.SPort = v[0]
+					portNum, _ := strconv.ParseInt(v[0], 10, 32)
+					ruleRes.SPort = int32(portNum)
+				}
+			}
+		case "udp":
+			OptionValueMap := m.OptionValueMap
+			for k, v := range OptionValueMap() {
+				if k == "dport" {
+					portNum, _ := strconv.ParseInt(v[0], 10, 32)
+					ruleRes.DPort = int32(portNum)
+				} else {
+					portNum, _ := strconv.ParseInt(v[0], 10, 32)
+					ruleRes.SPort = int32(portNum)
 				}
 			}
 		default:

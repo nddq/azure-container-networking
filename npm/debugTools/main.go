@@ -53,7 +53,7 @@ func main() {
 	// 	// metrics.SendErrorLogAndMetric(util.IptmID, "[BulkUpdateIPtables] Error: failed to get iptables-save command output with err: %s", err.Error())
 	// 	fmt.Println(err.Error())
 	// }
-	byteArray, err := ioutil.ReadFile("dataplaneConverter/clusterIptableSave")
+	byteArray, err := ioutil.ReadFile("dataplaneConverter/testFiles/clusterIptableSave")
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -61,13 +61,26 @@ func main() {
 		iptableBuffer.WriteByte(b)
 	}
 
-	// p := &parser.Parser{}
-	// iptableObj := p.ParseIptablesObject(tableName, iptableBuffer)
-	// iptableObj.PrintIptable()
+	// // p := &parser.Parser{}
+	// // iptableObj := p.ParseIptablesObject(tableName, iptableBuffer)
+	// // iptableObj.PrintIptable()
 
 	c := &converter.Converter{}
 	ipTableRulesRes := c.GetJSONRulesFromIptable(tableName, iptableBuffer)
 	fmt.Printf("%s\n", ipTableRulesRes)
 
-	// // fmt.Printf("%s\n", c.ConvertIptablesObject(iptableObj))
+	// p := &converter.Processor{}
+	// podname to podname
+	// src := &converter.Input{Content: "z/b", Type: converter.PODNAME}
+	// dst := &converter.Input{Content: "netpol-4537-x/a", Type: converter.PODNAME}
+
+	// internet to podname
+	// src := &converter.Input{Content: "", Type: converter.INTERNET}
+	// dst := &converter.Input{Content: "testnamespace/a", Type: converter.PODNAME}
+
+	// podname to internet
+	// src := &converter.Input{Content: "testnamespace/a", Type: converter.PODNAME}
+	// dst := &converter.Input{Content: "", Type: converter.INTERNET}
+	// p.GetNetworkTuple(src, dst)
+
 }
