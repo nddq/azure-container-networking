@@ -28,7 +28,10 @@ func (c *Converter) GetNpmCache(filename ...string) *NPMCache {
 	if err != nil {
 		panic(err)
 	}
-	json.Unmarshal(byteArray, &cachObj)
+	err = json.Unmarshal(byteArray, &cachObj)
+	if err != nil {
+		panic(err)
+	}
 	return cachObj
 }
 
