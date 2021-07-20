@@ -27,6 +27,7 @@ import (
 	"github.com/Azure/azure-container-networking/network/policy"
 	"github.com/Azure/azure-container-networking/platform"
 	nnscontracts "github.com/Azure/azure-container-networking/proto/nodenetworkservice/3.302.0.744"
+	"github.com/Azure/azure-container-networking/store"
 	"github.com/Azure/azure-container-networking/telemetry"
 	cniSkel "github.com/containernetworking/cni/pkg/skel"
 	cniTypes "github.com/containernetworking/cni/pkg/types"
@@ -161,7 +162,9 @@ func (plugin *netPlugin) GetAllEndpointState(networkid string) (*api.AzureCNISta
 	}
 
 	eps, err := plugin.nm.GetAllEndpoints(networkid)
-	if err != nil {
+	if err == store.ErrStoreEmpty {
+		log.Printf("failed to retrieve endpoint state with err %v", err)
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -178,7 +181,7 @@ func (plugin *netPlugin) GetAllEndpointState(networkid string) (*api.AzureCNISta
 		st.ContainerInterfaces[id] = info
 	}
 
-	return &st, err
+	return &st, nil
 }
 
 // Stops the plugin.
@@ -671,9 +674,8 @@ func (plugin *netPlugin) Add(args *cniSkel.CmdArgs) error {
 	}
 
 	epPolicies := getPoliciesFromRuntimeCfg(nwCfg)
-	for _, epPolicy := range epPolicies {
-		epInfo.Policies = append(epInfo.Policies, epPolicy)
-	}
+
+	epInfo.Policies = append(epInfo.Policies, epPolicies...)
 
 	// Populate addresses.
 	for _, ipconfig := range result.IPs {

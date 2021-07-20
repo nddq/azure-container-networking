@@ -11,10 +11,10 @@ import (
 
 func newCNIStateFakeExec(stdout string) exec.Interface {
 	calls := []testutils.TestCmd{
-		{Cmd: []string{"./azure-vnet"}, Stdout: stdout},
+		{Cmd: []string{"/opt/cni/bin/azure-vnet"}, Stdout: stdout},
 	}
 
-	fake, _ := testutils.GetFakeExecWithScripts(calls)
+	fake := testutils.GetFakeExecWithScripts(calls)
 	return fake
 }
 
@@ -34,6 +34,14 @@ func TestNewCNIPodInfoProvider(t *testing.T) {
 				"10.241.0.13": cns.NewPodInfo("6e688597eafb97c83c84e402cc72b299bfb8aeb02021e4c99307a037352c0bed", "6e688597-eth0", "tunnelfront-5d96f9b987-65xbn", "kube-system"),
 				"10.241.0.17": cns.NewPodInfo("3f813b029429b4e41a09ab33b6f6d365d2ed704017524c78d1d0dece33cdaf46", "3f813b02-eth0", "metrics-server-77c8679d7d-6ksdh", "kube-system"),
 			},
+			wantErr: false,
+		},
+		{
+			name: "empty CNI response",
+			exec: newCNIStateFakeExec(
+				`{}`,
+			),
+			want:    map[string]cns.PodInfo{},
 			wantErr: false,
 		},
 	}
