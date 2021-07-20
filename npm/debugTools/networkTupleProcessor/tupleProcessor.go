@@ -2,6 +2,7 @@ package processor
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,13 +20,13 @@ type Processor struct {
 }
 
 type Tuple struct {
-	RuleType  string
-	Direction pb.Direction
-	SrcIP     string
-	SrcPort   string
-	DstIP     string
-	DstPort   string
-	Protocol  string
+	RuleType  string `json:"ruleType"`
+	Direction string `json:"direction"`
+	SrcIP     string `json:"srcIP"`
+	SrcPort   string `json:"srcPort"`
+	DstIP     string `json:"dstIP"`
+	DstPort   string `json:"dstPort"`
+	Protocol  string `json:"protocol"`
 }
 
 type Input struct {
@@ -41,26 +42,45 @@ const (
 	INTERNET InputType = 2
 )
 
-func (p *Processor) GetNetworkTuple(src, dst *Input) []*Tuple {
-	// TODO: Assuming that both src and dst are pod name
+// GetNetworkTuple returns a list of hit rules between the source and the destination and a list of tuples from those rules in JSON format. Filenames following the format, cacheFile first and then iptable-save file
+// optional for debugging
+func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]byte, [][]byte) {
 	c := &converter.Converter{}
-
-	cacheObj := c.GetNpmCache()
 	var (
+		cacheObj      *converter.NPMCache
+		allRules      []*pb.RuleResponse
 		srcPod        *npm.NpmPod
 		dstPod        *npm.NpmPod
 		iptableBuffer = bytes.NewBuffer(nil)
 		tableName     = "filter"
 	)
 
-	byteArray, err := ioutil.ReadFile("dataplaneConverter/testFiles/clusterIptableSave")
-	if err != nil {
-		fmt.Print(err)
-	}
-	for _, b := range byteArray {
-		iptableBuffer.WriteByte(b)
-	}
+	// hacky way to make it works for testing
+	if len(filenames) > 1 {
+		cacheObj = c.GetNpmCache(filenames[0])
+		byteArray, err := ioutil.ReadFile(filenames[1])
 
+		if err != nil {
+			fmt.Print(err)
+		}
+		for _, b := range byteArray {
+			iptableBuffer.WriteByte(b)
+		}
+		allRules = c.GetProtobufRulesFromIptable(tableName, iptableBuffer, filenames[0])
+
+	} else {
+		cacheObj = c.GetNpmCache("testFiles/npmCache.json")
+		byteArray, err := ioutil.ReadFile("testFiles/clusterIptableSave")
+
+		if err != nil {
+			fmt.Print(err)
+		}
+		for _, b := range byteArray {
+			iptableBuffer.WriteByte(b)
+		}
+		allRules = c.GetProtobufRulesFromIptable(tableName, iptableBuffer, "testFiles/npmCache.json")
+
+	}
 	switch src.Type {
 	case PODNAME:
 		srcPod = cacheObj.PodMap[src.Content]
@@ -101,10 +121,8 @@ func (p *Processor) GetNetworkTuple(src, dst *Input) []*Tuple {
 		panic("Invalid destination type")
 	}
 
-	allRules := c.GetProtobufRulesFromIptable(tableName, iptableBuffer)
 	hitRules := p.GetHitRules(srcPod, dstPod, allRules, cacheObj)
 
-	// for debugging only, will remove
 	ruleResListJson := make([][]byte, 0)
 	m := protojson.MarshalOptions{
 		Indent: "	",
@@ -117,48 +135,62 @@ func (p *Processor) GetNetworkTuple(src, dst *Input) []*Tuple {
 		}
 		ruleResListJson = append(ruleResListJson, ruleJson)
 	}
-	fmt.Printf("%s\n", ruleResListJson)
-	//
 
 	resTupleList := make([]*Tuple, 0)
 	for _, rule := range hitRules {
-		tuple := &Tuple{}
-		if rule.Allowed {
-			tuple.RuleType = "ALLOWED"
-		} else {
-			tuple.RuleType = "NOT ALLOWED"
-		}
-		tuple.Direction = rule.Direction
-		if len(rule.SrcList) == 0 {
-			tuple.SrcIP = "ANY"
-		} else {
-			tuple.SrcIP = srcPod.PodIP
-		}
-		if rule.SPort != 0 {
-			tuple.SrcPort = strconv.Itoa(int(rule.SPort))
-		} else {
-			tuple.SrcPort = "ANY"
-		}
-		if len(rule.DstList) == 0 {
-			tuple.DstIP = "ANY"
-		} else {
-			tuple.DstIP = dstPod.PodIP
-		}
-		if rule.DPort != 0 {
-			tuple.DstPort = strconv.Itoa(int(rule.DPort))
-		} else {
-			tuple.DstPort = "ANY"
-		}
-		if rule.Protocol != "" {
-			tuple.Protocol = rule.Protocol
-		} else {
-			tuple.Protocol = "ANY"
-		}
-		fmt.Printf("%+v\n", tuple)
+		tuple := p.generateTuple(srcPod, dstPod, rule)
 		resTupleList = append(resTupleList, tuple)
 	}
-	return resTupleList
+	tupleResListJson := make([][]byte, 0)
+	for _, rule := range resTupleList {
+		ruleJson, err := json.MarshalIndent(rule, "", "  ")
+		if err != nil {
+			log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
+		}
+		tupleResListJson = append(tupleResListJson, ruleJson)
+	}
+	return ruleResListJson, tupleResListJson
 
+}
+
+func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *Tuple {
+	tuple := &Tuple{}
+	if rule.Allowed {
+		tuple.RuleType = "ALLOWED"
+	} else {
+		tuple.RuleType = "NOT ALLOWED"
+	}
+	if rule.Direction == pb.Direction_EGRESS {
+		tuple.Direction = "EGRESS"
+	} else {
+		tuple.Direction = "INGRESS"
+	}
+	if len(rule.SrcList) == 0 {
+		tuple.SrcIP = "ANY"
+	} else {
+		tuple.SrcIP = src.PodIP
+	}
+	if rule.SPort != 0 {
+		tuple.SrcPort = strconv.Itoa(int(rule.SPort))
+	} else {
+		tuple.SrcPort = "ANY"
+	}
+	if len(rule.DstList) == 0 {
+		tuple.DstIP = "ANY"
+	} else {
+		tuple.DstIP = dst.PodIP
+	}
+	if rule.DPort != 0 {
+		tuple.DstPort = strconv.Itoa(int(rule.DPort))
+	} else {
+		tuple.DstPort = "ANY"
+	}
+	if rule.Protocol != "" {
+		tuple.Protocol = rule.Protocol
+	} else {
+		tuple.Protocol = "ANY"
+	}
+	return tuple
 }
 
 func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, cacheObj *converter.NPMCache) []*pb.RuleResponse {
@@ -300,6 +332,8 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 				}
 			}
 		}
+	default:
+		panic("Invalid set type")
 	}
 
 	return matched

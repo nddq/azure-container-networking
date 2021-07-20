@@ -3,7 +3,6 @@ package converter
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"strconv"
@@ -22,27 +21,33 @@ type Converter struct {
 	RequiredChainsMap map[string]bool
 }
 
-func (c *Converter) GetNpmCache() *NPMCache {
+func (c *Converter) GetNpmCache(filename ...string) *NPMCache {
 	cachObj := &NPMCache{}
 
-	// currently read from file
-	byteArray, err := ioutil.ReadFile("testFiles/npmCache.json")
+	byteArray, err := ioutil.ReadFile(filename[0])
 	if err != nil {
-		fmt.Print(err)
+		panic(err)
 	}
 	json.Unmarshal(byteArray, &cachObj)
 	return cachObj
 }
 
 // initialize map of chain name that will be include in the result
-func (c *Converter) initConverter() {
+func (c *Converter) initConverter(filename ...string) {
+	var (
+		npmCache *NPMCache
+	)
 	c.RequiredChainsMap = make(map[string]bool)
 	for _, chain := range RequiredChains {
 		c.RequiredChainsMap[chain] = true
 	}
 	c.ListMap = make(map[string]string)
 	c.SetMap = make(map[string]string)
-	npmCache := c.GetNpmCache()
+	if len(filename) > 0 {
+		npmCache = c.GetNpmCache(filename[0])
+	} else {
+		npmCache = c.GetNpmCache()
+	}
 
 	for k := range npmCache.NsMap["all-namespaces"].IpsMgr.ListMap {
 		hashedName := util.GetHashedName(k)
@@ -66,13 +71,13 @@ func (c *Converter) initConverter() {
 // }
 
 // GetJSONRulesFromIptable returns a list of JSON rule object of an iptable
-func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) [][]byte {
+func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer, filename string) [][]byte {
 	ruleResListJson := make([][]byte, 0)
 	m := protojson.MarshalOptions{
 		Indent:          "  ",
 		EmitUnpopulated: true,
 	}
-	pbRuleObj := c.GetProtobufRulesFromIptable(tableName, iptableBuffer)
+	pbRuleObj := c.GetProtobufRulesFromIptable(tableName, iptableBuffer, filename)
 	for _, rule := range pbRuleObj {
 		ruleJson, err := m.Marshal(rule) // pretty print
 		if err != nil {
@@ -85,8 +90,8 @@ func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *byt
 }
 
 // GetRulesFromIptable returns a list of protobuf rule object of an iptable
-func (c *Converter) GetProtobufRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer) []*pb.RuleResponse {
-	c.initConverter()
+func (c *Converter) GetProtobufRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer, filename string) []*pb.RuleResponse {
+	c.initConverter(filename)
 	p := &parser.Parser{}
 	ipTableObj := p.ParseIptablesObject(tableName, iptableBuffer)
 	ruleResList := make([]*pb.RuleResponse, 0)

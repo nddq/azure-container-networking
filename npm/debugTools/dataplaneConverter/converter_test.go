@@ -2,7 +2,6 @@ package converter
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -17,16 +16,16 @@ func TestGetJSONRulesFromIptable(t *testing.T) {
 		tableName     = "filter"
 	)
 
-	byteArray, err := ioutil.ReadFile("testFiles/clusterIptableSave")
+	byteArray, err := ioutil.ReadFile("../testFiles/clusterIptableSave")
 	if err != nil {
-		fmt.Print(err)
+		panic(err)
 	}
 	for _, b := range byteArray {
 		iptableBuffer.WriteByte(b)
 	}
 
 	c := &Converter{}
-	c.GetJSONRulesFromIptable(tableName, iptableBuffer)
+	c.GetJSONRulesFromIptable(tableName, iptableBuffer, "../testFiles/npmCache.json")
 }
 
 func TestGetProtobufRulesFromIptable(t *testing.T) {
@@ -35,16 +34,16 @@ func TestGetProtobufRulesFromIptable(t *testing.T) {
 		tableName     = "filter"
 	)
 
-	byteArray, err := ioutil.ReadFile("testFiles/clusterIptableSave")
+	byteArray, err := ioutil.ReadFile("../testFiles/clusterIptableSave")
 	if err != nil {
-		fmt.Print(err)
+		panic(err)
 	}
 	for _, b := range byteArray {
 		iptableBuffer.WriteByte(b)
 	}
 
 	c := &Converter{}
-	c.GetProtobufRulesFromIptable(tableName, iptableBuffer)
+	c.GetProtobufRulesFromIptable(tableName, iptableBuffer, "../testFiles/npmCache.json")
 }
 
 func TestGetSetType(t *testing.T) {
@@ -65,7 +64,7 @@ func TestGetSetType(t *testing.T) {
 	testCases := []*test{t0, t1, t2, t3, t4, t5, t6}
 
 	c := &Converter{}
-	c.initConverter()
+	c.initConverter("../testFiles/npmCache.json")
 
 	for _, test := range testCases {
 		actualType := c.getSetType(test.inputSetName, test.inputMapName)
@@ -163,7 +162,7 @@ func TestGetRulesFromChain(t *testing.T) {
 		{input: iptableChainNotAllowed, expected: expectedDropRes}}
 
 	c := &Converter{}
-	c.initConverter()
+	c.initConverter("../testFiles/npmCache.json")
 
 	for _, test := range testCases {
 		actuatlReponsesArr := c.getRulesFromChain(test.input)
@@ -230,7 +229,7 @@ func TestGetModulesFromRule(t *testing.T) {
 		Direction: pb.Direction_INGRESS}
 
 	c := &Converter{}
-	c.initConverter()
+	c.initConverter("../testFiles/npmCache.json")
 
 	c.getModulesFromRule(modules, actualRuleResponse)
 
