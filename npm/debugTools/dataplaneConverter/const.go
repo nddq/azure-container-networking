@@ -3,7 +3,6 @@ package converter
 import (
 	"github.com/Azure/azure-container-networking/npm"
 	networkingv1 "k8s.io/api/networking/v1"
-	utilexec "k8s.io/utils/exec"
 )
 
 var (
@@ -18,7 +17,7 @@ var (
 )
 
 type NPMCache struct {
-	Exec             utilexec.Interface
+	Exec             interface{}
 	Nodename         string
 	NsMap            map[string]*npm.Namespace
 	PodMap           map[string]*npm.NpmPod
