@@ -26,11 +26,11 @@ func (c *Converter) GetNpmCache(filename ...string) *NPMCache {
 
 	byteArray, err := ioutil.ReadFile(filename[0])
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error occured during unmarshalling. Error: %s", err.Error())
 	}
 	err = json.Unmarshal(byteArray, &cachObj)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error occured during unmarshalling. Error: %s", err.Error())
 	}
 	return cachObj
 }

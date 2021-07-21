@@ -74,23 +74,23 @@ func main() {
 	src := &processor.Input{Content: "z/b", Type: processor.PODNAME}
 	dst := &processor.Input{Content: "netpol-4537-x/a", Type: processor.PODNAME}
 	_, tuple := p.GetNetworkTuple(src, dst)
-	fmt.Printf("%s\n", tuple)
+	fmt.Printf("%+v\n", tuple)
 
 	// internet to podname
 	src = &processor.Input{Content: "", Type: processor.INTERNET}
 	dst = &processor.Input{Content: "testnamespace/a", Type: processor.PODNAME}
 	_, tuple = p.GetNetworkTuple(src, dst)
-	fmt.Printf("%s\n", tuple)
+	fmt.Printf("%+v\n", tuple)
 
 	// podname to internet
 	src = &processor.Input{Content: "testnamespace/a", Type: processor.PODNAME}
 	dst = &processor.Input{Content: "", Type: processor.INTERNET}
 	_, tuple = p.GetNetworkTuple(src, dst)
-	fmt.Printf("%s\n", tuple)
+	fmt.Printf("%+v\n", tuple)
 
 	src = &processor.Input{Content: "10.240.0.70", Type: processor.IPADDRS}
 	dst = &processor.Input{Content: "10.240.0.13", Type: processor.IPADDRS}
 	_, tuple = p.GetNetworkTuple(src, dst)
-	fmt.Printf("%s\n", tuple)
+	fmt.Printf("%+v\n", tuple)
 
 }

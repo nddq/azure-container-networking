@@ -2,7 +2,6 @@ package processor
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -42,9 +41,9 @@ const (
 	INTERNET InputType = 2
 )
 
-// GetNetworkTuple returns a list of hit rules between the source and the destination and a list of tuples from those rules in JSON format. Filenames following the format, cacheFile first and then iptable-save file
+// GetNetworkTuple returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules. Filenames following the format, cacheFile first and then iptable-save file
 // optional for debugging
-func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]byte, [][]byte) {
+func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]byte, []*Tuple) {
 	c := &converter.Converter{}
 	var (
 		cacheObj      *converter.NPMCache
@@ -141,15 +140,15 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 		tuple := p.generateTuple(srcPod, dstPod, rule)
 		resTupleList = append(resTupleList, tuple)
 	}
-	tupleResListJson := make([][]byte, 0)
-	for _, rule := range resTupleList {
-		ruleJson, err := json.MarshalIndent(rule, "", "  ")
-		if err != nil {
-			log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
-		}
-		tupleResListJson = append(tupleResListJson, ruleJson)
-	}
-	return ruleResListJson, tupleResListJson
+	// tupleResListJson := make([][]byte, 0)
+	// for _, rule := range resTupleList {
+	// 	ruleJson, err := json.MarshalIndent(rule, "", "  ")
+	// 	if err != nil {
+	// 		log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
+	// 	}
+	// 	tupleResListJson = append(tupleResListJson, ruleJson)
+	// }
+	return ruleResListJson, resTupleList
 
 }
 
