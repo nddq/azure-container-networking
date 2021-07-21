@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -68,16 +69,21 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 		allRules = c.GetProtobufRulesFromIptable(tableName, iptableBuffer, filenames[0])
 
 	} else {
-		cacheObj = c.GetNpmCache("testFiles/npmCache.json")
-		byteArray, err := ioutil.ReadFile("testFiles/clusterIptableSave")
+		cacheObj = c.GetNpmCache()
+		// need to add iptable locks
+		cmdArgs := []string{"-t", string(tableName)}
+		cmd := exec.Command(util.IptablesSave, cmdArgs...)
+
+		cmd.Stdout = iptableBuffer
+		stderrBuffer := bytes.NewBuffer(nil)
+		cmd.Stderr = stderrBuffer
+
+		err := cmd.Run()
 
 		if err != nil {
-			fmt.Print(err)
+			stderrBuffer.WriteTo(iptableBuffer) // ignore error, since we need to return the original error
 		}
-		for _, b := range byteArray {
-			iptableBuffer.WriteByte(b)
-		}
-		allRules = c.GetProtobufRulesFromIptable(tableName, iptableBuffer, "testFiles/npmCache.json")
+		allRules = c.GetProtobufRulesFromIptable(tableName, iptableBuffer)
 
 	}
 	switch src.Type {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -24,14 +25,33 @@ type Converter struct {
 func (c *Converter) GetNpmCache(filename ...string) *NPMCache {
 	cachObj := &NPMCache{}
 
-	byteArray, err := ioutil.ReadFile(filename[0])
-	if err != nil {
-		log.Fatalf("Error occured during unmarshalling. Error: %s", err.Error())
+	if len(filename) > 0 {
+		// for dev
+		byteArray, err := ioutil.ReadFile(filename[0])
+		if err != nil {
+			log.Fatalf("Error occured during unmarshalling. Error: %s", err.Error())
+		}
+		err = json.Unmarshal(byteArray, &cachObj)
+		if err != nil {
+			log.Fatalf("Error occured during unmarshalling. Error: %s", err.Error())
+		}
+	} else {
+		// for deployment
+		resp, err := http.Get("localhost:10091/npm/v1/debug/manager")
+		if err != nil {
+			log.Fatalf("Error occured during curl. Error: %s", err.Error())
+		}
+		defer resp.Body.Close()
+		byteArray, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalf("Error occured during unmarshalling. Error: %s", err.Error())
+		}
+		err = json.Unmarshal(byteArray, &cachObj)
+		if err != nil {
+			log.Fatalf("Error occured during unmarshalling. Error: %s", err.Error())
+		}
 	}
-	err = json.Unmarshal(byteArray, &cachObj)
-	if err != nil {
-		log.Fatalf("Error occured during unmarshalling. Error: %s", err.Error())
-	}
+
 	return cachObj
 }
 
@@ -74,13 +94,20 @@ func (c *Converter) initConverter(filename ...string) {
 // }
 
 // GetJSONRulesFromIptable returns a list of JSON rule object of an iptable
-func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer, filename string) [][]byte {
+func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer, filename ...string) [][]byte {
+	var (
+		pbRuleObj []*pb.RuleResponse
+	)
 	ruleResListJson := make([][]byte, 0)
 	m := protojson.MarshalOptions{
 		Indent:          "  ",
 		EmitUnpopulated: true,
 	}
-	pbRuleObj := c.GetProtobufRulesFromIptable(tableName, iptableBuffer, filename)
+	if len(filename) > 0 {
+		pbRuleObj = c.GetProtobufRulesFromIptable(tableName, iptableBuffer, filename[0])
+	} else {
+		pbRuleObj = c.GetProtobufRulesFromIptable(tableName, iptableBuffer)
+	}
 	for _, rule := range pbRuleObj {
 		ruleJson, err := m.Marshal(rule) // pretty print
 		if err != nil {
@@ -93,8 +120,12 @@ func (c *Converter) GetJSONRulesFromIptable(tableName string, iptableBuffer *byt
 }
 
 // GetRulesFromIptable returns a list of protobuf rule object of an iptable
-func (c *Converter) GetProtobufRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer, filename string) []*pb.RuleResponse {
-	c.initConverter(filename)
+func (c *Converter) GetProtobufRulesFromIptable(tableName string, iptableBuffer *bytes.Buffer, filename ...string) []*pb.RuleResponse {
+	if len(filename) > 0 {
+		c.initConverter(filename[0])
+	} else {
+		c.initConverter()
+	}
 	p := &parser.Parser{}
 	ipTableObj := p.ParseIptablesObject(tableName, iptableBuffer)
 	ruleResList := make([]*pb.RuleResponse, 0)
