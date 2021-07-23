@@ -2,6 +2,7 @@ package iptable
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Iptables struct {
@@ -164,39 +165,45 @@ func (t *Target) SetOptionValueMap(optionvaluemap map[string][]string) {
 }
 
 // for debugging
-func (t *Iptables) PrintIptable() {
-	fmt.Printf("IPTABLE NAME - %v\n", t.Name())
-	t.printIptableChains()
+func (t *Iptables) String() string {
+	return fmt.Sprintf("IPTABLE NAME - %v\n%s\n", t.Name(), t.printIptableChains())
 }
 
-func (t *Iptables) printIptableChains() {
+func (t *Iptables) printIptableChains() string {
+	var ret strings.Builder
 	for k, v := range t.Chains() {
-		fmt.Printf("	IPTABLE CHAIN NAME - %v\n", k)
-		t.printIptableChainRules(v)
+		ret.WriteString(fmt.Sprintf("\tIPTABLE CHAIN NAME - %v\n%s\n", k, t.printIptableChainRules(v)))
 	}
+	return ret.String()
 }
 
-func (t *Iptables) printIptableChainRules(chain *IptablesChain) {
+func (t *Iptables) printIptableChainRules(chain *IptablesChain) string {
+	var ret strings.Builder
 	for k, v := range chain.Rules() {
-		fmt.Printf("		RULE %v\n", k)
-		fmt.Printf("			RULE'S PROTOCOL - %v\n", v.Protocol())
-		t.printIptableRuleModules(v.Modules())
-		t.printIptableRuleTarget(v.Target())
-
+		ret.WriteString(fmt.Sprintf("\t\tRULE %v\n", k))
+		ret.WriteString(fmt.Sprintf("\t\t\tRULE'S PROTOCOL - %v\n", v.Protocol()))
+		ret.WriteString(t.printIptableRuleModules(v.Modules()))
+		ret.WriteString(t.printIptableRuleTarget(v.Target()))
 	}
+	return ret.String()
 }
 
-func (t *Iptables) printIptableRuleModules(m_list []*Module) {
-	fmt.Printf("			RULE'S MODULES\n")
+func (t *Iptables) printIptableRuleModules(m_list []*Module) string {
+	var ret strings.Builder
+	ret.WriteString("\t\t\tRULE'S MODULES\n")
+
 	for i, v := range m_list {
-		fmt.Printf("				Module %v\n", i)
-		fmt.Printf("					Verb - %v\n", v.Verb())
-		fmt.Printf("					OptionValueMap - %+v\n", v.OptionValueMap())
+		ret.WriteString(fmt.Sprintf("\t\t\t\tModule %v\n", i))
+		ret.WriteString(fmt.Sprintf("\t\t\t\t\tVerb - %v\n", v.Verb()))
+		ret.WriteString(fmt.Sprintf("\t\t\t\t\tOptionValueMap - %+v\n", v.OptionValueMap()))
 	}
+	return ret.String()
 }
 
-func (t *Iptables) printIptableRuleTarget(target *Target) {
-	fmt.Printf("			RULE'S TARGET\n")
-	fmt.Printf("					NAME - %v\n", target.Name())
-	fmt.Printf("					OptionValueMap - %+v\n", target.OptionValueMap())
+func (t *Iptables) printIptableRuleTarget(target *Target) string {
+	var ret strings.Builder
+	ret.WriteString("\t\t\tRULE'S TARGET\n")
+	ret.WriteString(fmt.Sprintf("\t\t\t\tNAME - %v\n", target.Name()))
+	ret.WriteString(fmt.Sprintf("\t\t\t\tOptionValueMap - %+v\n", target.OptionValueMap()))
+	return ret.String()
 }
