@@ -14,7 +14,10 @@ func TestGetJSONRulesFromIptable(t *testing.T) {
 	)
 
 	c := &Converter{}
-	c.GetJSONRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
+	_, err := c.GetJSONRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
+	if err != nil {
+		t.Errorf("error during TestGetJSONRulesFromIptable : %w", err)
+	}
 }
 
 func TestGetProtobufRulesFromIptable(t *testing.T) {
@@ -23,7 +26,10 @@ func TestGetProtobufRulesFromIptable(t *testing.T) {
 	)
 
 	c := &Converter{}
-	c.GetProtobufRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
+	_, err := c.GetProtobufRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
+	if err != nil {
+		t.Errorf("error during TestGetJSONRulesFromIptable : %w", err)
+	}
 }
 
 func TestGetSetType(t *testing.T) {
@@ -46,7 +52,7 @@ func TestGetSetType(t *testing.T) {
 	c := &Converter{}
 	err := c.initConverter("../testFiles/npmCache.json")
 	if err != nil {
-		t.Errorf("error during initilizing converter. Error: %s", err.Error())
+		t.Errorf("error during initilizing converter : %w", err)
 	}
 
 	for _, test := range testCases {
@@ -147,13 +153,13 @@ func TestGetRulesFromChain(t *testing.T) {
 	c := &Converter{}
 	err := c.initConverter("../testFiles/npmCache.json")
 	if err != nil {
-		t.Errorf("error during initilizing converter. Error : %w", err)
+		t.Errorf("error during initilizing converter : %w", err)
 	}
 
 	for i, test := range testCases {
 		actuatlReponsesArr, err := c.getRulesFromChain(test.input)
 		if err != nil {
-			t.Errorf("error during test %v. Error : %w", i, err)
+			t.Errorf("error during test %v : %w", i, err)
 		}
 		if !reflect.DeepEqual(test.expected, actuatlReponsesArr) {
 			t.Errorf("expected '%+v', got '%+v'", test.expected, actuatlReponsesArr)
@@ -220,10 +226,13 @@ func TestGetModulesFromRule(t *testing.T) {
 	c := &Converter{}
 	err := c.initConverter("../testFiles/npmCache.json")
 	if err != nil {
-		t.Errorf("error during initilizing converter. Error : %w", err)
+		t.Errorf("error during initilizing converter : %w", err)
 	}
 
-	c.getModulesFromRule(modules, actualRuleResponse)
+	err = c.getModulesFromRule(modules, actualRuleResponse)
+	if err != nil {
+		t.Errorf("error during getModulesFromRule : %w", err)
+	}
 
 	if !reflect.DeepEqual(expectedRuleResponse, actualRuleResponse) {
 		t.Errorf("expected '%+v', got '%+v'", expectedRuleResponse, actualRuleResponse)
