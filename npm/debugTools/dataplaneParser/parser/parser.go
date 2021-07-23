@@ -3,6 +3,8 @@ package parser
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os/exec"
 
 	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
 	"github.com/Azure/azure-container-networking/npm/util"
@@ -11,10 +13,42 @@ import (
 type Parser struct {
 }
 
-// CreateIptableObject create a Go object from specified iptable
-func (p *Parser) ParseIptablesObject(tableName string, iptableBuffer *bytes.Buffer) *iptable.Iptables {
-	chains := p.parseIptablesChainObject(tableName, iptableBuffer.Bytes())
-	return iptable.NewIptables(tableName, chains)
+// CreateIptableObject create a Go object from specified iptable. Optional read from iptable-save file
+func (p *Parser) ParseIptablesObject(tableName string, filenames ...string) *iptable.Iptables {
+	iptableBuffer := bytes.NewBuffer(nil)
+	if len(filenames) > 0 {
+		byteArray, err := ioutil.ReadFile(filenames[0])
+
+		if err != nil {
+			fmt.Print(err)
+		}
+		for _, b := range byteArray {
+			iptableBuffer.WriteByte(b)
+		}
+		chains := p.parseIptablesChainObject(tableName, iptableBuffer.Bytes())
+		return iptable.NewIptables(tableName, chains)
+
+	} else {
+		// TODO: need to get iptable's lock
+		cmdArgs := []string{"-t", string(tableName)}
+		cmd := exec.Command(util.IptablesSave, cmdArgs...)
+
+		cmd.Stdout = iptableBuffer
+		stderrBuffer := bytes.NewBuffer(nil)
+		cmd.Stderr = stderrBuffer
+
+		err := cmd.Run()
+
+		if err != nil {
+			_, err = stderrBuffer.WriteTo(iptableBuffer)
+			if err != nil {
+				panic(err)
+			}
+		}
+		chains := p.parseIptablesChainObject(tableName, iptableBuffer.Bytes())
+		return iptable.NewIptables(tableName, chains)
+
+	}
 }
 
 // parseIptablesChainObject create a map of iptable chain name and iptable chain object
@@ -38,7 +72,8 @@ func (p *Parser) parseIptablesChainObject(tableName string, byteArray []byte) ma
 		}
 		if bytes.HasPrefix(line, util.CommitBytes) || line[0] == '*' {
 			break
-		} else if line[0] == ':' && len(line) > 1 {
+		}
+		if line[0] == ':' && len(line) > 1 {
 			// We assume that the <line> contains space - chain lines have 3 fields,
 			// space delimited. If there is no space, this line will panic.
 			spaceIndex := bytes.Index(line, util.SpaceBytes)
@@ -72,11 +107,10 @@ func (p *Parser) parseLine(readIndex int, byteArray []byte) ([]byte, int) {
 
 	// consume left spaces
 	for curReadIndex < len(byteArray) {
-		if byteArray[curReadIndex] == ' ' {
-			curReadIndex++
-		} else {
+		if byteArray[curReadIndex] != ' ' {
 			break
 		}
+		curReadIndex++
 	}
 	leftLineIndex := curReadIndex
 	rightLineIndex := -1
