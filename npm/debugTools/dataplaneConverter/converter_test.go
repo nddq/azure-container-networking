@@ -1,8 +1,6 @@
 package converter
 
 import (
-	"bytes"
-	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -12,38 +10,20 @@ import (
 
 func TestGetJSONRulesFromIptable(t *testing.T) {
 	var (
-		iptableBuffer = bytes.NewBuffer(nil)
-		tableName     = "filter"
+		tableName = "filter"
 	)
 
-	byteArray, err := ioutil.ReadFile("../testFiles/clusterIptableSave")
-	if err != nil {
-		panic(err)
-	}
-	for _, b := range byteArray {
-		iptableBuffer.WriteByte(b)
-	}
-
 	c := &Converter{}
-	c.GetJSONRulesFromIptable(tableName, iptableBuffer, "../testFiles/npmCache.json")
+	c.GetJSONRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
 }
 
 func TestGetProtobufRulesFromIptable(t *testing.T) {
 	var (
-		iptableBuffer = bytes.NewBuffer(nil)
-		tableName     = "filter"
+		tableName = "filter"
 	)
 
-	byteArray, err := ioutil.ReadFile("../testFiles/clusterIptableSave")
-	if err != nil {
-		panic(err)
-	}
-	for _, b := range byteArray {
-		iptableBuffer.WriteByte(b)
-	}
-
 	c := &Converter{}
-	c.GetProtobufRulesFromIptable(tableName, iptableBuffer, "../testFiles/npmCache.json")
+	c.GetProtobufRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
 }
 
 func TestGetSetType(t *testing.T) {
@@ -64,7 +44,10 @@ func TestGetSetType(t *testing.T) {
 	testCases := []*test{t0, t1, t2, t3, t4, t5, t6}
 
 	c := &Converter{}
-	c.initConverter("../testFiles/npmCache.json")
+	err := c.initConverter("../testFiles/npmCache.json")
+	if err != nil {
+		t.Errorf("error during initilizing converter. Error: %s", err.Error())
+	}
 
 	for _, test := range testCases {
 		actualType := c.getSetType(test.inputSetName, test.inputMapName)
@@ -162,10 +145,16 @@ func TestGetRulesFromChain(t *testing.T) {
 		{input: iptableChainNotAllowed, expected: expectedDropRes}}
 
 	c := &Converter{}
-	c.initConverter("../testFiles/npmCache.json")
+	err := c.initConverter("../testFiles/npmCache.json")
+	if err != nil {
+		t.Errorf("error during initilizing converter. Error: %s", err.Error())
+	}
 
-	for _, test := range testCases {
-		actuatlReponsesArr := c.getRulesFromChain(test.input)
+	for i, test := range testCases {
+		actuatlReponsesArr, err := c.getRulesFromChain(test.input)
+		if err != nil {
+			t.Errorf("error during test %v. Error: %s", i, err.Error())
+		}
 		if !reflect.DeepEqual(test.expected, actuatlReponsesArr) {
 			t.Errorf("expected '%+v', got '%+v'", test.expected, actuatlReponsesArr)
 		}
@@ -229,7 +218,10 @@ func TestGetModulesFromRule(t *testing.T) {
 		Direction: pb.Direction_INGRESS}
 
 	c := &Converter{}
-	c.initConverter("../testFiles/npmCache.json")
+	err := c.initConverter("../testFiles/npmCache.json")
+	if err != nil {
+		t.Errorf("error during initilizing converter. Error: %s", err.Error())
+	}
 
 	c.getModulesFromRule(modules, actualRuleResponse)
 
