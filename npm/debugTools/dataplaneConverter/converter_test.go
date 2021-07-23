@@ -147,13 +147,13 @@ func TestGetRulesFromChain(t *testing.T) {
 	c := &Converter{}
 	err := c.initConverter("../testFiles/npmCache.json")
 	if err != nil {
-		t.Errorf("error during initilizing converter. Error: %s", err.Error())
+		t.Errorf("error during initilizing converter. Error : %w", err)
 	}
 
 	for i, test := range testCases {
 		actuatlReponsesArr, err := c.getRulesFromChain(test.input)
 		if err != nil {
-			t.Errorf("error during test %v. Error: %s", i, err.Error())
+			t.Errorf("error during test %v. Error : %w", i, err)
 		}
 		if !reflect.DeepEqual(test.expected, actuatlReponsesArr) {
 			t.Errorf("expected '%+v', got '%+v'", test.expected, actuatlReponsesArr)
@@ -220,7 +220,7 @@ func TestGetModulesFromRule(t *testing.T) {
 	c := &Converter{}
 	err := c.initConverter("../testFiles/npmCache.json")
 	if err != nil {
-		t.Errorf("error during initilizing converter. Error: %s", err.Error())
+		t.Errorf("error during initilizing converter. Error : %w", err)
 	}
 
 	c.getModulesFromRule(modules, actualRuleResponse)
