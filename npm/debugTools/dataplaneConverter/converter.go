@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-container-networking/npm"
-	"github.com/Azure/azure-container-networking/npm/npm-debug-cli/dataplaneParser/iptable"
-	"github.com/Azure/azure-container-networking/npm/npm-debug-cli/dataplaneParser/parser"
-	"github.com/Azure/azure-container-networking/npm/npm-debug-cli/pb"
+	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
+	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/parser"
+	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 	"github.com/Azure/azure-container-networking/npm/util"
 	"google.golang.org/protobuf/encoding/protojson"
 	networkingv1 "k8s.io/api/networking/v1"
