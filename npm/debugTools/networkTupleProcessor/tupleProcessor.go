@@ -75,12 +75,12 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 			}
 		}
 		if srcPod == nil {
-			panic("No equivalent source pod found")
+			return nil, nil, fmt.Errorf("invalid ipaddress, no equivalent source pod found")
 		}
 	case INTERNET:
 		srcPod = &npm.NpmPod{}
 	default:
-		panic("Invalid source type")
+		return nil, nil, fmt.Errorf("invalid source type")
 	}
 	switch dst.Type {
 	case PODNAME:
@@ -93,15 +93,12 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 			}
 		}
 		if dstPod == nil {
-			panic("No equivalent source pod found")
+			return nil, nil, fmt.Errorf("invalid ipaddress, no equivalent destination pod found")
 		}
 	case INTERNET:
 		dstPod = &npm.NpmPod{}
-		if dstPod == nil {
-			panic("No equivalent source pod found")
-		}
 	default:
-		panic("Invalid destination type")
+		return nil, nil, fmt.Errorf("invalid destination type")
 	}
 
 	hitRules := p.GetHitRules(srcPod, dstPod, allRules, c.NPMCache)
