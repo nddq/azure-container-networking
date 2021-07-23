@@ -65,16 +65,15 @@ func TestGetNetworkTuple(t *testing.T) {
 
 	testCases := []*testInput{t0, t1, t2, t3}
 
-	for _, test := range testCases {
+	for i, test := range testCases {
 		sortedExpectedTupleList := hashTheSortTupleList(test.expected)
-		_, actualTupleList := p.GetNetworkTuple(test.input.src, test.input.dst, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
+		_, actualTupleList, err := p.GetNetworkTuple(test.input.src, test.input.dst, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
+		if err != nil {
+			t.Errorf("error during test %v : %w", i, err)
+		}
 		sortedActualTupleList := hashTheSortTupleList(actualTupleList)
 		if !reflect.DeepEqual(sortedExpectedTupleList, sortedActualTupleList) {
 			t.Errorf("expected '%+v', got '%+v'", sortedExpectedTupleList, sortedActualTupleList)
 		}
 	}
-}
-
-func TestEvaluateSetInfo(t *testing.T) {
-
 }
