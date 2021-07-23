@@ -2,7 +2,6 @@ package parser
 
 import (
 	"bytes"
-	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -11,20 +10,10 @@ import (
 
 func TestParseIptablesObject(t *testing.T) {
 	var (
-		iptableBuffer = bytes.NewBuffer(nil)
-		tableName     = "filter"
+		tableName = "filter"
 	)
-
-	byteArray, err := ioutil.ReadFile("../../testFiles/clusterIptableSave")
-	if err != nil {
-		panic(err)
-	}
-	for _, b := range byteArray {
-		iptableBuffer.WriteByte(b)
-	}
-
 	p := &Parser{}
-	p.ParseIptablesObject(tableName, iptableBuffer)
+	p.ParseIptablesObject(tableName, "../../testFiles/clusterIptableSave")
 }
 
 func TestParseLine(t *testing.T) {
