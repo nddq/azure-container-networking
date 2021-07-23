@@ -1,11 +1,8 @@
 package processor
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"os/exec"
+	"net"
 	"strconv"
 	"strings"
 
@@ -44,53 +41,34 @@ const (
 
 // GetNetworkTuple returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules. Filenames following the format, cacheFile first and then iptable-save file
 // optional for debugging
-func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]byte, []*Tuple) {
+func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]byte, []*Tuple, error) {
 	c := &converter.Converter{}
 	var (
-		cacheObj      *converter.NPMCache
-		allRules      []*pb.RuleResponse
-		srcPod        *npm.NpmPod
-		dstPod        *npm.NpmPod
-		iptableBuffer = bytes.NewBuffer(nil)
-		tableName     = "filter"
+		allRules  []*pb.RuleResponse
+		err       error
+		srcPod    *npm.NpmPod
+		dstPod    *npm.NpmPod
+		tableName = "filter"
 	)
 
 	// hacky way to make it works for testing
 	if len(filenames) > 1 {
-		cacheObj = c.GetNpmCache(filenames[0])
-		byteArray, err := ioutil.ReadFile(filenames[1])
-
+		allRules, err = c.GetProtobufRulesFromIptable(tableName, filenames[0], filenames[1])
 		if err != nil {
-			fmt.Print(err)
+			return nil, nil, fmt.Errorf("error occured during get network tuple : %w", err)
 		}
-		for _, b := range byteArray {
-			iptableBuffer.WriteByte(b)
-		}
-		allRules = c.GetProtobufRulesFromIptable(tableName, iptableBuffer, filenames[0])
-
 	} else {
-		cacheObj = c.GetNpmCache()
-		// need to add iptable locks
-		cmdArgs := []string{"-t", string(tableName)}
-		cmd := exec.Command(util.IptablesSave, cmdArgs...)
-
-		cmd.Stdout = iptableBuffer
-		stderrBuffer := bytes.NewBuffer(nil)
-		cmd.Stderr = stderrBuffer
-
-		err := cmd.Run()
-
+		allRules, err = c.GetProtobufRulesFromIptable(tableName)
 		if err != nil {
-			stderrBuffer.WriteTo(iptableBuffer) // ignore error, since we need to return the original error
+			return nil, nil, fmt.Errorf("error occured during get network tuple : %w", err)
 		}
-		allRules = c.GetProtobufRulesFromIptable(tableName, iptableBuffer)
 
 	}
 	switch src.Type {
 	case PODNAME:
-		srcPod = cacheObj.PodMap[src.Content]
+		srcPod = c.NPMCache.PodMap[src.Content]
 	case IPADDRS:
-		for _, pod := range cacheObj.PodMap {
+		for _, pod := range c.NPMCache.PodMap {
 			if pod.PodIP == src.Content {
 				srcPod = pod
 				break
@@ -106,9 +84,9 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 	}
 	switch dst.Type {
 	case PODNAME:
-		dstPod = cacheObj.PodMap[dst.Content]
+		dstPod = c.NPMCache.PodMap[dst.Content]
 	case IPADDRS:
-		for _, pod := range cacheObj.PodMap {
+		for _, pod := range c.NPMCache.PodMap {
 			if pod.PodIP == dst.Content {
 				dstPod = pod
 				break
@@ -126,7 +104,11 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 		panic("Invalid destination type")
 	}
 
-	hitRules := p.GetHitRules(srcPod, dstPod, allRules, cacheObj)
+	hitRules := p.GetHitRules(srcPod, dstPod, allRules, c.NPMCache)
+	if len(hitRules) == 0 {
+		// either no hit rules or no rules at all. Both cases allow all traffic
+		hitRules = append(hitRules, &pb.RuleResponse{Allowed: true})
+	}
 
 	ruleResListJson := make([][]byte, 0)
 	m := protojson.MarshalOptions{
@@ -136,7 +118,7 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 	for _, rule := range hitRules {
 		ruleJson, err := m.Marshal(rule) // pretty print
 		if err != nil {
-			log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
+			return nil, nil, fmt.Errorf("error occured during marshalling : %w", err)
 		}
 		ruleResListJson = append(ruleResListJson, ruleJson)
 	}
@@ -154,8 +136,19 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 	// 	}
 	// 	tupleResListJson = append(tupleResListJson, ruleJson)
 	// }
-	return ruleResListJson, resTupleList
+	return ruleResListJson, resTupleList, nil
 
+}
+
+// GetInputType returns the type of the input for GetNetworkTuple
+func (p *Processor) GetInputType(input string) InputType {
+	if input == "internet" {
+		return INTERNET
+	} else if _, _, err := net.ParseCIDR(input); err == nil {
+		return IPADDRS
+	} else {
+		return PODNAME
+	}
 }
 
 func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *Tuple {
@@ -167,8 +160,11 @@ func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *
 	}
 	if rule.Direction == pb.Direction_EGRESS {
 		tuple.Direction = "EGRESS"
-	} else {
+	} else if rule.Direction == pb.Direction_INGRESS {
 		tuple.Direction = "INGRESS"
+	} else {
+		// not sure if this is correct
+		tuple.Direction = "ANY"
 	}
 	if len(rule.SrcList) == 0 {
 		tuple.SrcIP = "ANY"
