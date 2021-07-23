@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-container-networking/npm"
-	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
-	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/parser"
-	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
+	"github.com/Azure/azure-container-networking/npm/npm-debug-cli/dataplaneParser/iptable"
+	"github.com/Azure/azure-container-networking/npm/npm-debug-cli/dataplaneParser/parser"
+	"github.com/Azure/azure-container-networking/npm/npm-debug-cli/pb"
 	"github.com/Azure/azure-container-networking/npm/util"
 	"google.golang.org/protobuf/encoding/protojson"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -42,26 +42,26 @@ func (c *Converter) GetNpmCache(filename ...string) error {
 		// for dev
 		byteArray, err := ioutil.ReadFile(filename[0])
 		if err != nil {
-			return fmt.Errorf("error occured during reading in file. Error: %s", err.Error())
+			return fmt.Errorf("error occured during reading in file : %w", err)
 		}
 		err = json.Unmarshal(byteArray, c.NPMCache)
 		if err != nil {
-			return fmt.Errorf("error occured during unmarshalling. Error: %s", err.Error())
+			return fmt.Errorf("error occured during unmarshalling : %w", err)
 		}
 	} else {
 		// for deployment
 		resp, err := http.Get("http://localhost:10091/npm/v1/debug/manager")
 		if err != nil {
-			return fmt.Errorf("error occured during curl. Error: %s", err.Error())
+			return fmt.Errorf("error occured during curl : %w", err)
 		}
 		defer resp.Body.Close()
 		byteArray, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("error occured during reading response's data. Error: %s", err.Error())
+			return fmt.Errorf("error occured during reading response's data : %w", err)
 		}
 		err = json.Unmarshal(byteArray, c.NPMCache)
 		if err != nil {
-			return fmt.Errorf("error occured during unmarshalling. Error: %s", err.Error())
+			return fmt.Errorf("error occured during unmarshalling : %w", err)
 		}
 	}
 
@@ -80,12 +80,12 @@ func (c *Converter) initConverter(npmCacheFile ...string) error {
 	if len(npmCacheFile) > 0 {
 		err := c.GetNpmCache(npmCacheFile[0])
 		if err != nil {
-			return fmt.Errorf("error occured during initialize converter. Error: %s", err.Error())
+			return fmt.Errorf("error occured during initialize converter : %w", err)
 		}
 	} else {
 		err := c.GetNpmCache()
 		if err != nil {
-			return fmt.Errorf("error occured during initialize converter. Error: %s", err.Error())
+			return fmt.Errorf("error occured during initialize converter : %w", err)
 		}
 	}
 
@@ -124,18 +124,18 @@ func (c *Converter) GetJSONRulesFromIptable(tableName string, filenames ...strin
 	if len(filenames) > 0 {
 		pbRuleObj, err = c.GetProtobufRulesFromIptable(tableName, filenames[0], filenames[1])
 		if err != nil {
-			return nil, fmt.Errorf("error occured during getting JSON rules from iptables. Error: %s", err.Error())
+			return nil, fmt.Errorf("error occured during getting JSON rules from iptables : %w", err)
 		}
 	} else {
 		pbRuleObj, err = c.GetProtobufRulesFromIptable(tableName)
 		if err != nil {
-			return nil, fmt.Errorf("error occured during getting JSON rules from iptables. Error: %s", err.Error())
+			return nil, fmt.Errorf("error occured during getting JSON rules from iptables : %w", err)
 		}
 	}
 	for _, rule := range pbRuleObj {
 		ruleJson, err := m.Marshal(rule) // pretty print
 		if err != nil {
-			return nil, fmt.Errorf("error occured during marshaling. Error: %s", err.Error())
+			return nil, fmt.Errorf("error occured during marshaling : %w", err)
 		}
 		ruleResListJson = append(ruleResListJson, ruleJson)
 	}
@@ -151,14 +151,14 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string, filenames ...s
 	if len(filenames) > 0 {
 		err := c.initConverter(filenames[0])
 		if err != nil {
-			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables. Error: %s", err.Error())
+			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
 		}
 		ipTableObj = p.ParseIptablesObject(tableName, filenames[1])
 
 	} else {
 		err := c.initConverter()
 		if err != nil {
-			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables. Error: %s", err.Error())
+			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
 		}
 		ipTableObj = p.ParseIptablesObject(tableName)
 	}
@@ -166,7 +166,7 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string, filenames ...s
 	for _, v := range ipTableObj.Chains() {
 		chainRules, err := c.getRulesFromChain(v)
 		if err != nil {
-			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables. Error: %s", err.Error())
+			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
 		}
 		ruleResList = append(ruleResList, chainRules...)
 	}
@@ -200,7 +200,7 @@ func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) ([
 
 		err := c.getModulesFromRule(v.Modules(), rule)
 		if err != nil {
-			return nil, fmt.Errorf("error occured during getting modules from rules. Error: %s", err.Error())
+			return nil, fmt.Errorf("error occured during getting modules from rules : %w", err)
 		}
 		rules = append(rules, rule)
 	}
