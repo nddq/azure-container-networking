@@ -218,6 +218,7 @@ func (c *Converter) getRuleDirection(iptableChainObjName string) pb.Direction {
 }
 
 func (c *Converter) getSetType(name string, m string) pb.SetType {
+	// TODO: Handle CIDR blocks
 	if m == "ListMap" { // labels of namespace
 		if strings.Contains(name, util.IpsetLabelDelimter) {
 			if strings.Count(name, util.IpsetLabelDelimter) > 1 {

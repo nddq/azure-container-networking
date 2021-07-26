@@ -9,6 +9,7 @@ enum SetType {
   KEYVALUELABELOFPOD = 4;
   NAMEDPORTS = 5;
   NESTEDLABELOFPOD = 6;
+  CIDRBLOCKS = 7;
 }
 
 enum Direction {

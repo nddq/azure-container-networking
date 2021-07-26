@@ -6,6 +6,7 @@ import (
 
 	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestGetJSONRulesFromIptable(t *testing.T) {
@@ -14,7 +15,7 @@ func TestGetJSONRulesFromIptable(t *testing.T) {
 	)
 
 	c := &Converter{}
-	_, err := c.GetJSONRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
+	_, err := c.GetJSONRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/iptableSave")
 	if err != nil {
 		t.Errorf("error during TestGetJSONRulesFromIptable : %w", err)
 	}
@@ -26,28 +27,26 @@ func TestGetProtobufRulesFromIptable(t *testing.T) {
 	)
 
 	c := &Converter{}
-	_, err := c.GetProtobufRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
+	_, err := c.GetProtobufRulesFromIptable(tableName, "../testFiles/npmCache.json", "../testFiles/iptableSave")
 	if err != nil {
 		t.Errorf("error during TestGetJSONRulesFromIptable : %w", err)
 	}
 }
 
 func TestGetSetType(t *testing.T) {
-	type test struct {
+	tests := map[string]struct {
 		inputSetName string
 		inputMapName string
 		expected     pb.SetType
+	}{
+		"namespace":                    {inputSetName: "ns-testnamespace", inputMapName: "SetMap", expected: pb.SetType_NAMESPACE},
+		"key value label of pod":       {inputSetName: "app:frontend", inputMapName: "SetMap", expected: pb.SetType_KEYVALUELABELOFPOD},
+		"nested label of pod":          {inputSetName: "k1:v0:v1", inputMapName: "ListMap", expected: pb.SetType_NESTEDLABELOFPOD},
+		"key label of namespace":       {inputSetName: "all-namespaces", inputMapName: "ListMap", expected: pb.SetType_KEYLABELOFNAMESPACE},
+		"namedports":                   {inputSetName: "namedport:serve-80", inputMapName: "SetMap", expected: pb.SetType_NAMEDPORTS},
+		"key label of pod":             {inputSetName: "k0", inputMapName: "SetMap", expected: pb.SetType_KEYLABELOFPOD},
+		"key value lable of namespace": {inputSetName: "ns-namespace:test0", inputMapName: "ListMap", expected: pb.SetType_KEYVALUELABELOFNAMESPACE},
 	}
-
-	t0 := &test{inputSetName: "ns-testnamespace", inputMapName: "SetMap", expected: pb.SetType_NAMESPACE}
-	t1 := &test{inputSetName: "app:frontend", inputMapName: "SetMap", expected: pb.SetType_KEYVALUELABELOFPOD}
-	t2 := &test{inputSetName: "k1:v0:v1", inputMapName: "ListMap", expected: pb.SetType_NESTEDLABELOFPOD}
-	t3 := &test{inputSetName: "all-namespaces", inputMapName: "ListMap", expected: pb.SetType_KEYLABELOFNAMESPACE}
-	t4 := &test{inputSetName: "namedport:serve-80", inputMapName: "SetMap", expected: pb.SetType_NAMEDPORTS}
-	t5 := &test{inputSetName: "k0", inputMapName: "SetMap", expected: pb.SetType_KEYLABELOFPOD}
-	t6 := &test{inputSetName: "ns-namespace:test0", inputMapName: "ListMap", expected: pb.SetType_KEYVALUELABELOFNAMESPACE}
-
-	testCases := []*test{t0, t1, t2, t3, t4, t5, t6}
 
 	c := &Converter{}
 	err := c.initConverter("../testFiles/npmCache.json")
@@ -55,14 +54,15 @@ func TestGetSetType(t *testing.T) {
 		t.Errorf("error during initilizing converter : %w", err)
 	}
 
-	for _, test := range testCases {
-		actualType := c.getSetType(test.inputSetName, test.inputMapName)
-		if !reflect.DeepEqual(test.expected, actualType) {
-			t.Errorf("expected '%+v', got '%+v'", test.expected, actualType)
-		}
-
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			actualType := c.getSetType(test.inputSetName, test.inputMapName)
+			diff := cmp.Diff(test.expected, actualType)
+			if diff != "" {
+				t.Fatalf(diff)
+			}
+		})
 	}
-
 }
 
 func TestGetRulesFromChain(t *testing.T) {
@@ -147,8 +147,10 @@ func TestGetRulesFromChain(t *testing.T) {
 		UnsortedIpset: map[string]string{"azure-npm-3050895063": "dst,dst"},
 	}}
 
-	testCases := []*test{{input: iptableChainAllowed, expected: expectedMarkRes},
-		{input: iptableChainNotAllowed, expected: expectedDropRes}}
+	testCases := map[string]*test{
+		"allowed rule":     {input: iptableChainAllowed, expected: expectedMarkRes},
+		"not allowed rule": {input: iptableChainNotAllowed, expected: expectedDropRes},
+	}
 
 	c := &Converter{}
 	err := c.initConverter("../testFiles/npmCache.json")
@@ -156,17 +158,17 @@ func TestGetRulesFromChain(t *testing.T) {
 		t.Errorf("error during initilizing converter : %w", err)
 	}
 
-	for i, test := range testCases {
-		actuatlReponsesArr, err := c.getRulesFromChain(test.input)
-		if err != nil {
-			t.Errorf("error during test %v : %w", i, err)
-		}
-		if !reflect.DeepEqual(test.expected, actuatlReponsesArr) {
-			t.Errorf("expected '%+v', got '%+v'", test.expected, actuatlReponsesArr)
-		}
-
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			actuatlReponsesArr, err := c.getRulesFromChain(test.input)
+			if err != nil {
+				t.Errorf("error during get rules : %w", err)
+			}
+			if !reflect.DeepEqual(test.expected, actuatlReponsesArr) {
+				t.Errorf("expected '%+v', got '%+v'", test.expected, actuatlReponsesArr)
+			}
+		})
 	}
-
 }
 
 func TestGetModulesFromRule(t *testing.T) {

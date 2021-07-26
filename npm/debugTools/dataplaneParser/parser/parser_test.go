@@ -13,7 +13,7 @@ func TestParseIptablesObject(t *testing.T) {
 		tableName = "filter"
 	)
 	p := &Parser{}
-	p.ParseIptablesObject(tableName, "../../testFiles/clusterIptableSave")
+	p.ParseIptablesObject(tableName, "../../testFiles/iptableSave")
 }
 
 func TestParseLine(t *testing.T) {

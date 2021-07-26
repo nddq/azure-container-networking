@@ -101,7 +101,10 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 		return nil, nil, fmt.Errorf("invalid destination type")
 	}
 
-	hitRules := p.GetHitRules(srcPod, dstPod, allRules, c.NPMCache)
+	hitRules, err := p.GetHitRules(srcPod, dstPod, allRules, c.NPMCache)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error occured during get hit rules : %w", err)
+	}
 	if len(hitRules) == 0 {
 		// either no hit rules or no rules at all. Both cases allow all traffic
 		hitRules = append(hitRules, &pb.RuleResponse{Allowed: true})
@@ -191,7 +194,7 @@ func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *
 	return tuple
 }
 
-func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, cacheObj *converter.NPMCache) []*pb.RuleResponse {
+func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, cacheObj *converter.NPMCache) ([]*pb.RuleResponse, error) {
 	res := make([]*pb.RuleResponse, 0)
 	for _, rule := range rules {
 		matched := true
@@ -202,7 +205,10 @@ func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, 
 				matched = false
 				break
 			}
-			matchedSource := p.evaluateSetInfo("src", setInfo, src, rule, cacheObj)
+			matchedSource, err := p.evaluateSetInfo("src", setInfo, src, rule, cacheObj)
+			if err != nil {
+				return nil, fmt.Errorf("error occured during evaluating source's set info : %w", err)
+			}
 			if !matchedSource {
 				matched = false
 				break
@@ -215,7 +221,10 @@ func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, 
 				matched = false
 				break
 			}
-			matchedDestination := p.evaluateSetInfo("dst", setInfo, dst, rule, cacheObj)
+			matchedDestination, err := p.evaluateSetInfo("dst", setInfo, dst, rule, cacheObj)
+			if err != nil {
+				return nil, fmt.Errorf("error occured during evaluating destination's set info : %w", err)
+			}
 			if !matchedDestination {
 				matched = false
 				break
@@ -225,11 +234,11 @@ func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, 
 			res = append(res, rule)
 		}
 	}
-	return res
+	return res, nil
 }
 
 // evalute an ipset to find out wether the pod's attributes match with the set
-func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetInfo, pod *npm.NpmPod, rule *pb.RuleResponse, cacheObj *converter.NPMCache) bool {
+func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetInfo, pod *npm.NpmPod, rule *pb.RuleResponse, cacheObj *converter.NPMCache) (bool, error) {
 	matched := true
 	switch setInfo.Type {
 	case pb.SetType_KEYVALUELABELOFNAMESPACE:
@@ -334,7 +343,7 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 		panic("Invalid set type")
 	}
 
-	return matched
+	return matched, nil
 
 }
 

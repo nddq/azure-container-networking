@@ -58,22 +58,24 @@ func TestGetNetworkTuple(t *testing.T) {
 		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
 		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"}}
 
-	t0 := &testInput{input: i0, expected: expected0}
-	t1 := &testInput{input: i1, expected: expected1}
-	t2 := &testInput{input: i2, expected: expected2}
-	t3 := &testInput{input: i3, expected: expected3}
+	tests := map[string]*testInput{
+		"podname to podname":     {input: i0, expected: expected0},
+		"internet to podname":    {input: i1, expected: expected1},
+		"podname to internet":    {input: i2, expected: expected2},
+		"ipaddress to ipaddress": {input: i3, expected: expected3},
+	}
 
-	testCases := []*testInput{t0, t1, t2, t3}
-
-	for i, test := range testCases {
-		sortedExpectedTupleList := hashTheSortTupleList(test.expected)
-		_, actualTupleList, err := p.GetNetworkTuple(test.input.src, test.input.dst, "../testFiles/npmCache.json", "../testFiles/clusterIptableSave")
-		if err != nil {
-			t.Errorf("error during test %v : %w", i, err)
-		}
-		sortedActualTupleList := hashTheSortTupleList(actualTupleList)
-		if !reflect.DeepEqual(sortedExpectedTupleList, sortedActualTupleList) {
-			t.Errorf("expected '%+v', got '%+v'", sortedExpectedTupleList, sortedActualTupleList)
-		}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			sortedExpectedTupleList := hashTheSortTupleList(test.expected)
+			_, actualTupleList, err := p.GetNetworkTuple(test.input.src, test.input.dst, "../testFiles/npmCache.json", "../testFiles/iptableSave")
+			if err != nil {
+				t.Errorf("error during get network tuple : %w", err)
+			}
+			sortedActualTupleList := hashTheSortTupleList(actualTupleList)
+			if !reflect.DeepEqual(sortedExpectedTupleList, sortedActualTupleList) {
+				t.Errorf("expected '%+v', got '%+v'", sortedExpectedTupleList, sortedActualTupleList)
+			}
+		})
 	}
 }
