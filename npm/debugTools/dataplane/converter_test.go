@@ -1,10 +1,9 @@
-package converter
+package dataplane
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 	"github.com/google/go-cmp/cmp"
 )
@@ -67,31 +66,31 @@ func TestGetSetType(t *testing.T) {
 
 func TestGetRulesFromChain(t *testing.T) {
 	type test struct {
-		input    *iptable.IptablesChain
+		input    *IptablesChain
 		expected []*pb.RuleResponse
 	}
 
-	iptableChainAllowed := iptable.NewIptablesChain("", nil, make([]*iptable.IptablesRule, 0))
-	iptableChainNotAllowed := iptable.NewIptablesChain("", nil, make([]*iptable.IptablesRule, 0))
+	iptableChainAllowed := NewIptablesChain("", nil, make([]*IptablesRule, 0))
+	iptableChainNotAllowed := NewIptablesChain("", nil, make([]*IptablesRule, 0))
 
-	m0 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-2173871756", "dst"}})     // ns-testnamespace - NAMESPACE
-	m1 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-837532042", "dst"}})      // app:frontend - KEYVALUELABELOFPOD
-	m2 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-370790958", "dst"}})      // k1:v0:v1 - NESTEDLABELOFPOD
-	m3 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-530439631", "dst"}})      // all-namespaces - KEYLABELOFNAMESPACE
-	m4 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-3050895063", "dst,dst"}}) // namedport:serve-80 - NAMEDPORTS
-	m5 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-2537389870", "dst"}})     // k0 - KEYLABELOFPOD
-	m6 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-1217484542", "dst"}})     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
+	m0 := NewModule("set", map[string][]string{"match-set": {"azure-npm-2173871756", "dst"}})     // ns-testnamespace - NAMESPACE
+	m1 := NewModule("set", map[string][]string{"match-set": {"azure-npm-837532042", "dst"}})      // app:frontend - KEYVALUELABELOFPOD
+	m2 := NewModule("set", map[string][]string{"match-set": {"azure-npm-370790958", "dst"}})      // k1:v0:v1 - NESTEDLABELOFPOD
+	m3 := NewModule("set", map[string][]string{"match-set": {"azure-npm-530439631", "dst"}})      // all-namespaces - KEYLABELOFNAMESPACE
+	m4 := NewModule("set", map[string][]string{"match-set": {"azure-npm-3050895063", "dst,dst"}}) // namedport:serve-80 - NAMEDPORTS
+	m5 := NewModule("set", map[string][]string{"match-set": {"azure-npm-2537389870", "dst"}})     // k0 - KEYLABELOFPOD
+	m6 := NewModule("set", map[string][]string{"match-set": {"azure-npm-1217484542", "dst"}})     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
 
-	m7 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-2173871756", "dst"}})      // ns-testnamespace - NAMESPACE
-	m8 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-837532042", "dst"}})       // app:frontend - KEYVALUELABELOFPOD
-	m9 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-370790958", "dst"}})       // k1:v0:v1 - NESTEDLABELOFPOD
-	m10 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-530439631", "dst"}})      // all-namespaces - KEYLABELOFNAMESPACE
-	m11 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-3050895063", "dst,dst"}}) // namedport:serve-80 - NAMEDPORTS
-	m12 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-2537389870", "dst"}})     // k0 - KEYLABELOFPOD
-	m13 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-1217484542", "dst"}})     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
+	m7 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-2173871756", "dst"}})      // ns-testnamespace - NAMESPACE
+	m8 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-837532042", "dst"}})       // app:frontend - KEYVALUELABELOFPOD
+	m9 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-370790958", "dst"}})       // k1:v0:v1 - NESTEDLABELOFPOD
+	m10 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-530439631", "dst"}})      // all-namespaces - KEYLABELOFNAMESPACE
+	m11 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-3050895063", "dst,dst"}}) // namedport:serve-80 - NAMEDPORTS
+	m12 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-2537389870", "dst"}})     // k0 - KEYLABELOFPOD
+	m13 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-1217484542", "dst"}})     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
 
-	m14 := iptable.NewModule("tcp", map[string][]string{"dport": {"8000"}})
-	m15 := iptable.NewModule("udp", map[string][]string{"sport": {"53"}})
+	m14 := NewModule("tcp", map[string][]string{"dport": {"8000"}})
+	m15 := NewModule("udp", map[string][]string{"sport": {"53"}})
 
 	s0 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMESPACE, Name: "ns-testnamespace", HashedSetName: "azure-npm-2173871756", Included: true}
 	s1 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFPOD, Name: "app:frontend", HashedSetName: "azure-npm-837532042", Included: true}
@@ -109,11 +108,11 @@ func TestGetRulesFromChain(t *testing.T) {
 	s12 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFPOD, Name: "k0", HashedSetName: "azure-npm-2537389870"}
 	s13 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFNAMESPACE, Name: "ns-namespace:test0", HashedSetName: "azure-npm-1217484542"}
 
-	modules := []*iptable.Module{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
+	modules := []*Module{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
 	dstList := []*pb.RuleResponse_SetInfo{s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13}
 
-	r1 := iptable.NewIptablesRule("tcp", iptable.NewTarget("MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}), modules)
-	r2 := iptable.NewIptablesRule("", iptable.NewTarget("DROP", map[string][]string{}), modules)
+	r1 := NewIptablesRule("tcp", NewTarget("MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}), modules)
+	r2 := NewIptablesRule("", NewTarget("DROP", map[string][]string{}), modules)
 
 	chainRule := iptableChainAllowed.Rules()
 	chainRule = append(chainRule, r1)
@@ -172,24 +171,24 @@ func TestGetRulesFromChain(t *testing.T) {
 }
 
 func TestGetModulesFromRule(t *testing.T) {
-	m0 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-2173871756", "dst"}})     // ns-testnamespace - NAMESPACE
-	m1 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-837532042", "dst"}})      // app:frontend - KEYVALUELABELOFPOD
-	m2 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-370790958", "dst"}})      // k1:v0:v1 - NESTEDLABELOFPOD
-	m3 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-530439631", "dst"}})      // all-namespaces - KEYLABELOFNAMESPACE
-	m4 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-3050895063", "dst,dst"}}) // namedport:serve-80 - NAMEDPORTS
-	m5 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-2537389870", "dst"}})     // k0 - KEYLABELOFPOD
-	m6 := iptable.NewModule("set", map[string][]string{"match-set": {"azure-npm-1217484542", "dst"}})     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
+	m0 := NewModule("set", map[string][]string{"match-set": {"azure-npm-2173871756", "dst"}})     // ns-testnamespace - NAMESPACE
+	m1 := NewModule("set", map[string][]string{"match-set": {"azure-npm-837532042", "dst"}})      // app:frontend - KEYVALUELABELOFPOD
+	m2 := NewModule("set", map[string][]string{"match-set": {"azure-npm-370790958", "dst"}})      // k1:v0:v1 - NESTEDLABELOFPOD
+	m3 := NewModule("set", map[string][]string{"match-set": {"azure-npm-530439631", "dst"}})      // all-namespaces - KEYLABELOFNAMESPACE
+	m4 := NewModule("set", map[string][]string{"match-set": {"azure-npm-3050895063", "dst,dst"}}) // namedport:serve-80 - NAMEDPORTS
+	m5 := NewModule("set", map[string][]string{"match-set": {"azure-npm-2537389870", "dst"}})     // k0 - KEYLABELOFPOD
+	m6 := NewModule("set", map[string][]string{"match-set": {"azure-npm-1217484542", "dst"}})     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
 
-	m7 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-2173871756", "dst"}})      // ns-testnamespace - NAMESPACE
-	m8 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-837532042", "dst"}})       // app:frontend - KEYVALUELABELOFPOD
-	m9 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-370790958", "dst"}})       // k1:v0:v1 - NESTEDLABELOFPOD
-	m10 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-530439631", "dst"}})      // all-namespaces - KEYLABELOFNAMESPACE
-	m11 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-3050895063", "dst,dst"}}) // namedport:serve-80 - NAMEDPORTS
-	m12 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-2537389870", "dst"}})     // k0 - KEYLABELOFPOD
-	m13 := iptable.NewModule("set", map[string][]string{"not-match-set": {"azure-npm-1217484542", "dst"}})     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
+	m7 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-2173871756", "dst"}})      // ns-testnamespace - NAMESPACE
+	m8 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-837532042", "dst"}})       // app:frontend - KEYVALUELABELOFPOD
+	m9 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-370790958", "dst"}})       // k1:v0:v1 - NESTEDLABELOFPOD
+	m10 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-530439631", "dst"}})      // all-namespaces - KEYLABELOFNAMESPACE
+	m11 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-3050895063", "dst,dst"}}) // namedport:serve-80 - NAMEDPORTS
+	m12 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-2537389870", "dst"}})     // k0 - KEYLABELOFPOD
+	m13 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-1217484542", "dst"}})     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
 
-	m14 := iptable.NewModule("tcp", map[string][]string{"dport": {"8000"}})
-	m15 := iptable.NewModule("udp", map[string][]string{"sport": {"53"}})
+	m14 := NewModule("tcp", map[string][]string{"dport": {"8000"}})
+	m15 := NewModule("udp", map[string][]string{"sport": {"53"}})
 
 	s0 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMESPACE, Name: "ns-testnamespace", HashedSetName: "azure-npm-2173871756", Included: true}
 	s1 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFPOD, Name: "app:frontend", HashedSetName: "azure-npm-837532042", Included: true}
@@ -207,7 +206,7 @@ func TestGetModulesFromRule(t *testing.T) {
 	s12 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFPOD, Name: "k0", HashedSetName: "azure-npm-2537389870"}
 	s13 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFNAMESPACE, Name: "ns-namespace:test0", HashedSetName: "azure-npm-1217484542"}
 
-	modules := []*iptable.Module{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
+	modules := []*Module{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
 	dstList := []*pb.RuleResponse_SetInfo{s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13}
 
 	expectedRuleResponse := &pb.RuleResponse{Chain: "TEST",

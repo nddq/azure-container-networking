@@ -1,4 +1,4 @@
-package processor
+package dataplane
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-container-networking/npm"
-	converter "github.com/Azure/azure-container-networking/npm/debugTools/dataplaneConverter"
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 	"github.com/Azure/azure-container-networking/npm/util"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -42,7 +41,7 @@ const (
 // GetNetworkTuple returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules. Filenames following the format, cacheFile first and then iptable-save file
 // optional for debugging
 func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]byte, []*Tuple, error) {
-	c := &converter.Converter{}
+	c := &Converter{}
 	var (
 		allRules  []*pb.RuleResponse
 		err       error
@@ -194,7 +193,7 @@ func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *
 	return tuple
 }
 
-func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, cacheObj *converter.NPMCache) ([]*pb.RuleResponse, error) {
+func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, cacheObj *NPMCache) ([]*pb.RuleResponse, error) {
 	res := make([]*pb.RuleResponse, 0)
 	for _, rule := range rules {
 		matched := true
@@ -238,7 +237,7 @@ func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, 
 }
 
 // evalute an ipset to find out wether the pod's attributes match with the set
-func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetInfo, pod *npm.NpmPod, rule *pb.RuleResponse, cacheObj *converter.NPMCache) (bool, error) {
+func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetInfo, pod *npm.NpmPod, rule *pb.RuleResponse, cacheObj *NPMCache) (bool, error) {
 	matched := true
 	switch setInfo.Type {
 	case pb.SetType_KEYVALUELABELOFNAMESPACE:

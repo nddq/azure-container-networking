@@ -1,4 +1,4 @@
-package converter
+package dataplane
 
 import (
 	"encoding/json"
@@ -10,8 +10,6 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-container-networking/npm"
-	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
-	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/parser"
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 	"github.com/Azure/azure-container-networking/npm/util"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -145,8 +143,8 @@ func (c *Converter) GetJSONRulesFromIptable(tableName string, filenames ...strin
 
 // GetRulesFromIptable returns a list of protobuf rule object of an iptable. Can pass in npmCache file and iptable-save files in that order for debugging purposes.
 func (c *Converter) GetProtobufRulesFromIptable(tableName string, filenames ...string) ([]*pb.RuleResponse, error) {
-	p := &parser.Parser{}
-	var ipTableObj *iptable.Iptables
+	p := &Parser{}
+	var ipTableObj *Iptables
 
 	if len(filenames) > 0 {
 		err := c.initConverter(filenames[0])
@@ -175,7 +173,7 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string, filenames ...s
 
 }
 
-func (c *Converter) getRulesFromChain(iptableChainObj *iptable.IptablesChain) ([]*pb.RuleResponse, error) {
+func (c *Converter) getRulesFromChain(iptableChainObj *IptablesChain) ([]*pb.RuleResponse, error) {
 	rules := make([]*pb.RuleResponse, 0)
 	for _, v := range iptableChainObj.Rules() {
 		rule := &pb.RuleResponse{}
@@ -240,7 +238,7 @@ func (c *Converter) getSetType(name string, m string) pb.SetType {
 	return pb.SetType_KEYLABELOFPOD
 }
 
-func (c *Converter) getModulesFromRule(m_list []*iptable.Module, ruleRes *pb.RuleResponse) error {
+func (c *Converter) getModulesFromRule(m_list []*Module, ruleRes *pb.RuleResponse) error {
 	ruleRes.SrcList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.DstList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.UnsortedIpset = make(map[string]string)

@@ -1,4 +1,4 @@
-package processor
+package dataplane
 
 import (
 	"crypto/sha256"

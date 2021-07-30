@@ -1,4 +1,4 @@
-package parser
+package dataplane
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os/exec"
 
-	"github.com/Azure/azure-container-networking/npm/debugTools/dataplaneParser/iptable"
 	"github.com/Azure/azure-container-networking/npm/util"
 )
 
@@ -14,7 +13,7 @@ type Parser struct {
 }
 
 // CreateIptableObject create a Go object from specified iptable. Optional read from iptable-save file
-func (p *Parser) ParseIptablesObject(tableName string, filenames ...string) *iptable.Iptables {
+func (p *Parser) ParseIptablesObject(tableName string, filenames ...string) *Iptables {
 	iptableBuffer := bytes.NewBuffer(nil)
 	if len(filenames) > 0 {
 		byteArray, err := ioutil.ReadFile(filenames[0])
@@ -26,7 +25,7 @@ func (p *Parser) ParseIptablesObject(tableName string, filenames ...string) *ipt
 			iptableBuffer.WriteByte(b)
 		}
 		chains := p.parseIptablesChainObject(tableName, iptableBuffer.Bytes())
-		return iptable.NewIptables(tableName, chains)
+		return NewIptables(tableName, chains)
 
 	} else {
 		// TODO: need to get iptable's lock
@@ -46,14 +45,14 @@ func (p *Parser) ParseIptablesObject(tableName string, filenames ...string) *ipt
 			}
 		}
 		chains := p.parseIptablesChainObject(tableName, iptableBuffer.Bytes())
-		return iptable.NewIptables(tableName, chains)
+		return NewIptables(tableName, chains)
 
 	}
 }
 
 // parseIptablesChainObject create a map of iptable chain name and iptable chain object
-func (p *Parser) parseIptablesChainObject(tableName string, byteArray []byte) map[string]*iptable.IptablesChain {
-	chainMap := make(map[string]*iptable.IptablesChain)
+func (p *Parser) parseIptablesChainObject(tableName string, byteArray []byte) map[string]*IptablesChain {
+	chainMap := make(map[string]*IptablesChain)
 	tablePrefix := []byte("*" + tableName)
 	curReadIndex := 0
 	for curReadIndex < len(byteArray) {
@@ -85,13 +84,13 @@ func (p *Parser) parseIptablesChainObject(tableName string, byteArray []byte) ma
 				val.SetData(line)
 				chainMap[chainName] = val
 			} else {
-				chainMap[chainName] = iptable.NewIptablesChain(chainName, line, make([]*iptable.IptablesRule, 0))
+				chainMap[chainName] = NewIptablesChain(chainName, line, make([]*IptablesRule, 0))
 			}
 		} else if line[0] == '-' && len(line) > 1 {
 			chainName, ruleStartIndex := p.parseChainNameFromRule(line)
 			val, ok := chainMap[chainName]
 			if !ok {
-				val = iptable.NewIptablesChain(chainName, []byte{}, make([]*iptable.IptablesRule, 0))
+				val = NewIptablesChain(chainName, []byte{}, make([]*IptablesRule, 0))
 			}
 			rules := val.Rules()
 			rules = append(rules, p.parseRuleFromLine(line[ruleStartIndex:]))
@@ -155,8 +154,8 @@ func (p *Parser) parseChainNameFromRule(byteArray []byte) (string, int) {
 }
 
 // parseRuleFromLine creates an iptable rule object from parsed rule line with chain name excluded from the byte array
-func (p *Parser) parseRuleFromLine(byteArray []byte) *iptable.IptablesRule {
-	iptableRule := iptable.NewIptablesRule("", nil, nil)
+func (p *Parser) parseRuleFromLine(byteArray []byte) *IptablesRule {
+	iptableRule := NewIptablesRule("", nil, nil)
 	nextIndex := 0
 	for nextIndex < len(byteArray) {
 		spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
@@ -177,13 +176,13 @@ func (p *Parser) parseRuleFromLine(byteArray []byte) *iptable.IptablesRule {
 			nextIndex = end + 1
 		case util.IptablesJumpFlag:
 			//parse target with format -j target (option) (value)
-			target := iptable.NewTarget("", make(map[string][]string))
+			target := NewTarget("", make(map[string][]string))
 			n := p.parseTarget(start+1, target, byteArray)
 			iptableRule.SetTarget(target)
 			nextIndex = n
 		case util.IptablesModuleFlag:
 			// parse module with format -m verb {--option {value}}
-			module := iptable.NewModule("", make(map[string][]string))
+			module := NewModule("", make(map[string][]string))
 			n := p.parseModule(start+1, module, byteArray)
 			modules := iptableRule.Modules()
 			modules = append(modules, module)
@@ -222,7 +221,7 @@ func (p *Parser) jumpToNextFlag(nextIndex int, byteArray []byte) int {
 	return p.jumpToNextFlag(nextIndex, byteArray)
 }
 
-func (p *Parser) parseTarget(nextIndex int, target *iptable.Target, byteArray []byte) int {
+func (p *Parser) parseTarget(nextIndex int, target *Target, byteArray []byte) int {
 	// TODO: Assume that target is always at the end of every line of rule
 	spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
 	if spaceIndex == -1 {
@@ -235,7 +234,7 @@ func (p *Parser) parseTarget(nextIndex int, target *iptable.Target, byteArray []
 	return p.parseTargetOptionAndValue(nextIndex+spaceIndex+1, target, "", byteArray)
 }
 
-func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *iptable.Target, curOption string, byteArray []byte) int {
+func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOption string, byteArray []byte) int {
 	spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
 	currentOption := curOption
 	if spaceIndex == -1 {
@@ -273,7 +272,7 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *iptable.Target
 	return p.parseTargetOptionAndValue(nextIndex, target, currentOption, byteArray)
 }
 
-func (p *Parser) parseModule(nextIndex int, module *iptable.Module, byteArray []byte) int {
+func (p *Parser) parseModule(nextIndex int, module *Module, byteArray []byte) int {
 	spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
 	if spaceIndex == -1 {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(byteArray)))
@@ -283,7 +282,7 @@ func (p *Parser) parseModule(nextIndex int, module *iptable.Module, byteArray []
 	return p.parseModuleOptionAndValue(nextIndex+spaceIndex+1, module, "", byteArray, true)
 }
 
-func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *iptable.Module, curOption string, byteArray []byte, included bool) int {
+func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *Module, curOption string, byteArray []byte, included bool) int {
 	// TODO: Assume that options and values don't locate at the end of a line
 	spaceIndex := bytes.Index(byteArray[nextIndex:], util.SpaceBytes)
 	currentOption := curOption

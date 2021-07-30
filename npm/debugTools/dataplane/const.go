@@ -1,4 +1,4 @@
-package converter
+package dataplane
 
 var RequiredChains = []string{
 	"AZURE-NPM-INGRESS-DROPS",
