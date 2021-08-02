@@ -432,6 +432,7 @@ func legacyMerge(in piface.MergeInput) piface.MergeOutput {
 	// a marshal and unmarshal operation.
 	srcv := in.Source.(unwrapper).protoUnwrap()
 	marshaler, ok := srcv.(legacyMarshaler)
+
 	if !ok {
 		return piface.MergeOutput{}
 	}
@@ -439,13 +440,6 @@ func legacyMerge(in piface.MergeInput) piface.MergeOutput {
 	unmarshaler, ok := dstv.(legacyUnmarshaler)
 	if !ok {
 		return piface.MergeOutput{}
-	}
-	if !in.Source.IsValid() {
-		// Legacy Marshal methods may not function on nil messages.
-		// Check for a typed nil source only after we confirm that
-		// legacy Marshal/Unmarshal methods are present, for
-		// consistency.
-		return piface.MergeOutput{Flags: piface.MergeComplete}
 	}
 	b, err := marshaler.Marshal()
 	if err != nil {
