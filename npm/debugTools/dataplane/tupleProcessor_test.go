@@ -68,7 +68,7 @@ func TestGetNetworkTuple(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			sortedExpectedTupleList := hashTheSortTupleList(test.expected)
-			_, actualTupleList, err := p.GetNetworkTuple(test.input.src, test.input.dst, "../testFiles/npmCache.json", "../testFiles/iptableSave")
+			_, actualTupleList, err := p.GetNetworkTupleFile(test.input.src, test.input.dst, "../testFiles/npmCache.json", "../testFiles/iptableSave")
 			if err != nil {
 				t.Errorf("error during get network tuple : %w", err)
 			}

@@ -13,8 +13,9 @@ enum SetType {
 }
 
 enum Direction {
-  EGRESS = 0;
-  INGRESS = 1;
+  UNDEFINED = 0;
+  EGRESS = 1;
+  INGRESS = 2;
 }
 
 message RuleResponse {

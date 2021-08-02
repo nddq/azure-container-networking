@@ -38,72 +38,47 @@ const (
 	INTERNET InputType = 2
 )
 
-// GetNetworkTuple returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules. Filenames following the format, cacheFile first and then iptable-save file
-// optional for debugging
-func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]byte, []*Tuple, error) {
+// GetNetworkTupleFile read from node's NPM cache and iptables-save and returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules.
+func (p *Processor) GetNetworkTuple(src, dst *Input) ([][]byte, []*Tuple, error) {
 	c := &Converter{}
-	var (
-		allRules  []*pb.RuleResponse
-		err       error
-		srcPod    *npm.NpmPod
-		dstPod    *npm.NpmPod
-		tableName = "filter"
-	)
 
-	// hacky way to make it works for testing
-	if len(filenames) > 1 {
-		allRules, err = c.GetProtobufRulesFromIptable(tableName, filenames[0], filenames[1])
-		if err != nil {
-			return nil, nil, fmt.Errorf("error occured during get network tuple : %w", err)
-		}
-	} else {
-		allRules, err = c.GetProtobufRulesFromIptable(tableName)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error occured during get network tuple : %w", err)
-		}
+	allRules, err := c.GetProtobufRulesFromIptable("filter")
+	if err != nil {
+		return nil, nil, fmt.Errorf("error occured during get network tuple : %w", err)
+	}
+	return p.getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
+}
 
-	}
-	switch src.Type {
-	case PODNAME:
-		srcPod = c.NPMCache.PodMap[src.Content]
-	case IPADDRS:
-		for _, pod := range c.NPMCache.PodMap {
-			if pod.PodIP == src.Content {
-				srcPod = pod
-				break
-			}
-		}
-		if srcPod == nil {
-			return nil, nil, fmt.Errorf("invalid ipaddress, no equivalent source pod found")
-		}
-	case INTERNET:
-		srcPod = &npm.NpmPod{}
-	default:
-		return nil, nil, fmt.Errorf("invalid source type")
-	}
-	switch dst.Type {
-	case PODNAME:
-		dstPod = c.NPMCache.PodMap[dst.Content]
-	case IPADDRS:
-		for _, pod := range c.NPMCache.PodMap {
-			if pod.PodIP == dst.Content {
-				dstPod = pod
-				break
-			}
-		}
-		if dstPod == nil {
-			return nil, nil, fmt.Errorf("invalid ipaddress, no equivalent destination pod found")
-		}
-	case INTERNET:
-		dstPod = &npm.NpmPod{}
-	default:
-		return nil, nil, fmt.Errorf("invalid destination type")
+// GetNetworkTupleFile read from NPM cache and iptables-save files and returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules.
+func (p *Processor) GetNetworkTupleFile(src, dst *Input, npmCacheFile string, iptableSaveFile string) ([][]byte, []*Tuple, error) {
+	c := &Converter{}
+
+	allRules, err := c.GetProtobufRulesFromIptableFile("filter", npmCacheFile, iptableSaveFile)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error occured during get network tuple : %w", err)
 	}
 
-	hitRules, err := p.GetHitRules(srcPod, dstPod, allRules, c.NPMCache)
+	return p.getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
+
+}
+
+// Common function
+func (p *Processor) getNetworkTupleCommon(src, dst *Input, npmCache *NPMCache, allRules []*pb.RuleResponse) ([][]byte, []*Tuple, error) {
+	srcPod, err := p.getCorrespondPod(src, npmCache)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error occured during get source pod : %w", err)
+	}
+
+	dstPod, err := p.getCorrespondPod(dst, npmCache)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error occured during get destination pod : %w", err)
+	}
+
+	hitRules, err := p.GetHitRules(srcPod, dstPod, allRules, npmCache)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occured during get hit rules : %w", err)
 	}
+
 	if len(hitRules) == 0 {
 		// either no hit rules or no rules at all. Both cases allow all traffic
 		hitRules = append(hitRules, &pb.RuleResponse{Allowed: true})
@@ -136,7 +111,24 @@ func (p *Processor) GetNetworkTuple(src, dst *Input, filenames ...string) ([][]b
 	// 	tupleResListJson = append(tupleResListJson, ruleJson)
 	// }
 	return ruleResListJson, resTupleList, nil
+}
 
+func (p *Processor) getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.NpmPod, error) {
+	switch origin.Type {
+	case PODNAME:
+		return cacheObj.PodMap[origin.Content], nil
+	case IPADDRS:
+		for _, pod := range cacheObj.PodMap {
+			if pod.PodIP == origin.Content {
+				return pod, nil
+			}
+		}
+		return nil, fmt.Errorf("invalid ipaddress, no equivalent pod found")
+	case INTERNET:
+		return &npm.NpmPod{}, nil
+	default:
+		return nil, fmt.Errorf("invalid input")
+	}
 }
 
 // GetInputType returns the type of the input for GetNetworkTuple
@@ -317,29 +309,22 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 					matched = false
 					break
 				}
+				if rule.Protocol != "" && rule.Protocol != strings.ToLower(string(namedPort.Protocol)) {
+					matched = false
+					break
+				}
+				if rule.Protocol == "" {
+					rule.Protocol = strings.ToLower(string(namedPort.Protocol))
+				}
 				if origin == "src" {
-					if rule.Protocol != "" && rule.Protocol != strings.ToLower(string(namedPort.Protocol)) {
-						matched = false
-						break
-					}
-					if rule.Protocol == "" {
-						rule.Protocol = strings.ToLower(string(namedPort.Protocol))
-					}
 					rule.SPort = namedPort.ContainerPort
 				} else {
-					if rule.Protocol != "" && rule.Protocol != strings.ToLower(string(namedPort.Protocol)) {
-						matched = false
-						break
-					}
-					if rule.Protocol == "" {
-						rule.Protocol = strings.ToLower(string(namedPort.Protocol))
-					}
 					rule.DPort = namedPort.ContainerPort
 				}
 			}
 		}
 	default:
-		panic("Invalid set type")
+		return false, fmt.Errorf("invalid set type")
 	}
 
 	return matched, nil

@@ -33,59 +33,71 @@ type NPMCache struct {
 	TelemetryEnabled bool
 }
 
-func (c *Converter) GetNpmCache(filename ...string) error {
-
+// Initialize NPM cache from file
+func (c *Converter) NpmCacheFromFile(npmCacheJsonFile string) error {
 	c.NPMCache = &NPMCache{}
-	if len(filename) > 0 {
-		// for dev
-		byteArray, err := ioutil.ReadFile(filename[0])
-		if err != nil {
-			return fmt.Errorf("error occured during reading in file : %w", err)
-		}
-		err = json.Unmarshal(byteArray, c.NPMCache)
-		if err != nil {
-			return fmt.Errorf("error occured during unmarshalling : %w", err)
-		}
-	} else {
-		// for deployment
-		resp, err := http.Get("http://localhost:10091/npm/v1/debug/manager")
-		if err != nil {
-			return fmt.Errorf("error occured during curl : %w", err)
-		}
-		defer resp.Body.Close()
-		byteArray, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("error occured during reading response's data : %w", err)
-		}
-		err = json.Unmarshal(byteArray, c.NPMCache)
-		if err != nil {
-			return fmt.Errorf("error occured during unmarshalling : %w", err)
-		}
+	// for dev
+	byteArray, err := ioutil.ReadFile(npmCacheJsonFile)
+	if err != nil {
+		return fmt.Errorf("error occured during reading in file : %w", err)
 	}
+	err = json.Unmarshal(byteArray, c.NPMCache)
+	if err != nil {
+		return fmt.Errorf("error occured during unmarshalling : %w", err)
+	}
+	return nil
+}
+
+// Initialize NPM cache from node
+func (c *Converter) NpmCache() error {
+	c.NPMCache = &NPMCache{}
+	// for deployment
+	resp, err := http.Get("http://localhost:10091/npm/v1/debug/manager")
+	if err != nil {
+		return fmt.Errorf("error occured during curl : %w", err)
+	}
+	defer resp.Body.Close()
+	byteArray, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error occured during reading response's data : %w", err)
+	}
+	err = json.Unmarshal(byteArray, c.NPMCache)
+	if err != nil {
+		return fmt.Errorf("error occured during unmarshalling : %w", err)
+	}
+	return nil
+}
+
+// Initialize converter from file
+func (c *Converter) initConverterFile(npmCacheJsonFile string) error {
+	err := c.NpmCacheFromFile(npmCacheJsonFile)
+	if err != nil {
+		return fmt.Errorf("error occured during initialize converter : %w", err)
+	}
+	c.initConverterMaps()
+	return nil
+}
+
+// Initialize converter from node
+func (c *Converter) initConverter() error {
+
+	err := c.NpmCache()
+	if err != nil {
+		return fmt.Errorf("error occured during initialize converter : %w", err)
+	}
+	c.initConverterMaps()
 
 	return nil
 }
 
-// initialize map of chain name that will be include in the result
-func (c *Converter) initConverter(npmCacheFile ...string) error {
-
+// Initialize all converter's maps
+func (c *Converter) initConverterMaps() {
 	c.RequiredChainsMap = make(map[string]bool)
 	for _, chain := range RequiredChains {
 		c.RequiredChainsMap[chain] = true
 	}
 	c.ListMap = make(map[string]string)
 	c.SetMap = make(map[string]string)
-	if len(npmCacheFile) > 0 {
-		err := c.GetNpmCache(npmCacheFile[0])
-		if err != nil {
-			return fmt.Errorf("error occured during initialize converter : %w", err)
-		}
-	} else {
-		err := c.GetNpmCache()
-		if err != nil {
-			return fmt.Errorf("error occured during initialize converter : %w", err)
-		}
-	}
 
 	for k := range c.NPMCache.NsMap["all-namespaces"].IpsMgr.ListMap {
 		hashedName := util.GetHashedName(k)
@@ -95,40 +107,32 @@ func (c *Converter) initConverter(npmCacheFile ...string) error {
 		hashedName := util.GetHashedName(k)
 		c.SetMap[hashedName] = k
 	}
-	return nil
-
 }
 
-// ConvertIptablesObject returns a JSON object of an iptable go oject
-// func (c *Converter) ConvertIptablesObject(iptableObj *iptable.Iptables) []byte {
-// 	// iptableJson, err := json.Marshal(iptableObj)
-// 	iptableJson, err := json.MarshalIndent(iptableObj, "", "    ") // pretty print
-// 	if err != nil {
-// 		log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
-// 	}
-// 	return iptableJson
-// }
+//Get a list of json rules from files
+func (c *Converter) GetJSONRulesFromIptableFile(tableName string, npmCacheFile string, iptableSaveFile string) ([][]byte, error) {
+	pbRuleObj, err := c.GetProtobufRulesFromIptableFile(tableName, npmCacheFile, iptableSaveFile)
+	if err != nil {
+		return nil, fmt.Errorf("error occured during getting JSON rules from iptables : %w", err)
+	}
+	return c.jsonRuleList(pbRuleObj)
+}
 
-// GetJSONRulesFromIptable returns a list of JSON rule object of an iptable. Can pass in npmCache file and iptable-save files in that order for debugging purposes.
-func (c *Converter) GetJSONRulesFromIptable(tableName string, filenames ...string) ([][]byte, error) {
-	var pbRuleObj []*pb.RuleResponse
-	var err error
+//Get a list of json rules from node
+func (c *Converter) GetJSONRulesFromIptables(tableName string) ([][]byte, error) {
+	pbRuleObj, err := c.GetProtobufRulesFromIptable(tableName)
+	if err != nil {
+		return nil, fmt.Errorf("error occured during getting JSON rules from iptables : %w", err)
+	}
+	return c.jsonRuleList(pbRuleObj)
+}
 
+// Convert list of protobuf rules to list of JSON rules
+func (c *Converter) jsonRuleList(pbRuleObj []*pb.RuleResponse) ([][]byte, error) {
 	ruleResListJson := make([][]byte, 0)
 	m := protojson.MarshalOptions{
 		Indent:          "  ",
 		EmitUnpopulated: true,
-	}
-	if len(filenames) > 0 {
-		pbRuleObj, err = c.GetProtobufRulesFromIptable(tableName, filenames[0], filenames[1])
-		if err != nil {
-			return nil, fmt.Errorf("error occured during getting JSON rules from iptables : %w", err)
-		}
-	} else {
-		pbRuleObj, err = c.GetProtobufRulesFromIptable(tableName)
-		if err != nil {
-			return nil, fmt.Errorf("error occured during getting JSON rules from iptables : %w", err)
-		}
 	}
 	for _, rule := range pbRuleObj {
 		ruleJson, err := m.Marshal(rule) // pretty print
@@ -138,39 +142,55 @@ func (c *Converter) GetJSONRulesFromIptable(tableName string, filenames ...strin
 		ruleResListJson = append(ruleResListJson, ruleJson)
 	}
 	return ruleResListJson, nil
-
 }
 
-// GetRulesFromIptable returns a list of protobuf rule object of an iptable. Can pass in npmCache file and iptable-save files in that order for debugging purposes.
-func (c *Converter) GetProtobufRulesFromIptable(tableName string, filenames ...string) ([]*pb.RuleResponse, error) {
-	p := &Parser{}
-	var ipTableObj *Iptables
+// Get a list of protobuf rules from files
+func (c *Converter) GetProtobufRulesFromIptableFile(tableName string, npmCacheFile string, iptableSaveFile string) ([]*pb.RuleResponse, error) {
 
-	if len(filenames) > 0 {
-		err := c.initConverter(filenames[0])
-		if err != nil {
-			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
-		}
-		ipTableObj = p.ParseIptablesObject(tableName, filenames[1])
-
-	} else {
-		err := c.initConverter()
-		if err != nil {
-			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
-		}
-		ipTableObj = p.ParseIptablesObject(tableName)
+	err := c.initConverterFile(npmCacheFile)
+	if err != nil {
+		return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
 	}
+
+	p := &Parser{}
+	ipTableObj := p.ParseIptablesObjectFile(tableName, iptableSaveFile)
+	ruleResList, err := c.pbRuleList(ipTableObj)
+	if err != nil {
+		return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
+	}
+
+	return ruleResList, nil
+}
+
+// Get a list of protobuf rules from node
+func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleResponse, error) {
+	err := c.initConverter()
+	if err != nil {
+		return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
+	}
+
+	p := &Parser{}
+	ipTableObj := p.ParseIptablesObject(tableName)
+	ruleResList, err := c.pbRuleList(ipTableObj)
+	if err != nil {
+		return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
+	}
+
+	return ruleResList, nil
+}
+
+// Create a list of protobuf rules from iptable
+func (c *Converter) pbRuleList(ipTableObj *Iptables) ([]*pb.RuleResponse, error) {
 	ruleResList := make([]*pb.RuleResponse, 0)
 	for _, v := range ipTableObj.Chains() {
 		chainRules, err := c.getRulesFromChain(v)
 		if err != nil {
-			return nil, fmt.Errorf("error occured during getting protobuf rules from iptables : %w", err)
+			return nil, fmt.Errorf("error occured during getting protobuf rule list : %w", err)
 		}
 		ruleResList = append(ruleResList, chainRules...)
 	}
 
 	return ruleResList, nil
-
 }
 
 func (c *Converter) getRulesFromChain(iptableChainObj *IptablesChain) ([]*pb.RuleResponse, error) {
@@ -198,7 +218,7 @@ func (c *Converter) getRulesFromChain(iptableChainObj *IptablesChain) ([]*pb.Rul
 
 		err := c.getModulesFromRule(v.Modules(), rule)
 		if err != nil {
-			return nil, fmt.Errorf("error occured during getting modules from rules : %w", err)
+			return nil, fmt.Errorf("error occured during getting rules from chain : %w", err)
 		}
 		rules = append(rules, rule)
 	}
@@ -210,9 +230,8 @@ func (c *Converter) getRuleDirection(iptableChainObjName string) pb.Direction {
 		return pb.Direction_EGRESS
 	} else if strings.Contains(iptableChainObjName, "INGRESS") {
 		return pb.Direction_INGRESS
-	} else {
-		return -1
 	}
+	return pb.Direction_UNDEFINED
 }
 
 func (c *Converter) getSetType(name string, m string) pb.SetType {
@@ -238,86 +257,43 @@ func (c *Converter) getSetType(name string, m string) pb.SetType {
 	return pb.SetType_KEYLABELOFPOD
 }
 
-func (c *Converter) getModulesFromRule(m_list []*Module, ruleRes *pb.RuleResponse) error {
+func (c *Converter) getModulesFromRule(moduleList []*Module, ruleRes *pb.RuleResponse) error {
 	ruleRes.SrcList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.DstList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.UnsortedIpset = make(map[string]string)
-	for _, m := range m_list {
-		switch m.Verb() {
+	for _, module := range moduleList {
+		switch module.Verb() {
 		case "set":
 			//set module
-			infoObj := &pb.RuleResponse_SetInfo{}
-			OptionValueMap := m.OptionValueMap()
-			for k, v := range OptionValueMap {
-				switch k {
+			OptionValueMap := module.OptionValueMap()
+			for option, values := range OptionValueMap {
+				switch option {
 				case "match-set":
-					ipsetHashedName := v[0]
-					ipsetOrigin := v[1]
-					infoObj.HashedSetName = ipsetHashedName
-					if v, ok := c.ListMap[ipsetHashedName]; ok {
-						infoObj.Name = v
-						infoObj.Type = c.getSetType(v, "ListMap")
-					} else if v, ok := c.SetMap[ipsetHashedName]; ok {
-						infoObj.Name = v
-						infoObj.Type = c.getSetType(v, "SetMap")
-					} else {
-						return fmt.Errorf("set %v does not exist", ipsetHashedName)
+					infoObj := &pb.RuleResponse_SetInfo{}
+
+					err := c.populateSetInfoObj(infoObj, values, ruleRes)
+					if err != nil {
+						return fmt.Errorf("error occured during getting modules from rules : %w", err)
 					}
 					infoObj.Included = true
 
-					if len(ipsetOrigin) > 3 {
-						ruleRes.UnsortedIpset[ipsetHashedName] = ipsetOrigin
-					}
-					if strings.Contains(ipsetOrigin, "src") {
-						ruleRes.SrcList = append(ruleRes.SrcList, infoObj)
-					} else {
-						ruleRes.DstList = append(ruleRes.DstList, infoObj)
-					}
 				case "not-match-set":
-					ipsetHashedName := v[0]
-					ipsetOrigin := v[1]
-					infoObj.HashedSetName = ipsetHashedName
-					if v, ok := c.ListMap[ipsetHashedName]; ok {
-						infoObj.Name = v
-						infoObj.Type = c.getSetType(v, "ListMap")
-					} else if v, ok := c.SetMap[ipsetHashedName]; ok {
-						infoObj.Name = v
-						infoObj.Type = c.getSetType(v, "SetMap")
-					} else {
-						return fmt.Errorf("set %v does not exist", ipsetHashedName)
+					infoObj := &pb.RuleResponse_SetInfo{}
+					err := c.populateSetInfoObj(infoObj, values, ruleRes)
+					if err != nil {
+						return fmt.Errorf("error occured during getting modules from rules : %w", err)
 					}
 					infoObj.Included = false
-
-					if len(ipsetOrigin) > 3 {
-						ruleRes.UnsortedIpset[ipsetHashedName] = ipsetOrigin
-					}
-					if strings.Contains(ipsetOrigin, "src") {
-						ruleRes.SrcList = append(ruleRes.SrcList, infoObj)
-					} else {
-						ruleRes.DstList = append(ruleRes.DstList, infoObj)
-					}
 				default:
 					// todo add warning log
-					log.Printf("%v option have not been implemented\n", k)
+					log.Printf("%v option have not been implemented\n", option)
 					continue
 				}
 
 			}
 
-		case "tcp":
-			// tcp module TODO: other protocol
-			OptionValueMap := m.OptionValueMap
-			for k, v := range OptionValueMap() {
-				if k == "dport" {
-					portNum, _ := strconv.ParseInt(v[0], 10, 32)
-					ruleRes.DPort = int32(portNum)
-				} else {
-					portNum, _ := strconv.ParseInt(v[0], 10, 32)
-					ruleRes.SPort = int32(portNum)
-				}
-			}
-		case "udp":
-			OptionValueMap := m.OptionValueMap
+		case "tcp", "udp":
+			OptionValueMap := module.OptionValueMap
 			for k, v := range OptionValueMap() {
 				if k == "dport" {
 					portNum, _ := strconv.ParseInt(v[0], 10, 32)
@@ -330,6 +306,31 @@ func (c *Converter) getModulesFromRule(m_list []*Module, ruleRes *pb.RuleRespons
 		default:
 			continue
 		}
+	}
+	return nil
+}
+
+func (c *Converter) populateSetInfoObj(infoObj *pb.RuleResponse_SetInfo, values []string, ruleRes *pb.RuleResponse) error {
+	ipsetHashedName := values[0]
+	ipsetOrigin := values[1]
+	infoObj.HashedSetName = ipsetHashedName
+	if v, ok := c.ListMap[ipsetHashedName]; ok {
+		infoObj.Name = v
+		infoObj.Type = c.getSetType(v, "ListMap")
+	} else if v, ok := c.SetMap[ipsetHashedName]; ok {
+		infoObj.Name = v
+		infoObj.Type = c.getSetType(v, "SetMap")
+	} else {
+		return fmt.Errorf("set %v does not exist", ipsetHashedName)
+	}
+
+	if len(ipsetOrigin) > 3 {
+		ruleRes.UnsortedIpset[ipsetHashedName] = ipsetOrigin
+	}
+	if strings.Contains(ipsetOrigin, "src") {
+		ruleRes.SrcList = append(ruleRes.SrcList, infoObj)
+	} else {
+		ruleRes.DstList = append(ruleRes.DstList, infoObj)
 	}
 	return nil
 }
