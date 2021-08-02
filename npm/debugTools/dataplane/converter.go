@@ -180,7 +180,7 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleRes
 // Create a list of protobuf rules from iptable
 func (c *Converter) pbRuleList(ipTableObj *Iptables) ([]*pb.RuleResponse, error) {
 	ruleResList := make([]*pb.RuleResponse, 0)
-	for _, v := range ipTableObj.Chains() {
+	for _, v := range ipTableObj.Chains {
 		chainRules, err := c.getRulesFromChain(v)
 		if err != nil {
 			return nil, fmt.Errorf("error occurred during getting protobuf rule list : %w", err)
@@ -193,14 +193,14 @@ func (c *Converter) pbRuleList(ipTableObj *Iptables) ([]*pb.RuleResponse, error)
 
 func (c *Converter) getRulesFromChain(iptableChainObj *IptablesChain) ([]*pb.RuleResponse, error) {
 	rules := make([]*pb.RuleResponse, 0)
-	for _, v := range iptableChainObj.Rules() {
+	for _, v := range iptableChainObj.Rules {
 		rule := &pb.RuleResponse{}
-		rule.Chain = iptableChainObj.Name()
+		rule.Chain = iptableChainObj.Name
 		if _, ok := c.RequiredChainsMap[rule.Chain]; !ok {
 			continue
 		}
-		rule.Protocol = v.Protocol()
-		switch v.Target().Name() {
+		rule.Protocol = v.Protocol
+		switch v.Target.Name {
 		case "MARK":
 			rule.Allowed = true
 		case "DROP":
@@ -209,12 +209,12 @@ func (c *Converter) getRulesFromChain(iptableChainObj *IptablesChain) ([]*pb.Rul
 			// ignore other targets
 			continue
 		}
-		direction := c.getRuleDirection(iptableChainObj.Name())
+		direction := c.getRuleDirection(iptableChainObj.Name)
 		if direction >= 0 {
 			rule.Direction = direction
 		}
 
-		err := c.getModulesFromRule(v.Modules(), rule)
+		err := c.getModulesFromRule(v.Modules, rule)
 		if err != nil {
 			return nil, fmt.Errorf("error occurred during getting rules from chain : %w", err)
 		}
@@ -260,10 +260,10 @@ func (c *Converter) getModulesFromRule(moduleList []*Module, ruleRes *pb.RuleRes
 	ruleRes.DstList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.UnsortedIpset = make(map[string]string)
 	for _, module := range moduleList {
-		switch module.Verb() {
+		switch module.Verb {
 		case "set":
 			// set module
-			OptionValueMap := module.OptionValueMap()
+			OptionValueMap := module.OptionValueMap
 			for option, values := range OptionValueMap {
 				switch option {
 				case "match-set":
@@ -291,7 +291,7 @@ func (c *Converter) getModulesFromRule(moduleList []*Module, ruleRes *pb.RuleRes
 
 		case "tcp", "udp":
 			OptionValueMap := module.OptionValueMap
-			for k, v := range OptionValueMap() {
+			for k, v := range OptionValueMap {
 				if k == "dport" {
 					portNum, _ := strconv.ParseInt(v[0], 10, 32)
 					ruleRes.DPort = int32(portNum)

@@ -9,7 +9,7 @@ import (
 func TestParseIptablesObject(t *testing.T) {
 	tableName := "filter"
 	p := &Parser{}
-	p.ParseIptablesObjectFile(tableName, "../../testFiles/iptableSave")
+	p.ParseIptablesObjectFile(tableName, "../testFiles/iptableSave")
 }
 
 func TestParseLine(t *testing.T) {
@@ -50,14 +50,14 @@ func TestParseRuleFromLine(t *testing.T) {
 	}
 	p := &Parser{}
 
-	m1 := NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}})
-	m2 := NewModule("set", map[string][]string{"match-set": {"azure-npm-3260345197", "src"}})
-	m3 := NewModule("tcp", map[string][]string{"dport": {"8000"}})
-	m4 := NewModule("comment", map[string][]string{"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"}})
+	m1 := &Module{"set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}}}
+	m2 := &Module{"set", map[string][]string{"match-set": {"azure-npm-3260345197", "src"}}}
+	m3 := &Module{"tcp", map[string][]string{"dport": {"8000"}}}
+	m4 := &Module{"comment", map[string][]string{"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"}}}
 
 	modules := []*Module{m1, m2, m3, m4}
 
-	testR1 := NewIptablesRule("tcp", NewTarget("MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}), modules)
+	testR1 := &IptablesRule{"tcp", &Target{"MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}}, modules}
 
 	tests := []test{
 		{input: "-p tcp -d 10.0.153.59/32 -m set --match-set azure-npm-806075013 dst -m set --match-set azure-npm-3260345197 src -m tcp --dport 8000 -m comment --comment ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy -j MARK --set-xmark 0x2000/0xffffffff", expected: testR1},
@@ -79,15 +79,15 @@ func TestParseTarget(t *testing.T) {
 	}
 	p := &Parser{}
 
-	testT1 := NewTarget("MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}) // target with option and value
-	testT2 := NewTarget("RETURN", map[string][]string{})                                 // target with no option or value
+	testT1 := &Target{"MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}} // target with option and value
+	testT2 := &Target{"RETURN", map[string][]string{}}                                 // target with no option or value
 
 	tests := []test{
 		{input: "MARK --set-xmark 0x2000/0xffffffff", expected: testT1},
 		{input: "RETURN", expected: testT2},
 	}
 	for _, tc := range tests {
-		actualTarget := NewTarget("", make(map[string][]string))
+		actualTarget := &Target{"", make(map[string][]string)}
 		t.Run(tc.input, func(t *testing.T) {
 			p.parseTarget(0, actualTarget, []byte(tc.input))
 			if !reflect.DeepEqual(tc.expected, actualTarget) {
@@ -105,9 +105,9 @@ func TestParseModule(t *testing.T) {
 
 	p := &Parser{}
 
-	testM1 := NewModule("set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}})                          // single option
-	testM2 := NewModule("set", map[string][]string{"not-match-set": {"azure-npm-806075013", "dst"}, "packets-gt": {"0"}}) // multiple options
-	testM3 := NewModule("set", map[string][]string{"return-nomatch": {}})                                                 // option with no values
+	testM1 := &Module{"set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}}}                          // single option
+	testM2 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-806075013", "dst"}, "packets-gt": {"0"}}} // multiple options
+	testM3 := &Module{"set", map[string][]string{"return-nomatch": {}}}                                                 // option with no values
 	tests := []test{
 		{input: "set --match-set azure-npm-806075013 dst", expected: testM1},
 		{input: "set ! --match-set azure-npm-806075013 dst --packets-gt 0", expected: testM2},
@@ -115,7 +115,7 @@ func TestParseModule(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		actualModule := NewModule("", make(map[string][]string))
+		actualModule := &Module{"", make(map[string][]string)}
 		t.Run(tc.input, func(t *testing.T) {
 			p.parseModule(0, actualModule, []byte(tc.input))
 			if !reflect.DeepEqual(tc.expected, actualModule) {
