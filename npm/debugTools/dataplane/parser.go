@@ -9,8 +9,7 @@ import (
 	"github.com/Azure/azure-container-networking/npm/util"
 )
 
-type Parser struct {
-}
+type Parser struct{}
 
 // CreateIptableObject create a Go object from specified iptable. Optional read from iptable-save file
 func (p *Parser) ParseIptablesObject(tableName string) *Iptables {
@@ -24,7 +23,6 @@ func (p *Parser) ParseIptablesObject(tableName string) *Iptables {
 	cmd.Stderr = stderrBuffer
 
 	err := cmd.Run()
-
 	if err != nil {
 		_, err = stderrBuffer.WriteTo(iptableBuffer)
 		if err != nil {
@@ -33,13 +31,11 @@ func (p *Parser) ParseIptablesObject(tableName string) *Iptables {
 	}
 	chains := p.parseIptablesChainObject(tableName, iptableBuffer.Bytes())
 	return NewIptables(tableName, chains)
-
 }
 
 func (p *Parser) ParseIptablesObjectFile(tableName string, iptableSaveFile string) *Iptables {
 	iptableBuffer := bytes.NewBuffer(nil)
 	byteArray, err := ioutil.ReadFile(iptableSaveFile)
-
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -121,7 +117,7 @@ func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 				rightLineIndex = curReadIndex
 			}
 		} else if iptableBuffer[curReadIndex] == '\n' || curReadIndex == (len(iptableBuffer)-1) {
-			//end of buffer or end of line
+			// end of buffer or end of line
 			if rightLineIndex == -1 {
 				rightLineIndex = curReadIndex
 				if curReadIndex == len(iptableBuffer)-1 && iptableBuffer[curReadIndex] != '\n' {
@@ -133,7 +129,6 @@ func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 			lastNonWhiteSpaceIndex = curReadIndex
 			rightLineIndex = -1
 		}
-
 	}
 	return iptableBuffer[leftLineIndex : lastNonWhiteSpaceIndex+1], curReadIndex // line with right spaces
 }
@@ -162,7 +157,7 @@ func (p *Parser) parseRuleFromLine(ruleLine []byte) *IptablesRule {
 		if spaceIndex == -1 {
 			break
 		}
-		start := spaceIndex + nextIndex           //offset start index
+		start := spaceIndex + nextIndex           // offset start index
 		flag := string(ruleLine[nextIndex:start]) // can be -m, -,j -p
 		switch flag {
 		case util.IptablesProtFlag:
@@ -175,7 +170,7 @@ func (p *Parser) parseRuleFromLine(ruleLine []byte) *IptablesRule {
 			iptableRule.SetProtocol(protocol)
 			nextIndex = end + 1
 		case util.IptablesJumpFlag:
-			//parse target with format -j target (option) (value)
+			// parse target with format -j target (option) (value)
 			target := NewTarget("", make(map[string][]string))
 			n := p.parseTarget(start+1, target, ruleLine)
 			iptableRule.SetTarget(target)
@@ -207,7 +202,7 @@ func (p *Parser) jumpToNextFlag(nextIndex int, ruleLine []byte) int {
 	if len(ruleElement) >= 2 {
 		if ruleElement[0] == '-' {
 			if ruleElement[1] == '-' {
-				//this is an option
+				// this is an option
 				nextIndex = nextIndex + spaceIndex + 1
 				// recursively parsing unrecognized flag's options and their value until a new flag is encounter
 				return p.jumpToNextFlag(nextIndex, ruleLine)
@@ -251,7 +246,7 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 	if len(ruleElement) >= 2 {
 		if ruleElement[0] == '-' {
 			if ruleElement[1] == '-' {
-				//this is an option
+				// this is an option
 				currentOption = ruleElement[2:]
 				target.OptionValueMap()[currentOption] = make([]string, 0)
 				nextIndex = nextIndex + spaceIndex + 1
@@ -263,7 +258,7 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 			}
 		}
 	}
-	//this is a value
+	// this is a value
 	if currentOption == "" {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(ruleLine)))
 	}
@@ -312,7 +307,7 @@ func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *Module, curOpt
 	if len(ruleElement) >= 2 {
 		if ruleElement[0] == '-' {
 			if ruleElement[1] == '-' {
-				//this is an option
+				// this is an option
 				currentOption = ruleElement[2:]
 				if !included {
 					currentOption = util.NegationPrefix + currentOption
@@ -327,12 +322,11 @@ func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *Module, curOpt
 			}
 		}
 	}
-	//this is a value
+	// this is a value
 	if currentOption == "" {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(ruleLine)))
 	}
 	module.OptionValueMap()[currentOption] = append(module.OptionValueMap()[currentOption], ruleElement)
 	nextIndex = nextIndex + spaceIndex + 1
 	return p.parseModuleOptionAndValue(nextIndex, module, currentOption, ruleLine, true)
-
 }

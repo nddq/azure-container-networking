@@ -432,7 +432,6 @@ func legacyMerge(in piface.MergeInput) piface.MergeOutput {
 	// a marshal and unmarshal operation.
 	srcv := in.Source.(unwrapper).protoUnwrap()
 	marshaler, ok := srcv.(legacyMarshaler)
-
 	if !ok {
 		return piface.MergeOutput{}
 	}

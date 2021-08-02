@@ -13,6 +13,8 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/libnetwork v0.8.0-dev.2.0.20210525090646-64b7a4574d14
 	github.com/golang/mock v1.4.1
+	github.com/golang/protobuf v1.5.2
+	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.3.0
@@ -40,6 +42,7 @@ require (
 	k8s.io/client-go v0.21.3
 	k8s.io/klog v1.0.0
 	k8s.io/utils v0.0.0-20210722164352-7f3ee0f31471
+	mvdan.cc/gofumpt v0.1.1 // indirect
 	sigs.k8s.io/controller-runtime v0.9.5
 	sigs.k8s.io/yaml v1.2.0
 )

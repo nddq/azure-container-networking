@@ -10,7 +10,7 @@ type Iptables struct {
 	chains map[string]*IptablesChain
 }
 
-// Constructor
+// NewIptables is the constructor for iptables
 func NewIptables(name string, chains map[string]*IptablesChain) *Iptables {
 	iptable := &Iptables{}
 	iptable.name = name
@@ -106,8 +106,8 @@ func (r *IptablesRule) Modules() []*Module {
 	return r.modules
 }
 
-func (r *IptablesRule) SetModules(m_list []*Module) {
-	r.modules = m_list
+func (r *IptablesRule) SetModules(mList []*Module) {
+	r.modules = mList
 }
 
 type Module struct {
@@ -153,6 +153,7 @@ func NewTarget(name string, optionValueMap map[string][]string) *Target {
 func (t *Target) Name() string {
 	return t.name
 }
+
 func (t *Target) SetName(name string) {
 	t.name = name
 }
@@ -160,6 +161,7 @@ func (t *Target) SetName(name string) {
 func (t *Target) OptionValueMap() map[string][]string {
 	return t.optionValueMap
 }
+
 func (t *Target) SetOptionValueMap(optionvaluemap map[string][]string) {
 	t.optionValueMap = optionvaluemap
 }
@@ -188,11 +190,11 @@ func (t *Iptables) printIptableChainRules(chain *IptablesChain) string {
 	return ret.String()
 }
 
-func (t *Iptables) printIptableRuleModules(m_list []*Module) string {
+func (t *Iptables) printIptableRuleModules(mList []*Module) string {
 	var ret strings.Builder
 	ret.WriteString("\t\t\tRULE'S MODULES\n")
 
-	for i, v := range m_list {
+	for i, v := range mList {
 		ret.WriteString(fmt.Sprintf("\t\t\t\tModule %v\n", i))
 		ret.WriteString(fmt.Sprintf("\t\t\t\t\tVerb - %v\n", v.Verb()))
 		ret.WriteString(fmt.Sprintf("\t\t\t\t\tOptionValueMap - %+v\n", v.OptionValueMap()))

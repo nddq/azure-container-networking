@@ -15,9 +15,9 @@ func AsSha256(o interface{}) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func hashTheSortTupleList(tuple_list []*Tuple) []string {
+func hashTheSortTupleList(tupleList []*Tuple) []string {
 	ret := make([]string, 0)
-	for _, tuple := range tuple_list {
+	for _, tuple := range tupleList {
 		hashedTuple := AsSha256(tuple)
 		ret = append(ret, hashedTuple)
 	}
@@ -42,21 +42,29 @@ func TestGetNetworkTuple(t *testing.T) {
 	i2 := &srcDstPair{src: &Input{Content: "testnamespace/a", Type: PODNAME}, dst: &Input{Content: "", Type: INTERNET}}
 	i3 := &srcDstPair{src: &Input{Content: "10.240.0.70", Type: IPADDRS}, dst: &Input{Content: "10.240.0.13", Type: IPADDRS}}
 
-	expected0 := []*Tuple{{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
+	expected0 := []*Tuple{
+		{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
 		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"}}
+		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
+	}
 
-	expected1 := []*Tuple{{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.12", DstPort: "ANY", Protocol: "ANY"},
+	expected1 := []*Tuple{
 		{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.12", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.12", DstPort: "ANY", Protocol: "ANY"}}
+		{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.12", DstPort: "ANY", Protocol: "ANY"},
+		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.12", DstPort: "ANY", Protocol: "ANY"},
+	}
 
-	expected2 := []*Tuple{{RuleType: "NOT ALLOWED", Direction: "EGRESS", SrcIP: "10.240.0.12", SrcPort: "ANY", DstIP: "ANY", DstPort: "ANY", Protocol: "ANY"},
+	expected2 := []*Tuple{
+		{RuleType: "NOT ALLOWED", Direction: "EGRESS", SrcIP: "10.240.0.12", SrcPort: "ANY", DstIP: "ANY", DstPort: "ANY", Protocol: "ANY"},
 		{RuleType: "ALLOWED", Direction: "EGRESS", SrcIP: "10.240.0.12", SrcPort: "ANY", DstIP: "ANY", DstPort: "53", Protocol: "udp"},
-		{RuleType: "ALLOWED", Direction: "EGRESS", SrcIP: "10.240.0.12", SrcPort: "ANY", DstIP: "ANY", DstPort: "53", Protocol: "tcp"}}
+		{RuleType: "ALLOWED", Direction: "EGRESS", SrcIP: "10.240.0.12", SrcPort: "ANY", DstIP: "ANY", DstPort: "53", Protocol: "tcp"},
+	}
 
-	expected3 := []*Tuple{{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
+	expected3 := []*Tuple{
+		{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
 		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"}}
+		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
+	}
 
 	tests := map[string]*testInput{
 		"podname to podname":     {input: i0, expected: expected0},

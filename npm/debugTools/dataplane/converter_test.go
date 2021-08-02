@@ -9,9 +9,7 @@ import (
 )
 
 func TestGetJSONRulesFromIptable(t *testing.T) {
-	var (
-		tableName = "filter"
-	)
+	tableName := "filter"
 
 	c := &Converter{}
 	_, err := c.GetJSONRulesFromIptableFile(tableName, "../testFiles/npmCache.json", "../testFiles/iptableSave")
@@ -21,9 +19,7 @@ func TestGetJSONRulesFromIptable(t *testing.T) {
 }
 
 func TestGetProtobufRulesFromIptable(t *testing.T) {
-	var (
-		tableName = "filter"
-	)
+	tableName := "filter"
 
 	c := &Converter{}
 	_, err := c.GetProtobufRulesFromIptableFile(tableName, "../testFiles/npmCache.json", "../testFiles/iptableSave")
@@ -124,7 +120,8 @@ func TestGetRulesFromChain(t *testing.T) {
 	iptableChainNotAllowed.SetRules(chainRule)
 	iptableChainNotAllowed.SetName("AZURE-NPM-INGRESS-DROPS")
 
-	expectedMarkRes := []*pb.RuleResponse{{Chain: "AZURE-NPM-INGRESS-PORT",
+	expectedMarkRes := []*pb.RuleResponse{{
+		Chain:         "AZURE-NPM-INGRESS-PORT",
 		SrcList:       []*pb.RuleResponse_SetInfo{},
 		DstList:       dstList,
 		Protocol:      "tcp",
@@ -135,7 +132,8 @@ func TestGetRulesFromChain(t *testing.T) {
 		UnsortedIpset: map[string]string{"azure-npm-3050895063": "dst,dst"},
 	}}
 
-	expectedDropRes := []*pb.RuleResponse{{Chain: "AZURE-NPM-INGRESS-DROPS",
+	expectedDropRes := []*pb.RuleResponse{{
+		Chain:         "AZURE-NPM-INGRESS-DROPS",
 		SrcList:       []*pb.RuleResponse_SetInfo{},
 		DstList:       dstList,
 		Protocol:      "",
@@ -209,7 +207,8 @@ func TestGetModulesFromRule(t *testing.T) {
 	modules := []*Module{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
 	dstList := []*pb.RuleResponse_SetInfo{s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13}
 
-	expectedRuleResponse := &pb.RuleResponse{Chain: "TEST",
+	expectedRuleResponse := &pb.RuleResponse{
+		Chain:         "TEST",
 		SrcList:       []*pb.RuleResponse_SetInfo{},
 		DstList:       dstList,
 		Protocol:      "",
@@ -217,12 +216,15 @@ func TestGetModulesFromRule(t *testing.T) {
 		SPort:         53,
 		Allowed:       true,
 		Direction:     pb.Direction_INGRESS,
-		UnsortedIpset: map[string]string{"azure-npm-3050895063": "dst,dst"}}
+		UnsortedIpset: map[string]string{"azure-npm-3050895063": "dst,dst"},
+	}
 
-	actualRuleResponse := &pb.RuleResponse{Chain: "TEST",
+	actualRuleResponse := &pb.RuleResponse{
+		Chain:     "TEST",
 		Protocol:  "",
 		Allowed:   true,
-		Direction: pb.Direction_INGRESS}
+		Direction: pb.Direction_INGRESS,
+	}
 
 	c := &Converter{}
 	err := c.initConverterFile("../testFiles/npmCache.json")
@@ -238,5 +240,4 @@ func TestGetModulesFromRule(t *testing.T) {
 	if !reflect.DeepEqual(expectedRuleResponse, actualRuleResponse) {
 		t.Errorf("expected '%+v', got '%+v'", expectedRuleResponse, actualRuleResponse)
 	}
-
 }

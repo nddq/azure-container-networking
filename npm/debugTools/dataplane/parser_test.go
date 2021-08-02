@@ -7,9 +7,7 @@ import (
 )
 
 func TestParseIptablesObject(t *testing.T) {
-	var (
-		tableName = "filter"
-	)
+	tableName := "filter"
 	p := &Parser{}
 	p.ParseIptablesObjectFile(tableName, "../../testFiles/iptableSave")
 }
@@ -43,7 +41,6 @@ func TestParseLine(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestParseRuleFromLine(t *testing.T) {
@@ -98,7 +95,6 @@ func TestParseTarget(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestParseModule(t *testing.T) {
@@ -127,5 +123,4 @@ func TestParseModule(t *testing.T) {
 			}
 		})
 	}
-
 }

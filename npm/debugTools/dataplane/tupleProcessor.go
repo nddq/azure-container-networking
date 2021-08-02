@@ -12,8 +12,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type Processor struct {
-}
+type Processor struct{}
 
 type Tuple struct {
 	RuleType  string `json:"ruleType"`
@@ -44,7 +43,7 @@ func (p *Processor) GetNetworkTuple(src, dst *Input) ([][]byte, []*Tuple, error)
 
 	allRules, err := c.GetProtobufRulesFromIptable("filter")
 	if err != nil {
-		return nil, nil, fmt.Errorf("error occured during get network tuple : %w", err)
+		return nil, nil, fmt.Errorf("error occurred during get network tuple : %w", err)
 	}
 	return p.getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
 }
@@ -55,28 +54,27 @@ func (p *Processor) GetNetworkTupleFile(src, dst *Input, npmCacheFile string, ip
 
 	allRules, err := c.GetProtobufRulesFromIptableFile("filter", npmCacheFile, iptableSaveFile)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error occured during get network tuple : %w", err)
+		return nil, nil, fmt.Errorf("error occurred during get network tuple : %w", err)
 	}
 
 	return p.getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
-
 }
 
 // Common function
 func (p *Processor) getNetworkTupleCommon(src, dst *Input, npmCache *NPMCache, allRules []*pb.RuleResponse) ([][]byte, []*Tuple, error) {
 	srcPod, err := p.getCorrespondPod(src, npmCache)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error occured during get source pod : %w", err)
+		return nil, nil, fmt.Errorf("error occurred during get source pod : %w", err)
 	}
 
 	dstPod, err := p.getCorrespondPod(dst, npmCache)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error occured during get destination pod : %w", err)
+		return nil, nil, fmt.Errorf("error occurred during get destination pod : %w", err)
 	}
 
 	hitRules, err := p.GetHitRules(srcPod, dstPod, allRules, npmCache)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error occured during get hit rules : %w", err)
+		return nil, nil, fmt.Errorf("error occurred during get hit rules : %w", err)
 	}
 
 	if len(hitRules) == 0 {
@@ -84,17 +82,17 @@ func (p *Processor) getNetworkTupleCommon(src, dst *Input, npmCache *NPMCache, a
 		hitRules = append(hitRules, &pb.RuleResponse{Allowed: true})
 	}
 
-	ruleResListJson := make([][]byte, 0)
+	ruleResListJSON := make([][]byte, 0)
 	m := protojson.MarshalOptions{
 		Indent: "	",
 		EmitUnpopulated: true,
 	}
 	for _, rule := range hitRules {
-		ruleJson, err := m.Marshal(rule) // pretty print
+		ruleJSON, err := m.Marshal(rule) // pretty print
 		if err != nil {
-			return nil, nil, fmt.Errorf("error occured during marshalling : %w", err)
+			return nil, nil, fmt.Errorf("error occurred during marshalling : %w", err)
 		}
-		ruleResListJson = append(ruleResListJson, ruleJson)
+		ruleResListJSON = append(ruleResListJSON, ruleJSON)
 	}
 
 	resTupleList := make([]*Tuple, 0)
@@ -106,11 +104,11 @@ func (p *Processor) getNetworkTupleCommon(src, dst *Input, npmCache *NPMCache, a
 	// for _, rule := range resTupleList {
 	// 	ruleJson, err := json.MarshalIndent(rule, "", "  ")
 	// 	if err != nil {
-	// 		log.Fatalf("Error occured during marshaling. Error: %s", err.Error())
+	// 		log.Fatalf("Error occurred during marshaling. Error: %s", err.Error())
 	// 	}
 	// 	tupleResListJson = append(tupleResListJson, ruleJson)
 	// }
-	return ruleResListJson, resTupleList, nil
+	return ruleResListJSON, resTupleList, nil
 }
 
 func (p *Processor) getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.NpmPod, error) {
@@ -155,32 +153,32 @@ func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *
 		tuple.Direction = "INGRESS"
 	} else {
 		// not sure if this is correct
-		tuple.Direction = "ANY"
+		tuple.Direction = ANY
 	}
 	if len(rule.SrcList) == 0 {
-		tuple.SrcIP = "ANY"
+		tuple.SrcIP = ANY
 	} else {
 		tuple.SrcIP = src.PodIP
 	}
 	if rule.SPort != 0 {
 		tuple.SrcPort = strconv.Itoa(int(rule.SPort))
 	} else {
-		tuple.SrcPort = "ANY"
+		tuple.SrcPort = ANY
 	}
 	if len(rule.DstList) == 0 {
-		tuple.DstIP = "ANY"
+		tuple.DstIP = ANY
 	} else {
 		tuple.DstIP = dst.PodIP
 	}
 	if rule.DPort != 0 {
 		tuple.DstPort = strconv.Itoa(int(rule.DPort))
 	} else {
-		tuple.DstPort = "ANY"
+		tuple.DstPort = ANY
 	}
 	if rule.Protocol != "" {
 		tuple.Protocol = rule.Protocol
 	} else {
-		tuple.Protocol = "ANY"
+		tuple.Protocol = ANY
 	}
 	return tuple
 }
@@ -198,7 +196,7 @@ func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, 
 			}
 			matchedSource, err := p.evaluateSetInfo("src", setInfo, src, rule, cacheObj)
 			if err != nil {
-				return nil, fmt.Errorf("error occured during evaluating source's set info : %w", err)
+				return nil, fmt.Errorf("error occurred during evaluating source's set info : %w", err)
 			}
 			if !matchedSource {
 				matched = false
@@ -214,7 +212,7 @@ func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, 
 			}
 			matchedDestination, err := p.evaluateSetInfo("dst", setInfo, dst, rule, cacheObj)
 			if err != nil {
-				return nil, fmt.Errorf("error occured during evaluating destination's set info : %w", err)
+				return nil, fmt.Errorf("error occurred during evaluating destination's set info : %w", err)
 			}
 			if !matchedDestination {
 				matched = false
@@ -250,10 +248,10 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 		// a function to split the key and the values and then combine the key with each value
 		// return list of key value pairs which are keyvaluelabel of pod
 		// one match then break
-		kv_list := processNestedLabelOfPod(setInfo.Name)
+		kvList := processNestedLabelOfPod(setInfo.Name)
 		hasOneKeyValuePair := false
-		for _, kv_pair := range kv_list {
-			key, value := processKeyValueLabelOfPod(kv_pair)
+		for _, kvPair := range kvList {
+			key, value := processKeyValueLabelOfPod(kvPair)
 			if pod.Labels[key] == value {
 				if !setInfo.Included {
 					matched = false
@@ -328,7 +326,6 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 	}
 
 	return matched, nil
-
 }
 
 func processKeyValueLabelOfNameSpace(kv string) (string, string) {
@@ -343,10 +340,10 @@ func processKeyValueLabelOfPod(kv string) (string, string) {
 }
 
 func processNestedLabelOfPod(kv string) []string {
-	kv_list := strings.Split(kv, ":")
-	key := kv_list[0]
+	kvList := strings.Split(kv, ":")
+	key := kvList[0]
 	ret := make([]string, 0)
-	for _, value := range kv_list[1:] {
+	for _, value := range kvList[1:] {
 		ret = append(ret, key+":"+value)
 	}
 	return ret
