@@ -94,9 +94,9 @@ func (p *Parser) parseIptablesChainObject(tableName string, iptableBuffer []byte
 	return chainMap
 }
 
-// parseLine parse each line of the read-in byteArray of iptables-save
+// parseLine parse the line starting from the given readIndex of the iptableBuffer. Returns a slice of line starting from given read index and the next index to read from.
 func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
-	curReadIndex := readIndex
+	curReadIndex := readIndex // index of iptableBuffer to start reading from
 
 	// consume left spaces
 	for curReadIndex < len(iptableBuffer) {
@@ -105,30 +105,29 @@ func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 		}
 		curReadIndex++
 	}
-	leftLineIndex := curReadIndex
-	rightLineIndex := -1
-	lastNonWhiteSpaceIndex := leftLineIndex
+	leftLineIndex := curReadIndex           // start index of line
+	rightLineIndex := -1                    // end index of line
+	lastNonWhiteSpaceIndex := leftLineIndex // index of last seen non-white space character
 
 	for ; curReadIndex < len(iptableBuffer); curReadIndex++ {
-		if iptableBuffer[curReadIndex] == ' ' {
+		if iptableBuffer[curReadIndex] == ' ' { // current index is a white space character
 			if rightLineIndex == -1 {
-				rightLineIndex = curReadIndex
+				rightLineIndex = curReadIndex // update end index of line
 			}
-		} else if iptableBuffer[curReadIndex] == '\n' || curReadIndex == (len(iptableBuffer)-1) {
-			// end of buffer or end of line
-			if rightLineIndex == -1 {
+		} else if iptableBuffer[curReadIndex] == '\n' || curReadIndex == (len(iptableBuffer)-1) { // encountered end of line (indicate by the new line character) or end of buffer
+			if rightLineIndex == -1 { // if end index of line is not set
 				rightLineIndex = curReadIndex
-				if curReadIndex == len(iptableBuffer)-1 && iptableBuffer[curReadIndex] != '\n' {
-					rightLineIndex++
+				if curReadIndex == len(iptableBuffer)-1 && iptableBuffer[curReadIndex] != '\n' { // if end of buffer
+					rightLineIndex++ // increment right index to conver the last read character
 				}
 			}
-			return iptableBuffer[leftLineIndex:rightLineIndex], curReadIndex + 1
+			return iptableBuffer[leftLineIndex:rightLineIndex], curReadIndex + 1 // return line slice and the next index to read from
 		} else {
-			lastNonWhiteSpaceIndex = curReadIndex
-			rightLineIndex = -1
+			lastNonWhiteSpaceIndex = curReadIndex // update index of last non-white space character
+			rightLineIndex = -1                   // reset right index of line
 		}
 	}
-	return iptableBuffer[leftLineIndex : lastNonWhiteSpaceIndex+1], curReadIndex // line with right spaces
+	return iptableBuffer[leftLineIndex : lastNonWhiteSpaceIndex+1], curReadIndex // line with right spaces (unlikely to encounter)
 }
 
 // parseChainNameFromRule gets the chain name from given rule line
