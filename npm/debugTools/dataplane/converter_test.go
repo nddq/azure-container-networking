@@ -5,24 +5,21 @@ import (
 	"testing"
 
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
+	"github.com/Azure/azure-container-networking/npm/util"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestGetJSONRulesFromIptable(t *testing.T) {
-	tableName := "filter"
-
 	c := &Converter{}
-	_, err := c.GetJSONRulesFromIptableFile(tableName, "../testFiles/npmCache.json", "../testFiles/iptableSave")
+	_, err := c.GetJSONRulesFromIptableFile(util.IptablesFilterTable, "../testFiles/npmCache.json", "../testFiles/iptableSave")
 	if err != nil {
 		t.Errorf("error during TestGetJSONRulesFromIptable : %w", err)
 	}
 }
 
 func TestGetProtobufRulesFromIptable(t *testing.T) {
-	tableName := "filter"
-
 	c := &Converter{}
-	_, err := c.GetProtobufRulesFromIptableFile(tableName, "../testFiles/npmCache.json", "../testFiles/iptableSave")
+	_, err := c.GetProtobufRulesFromIptableFile(util.IptablesFilterTable, "../testFiles/npmCache.json", "../testFiles/iptableSave")
 	if err != nil {
 		t.Errorf("error during TestGetJSONRulesFromIptable : %w", err)
 	}

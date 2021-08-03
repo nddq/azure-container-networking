@@ -16,7 +16,7 @@ func (p *Parser) ParseIptablesObject(tableName string) *Iptables {
 	iptableBuffer := bytes.NewBuffer(nil)
 	// TODO: need to get iptable's lock
 	cmdArgs := []string{"-t", string(tableName)}
-	cmd := exec.Command(util.IptablesSave, cmdArgs...)
+	cmd := exec.Command(util.IptablesSave, cmdArgs...) //nolint:gosec
 
 	cmd.Stdout = iptableBuffer
 	stderrBuffer := bytes.NewBuffer(nil)
@@ -196,7 +196,7 @@ func (p *Parser) jumpToNextFlag(nextIndex int, ruleLine []byte) int {
 		return nextIndex
 	}
 	ruleElement := string(ruleLine[nextIndex : nextIndex+spaceIndex])
-	if len(ruleElement) >= 2 {
+	if len(ruleElement) >= MinOptionLength {
 		if ruleElement[0] == '-' {
 			if ruleElement[1] == '-' {
 				// this is an option
@@ -239,7 +239,7 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 		return nextIndex
 	}
 	ruleElement := string(ruleLine[nextIndex : nextIndex+spaceIndex])
-	if len(ruleElement) >= 2 {
+	if len(ruleElement) >= MinOptionLength {
 		if ruleElement[0] == '-' {
 			if ruleElement[1] == '-' {
 				// this is an option
@@ -299,7 +299,7 @@ func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *Module, curOpt
 		return p.parseModuleOptionAndValue(nextIndex, module, currentOption, ruleLine, false)
 	}
 
-	if len(ruleElement) >= 2 {
+	if len(ruleElement) >= MinOptionLength {
 		if ruleElement[0] == '-' {
 			if ruleElement[1] == '-' {
 				// this is an option

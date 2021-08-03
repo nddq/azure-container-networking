@@ -38,8 +38,8 @@ func TestGetNetworkTuple(t *testing.T) {
 	p := &Processor{}
 
 	i0 := &srcDstPair{src: &Input{Content: "z/b", Type: PODNAME}, dst: &Input{Content: "netpol-4537-x/a", Type: PODNAME}}
-	i1 := &srcDstPair{src: &Input{Content: "", Type: INTERNET}, dst: &Input{Content: "testnamespace/a", Type: PODNAME}}
-	i2 := &srcDstPair{src: &Input{Content: "testnamespace/a", Type: PODNAME}, dst: &Input{Content: "", Type: INTERNET}}
+	i1 := &srcDstPair{src: &Input{Content: "", Type: EXTERNAL}, dst: &Input{Content: "testnamespace/a", Type: PODNAME}}
+	i2 := &srcDstPair{src: &Input{Content: "testnamespace/a", Type: PODNAME}, dst: &Input{Content: "", Type: EXTERNAL}}
 	i3 := &srcDstPair{src: &Input{Content: "10.240.0.70", Type: IPADDRS}, dst: &Input{Content: "10.240.0.13", Type: IPADDRS}}
 
 	expected0 := []*Tuple{

@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"reflect"
 	"testing"
+
+	"github.com/Azure/azure-container-networking/npm/util"
 )
 
 func TestParseIptablesObject(t *testing.T) {
-	tableName := "filter"
 	p := &Parser{}
-	p.ParseIptablesObjectFile(tableName, "../testFiles/iptableSave")
+	p.ParseIptablesObjectFile(util.IptablesFilterTable, "../testFiles/iptableSave")
 }
 
 func TestParseLine(t *testing.T) {

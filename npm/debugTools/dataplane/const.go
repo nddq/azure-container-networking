@@ -1,7 +1,9 @@
 package dataplane
 
 const (
-	ANY string = "ANY"
+	// ANY string
+	ANY             string = "ANY"
+	MinOptionLength int    = 2
 )
 
 // RequiredChains contains names of chain that will be include in the result of the converter

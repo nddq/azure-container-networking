@@ -34,7 +34,7 @@ type InputType int32
 const (
 	IPADDRS  InputType = 0
 	PODNAME  InputType = 1
-	INTERNET InputType = 2
+	EXTERNAL InputType = 2
 )
 
 // GetNetworkTupleFile read from node's NPM cache and iptables-save and returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules.
@@ -52,7 +52,7 @@ func (p *Processor) GetNetworkTuple(src, dst *Input) ([][]byte, []*Tuple, error)
 func (p *Processor) GetNetworkTupleFile(src, dst *Input, npmCacheFile string, iptableSaveFile string) ([][]byte, []*Tuple, error) {
 	c := &Converter{}
 
-	allRules, err := c.GetProtobufRulesFromIptableFile("filter", npmCacheFile, iptableSaveFile)
+	allRules, err := c.GetProtobufRulesFromIptableFile(util.IptablesFilterTable, npmCacheFile, iptableSaveFile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get network tuple : %w", err)
 	}
@@ -122,7 +122,7 @@ func (p *Processor) getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.Np
 			}
 		}
 		return nil, fmt.Errorf("invalid ipaddress, no equivalent pod found")
-	case INTERNET:
+	case EXTERNAL:
 		return &npm.NpmPod{}, nil
 	default:
 		return nil, fmt.Errorf("invalid input")
@@ -131,8 +131,8 @@ func (p *Processor) getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.Np
 
 // GetInputType returns the type of the input for GetNetworkTuple
 func (p *Processor) GetInputType(input string) InputType {
-	if input == "internet" {
-		return INTERNET
+	if input == "External" {
+		return EXTERNAL
 	} else if _, _, err := net.ParseCIDR(input); err == nil {
 		return IPADDRS
 	} else {
@@ -321,6 +321,8 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 				}
 			}
 		}
+	case pb.SetType_CIDRBLOCKS:
+		// TODO
 	default:
 		return false, fmt.Errorf("invalid set type")
 	}
