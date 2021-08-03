@@ -122,7 +122,7 @@ func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 				rightLineIndex = curReadIndex
 				if curReadIndex == len(iptableBuffer)-1 && iptableBuffer[curReadIndex] != '\n' {
 					// if end of buffer
-					rightLineIndex++ // increment right index to conver the last read character
+					rightLineIndex++ // increment right index to include the last read character in final slice
 				}
 			}
 			// return line slice and the next index to read from

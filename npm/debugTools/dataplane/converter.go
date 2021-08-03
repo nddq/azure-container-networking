@@ -1,6 +1,7 @@
 package dataplane
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -51,10 +52,18 @@ func (c *Converter) NpmCacheFromFile(npmCacheJSONFile string) error {
 // Initialize NPM cache from node
 func (c *Converter) NpmCache() error {
 	c.NPMCache = &NPMCache{}
-	// for deployment
-	resp, err := http.Get("http://localhost:10091/npm/v1/debug/manager")
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		"http://localhost:10091/npm/v1/debug/manager",
+		nil,
+	)
 	if err != nil {
-		return fmt.Errorf("error occurred during curl : %w", err)
+		return fmt.Errorf("error occurred during creating http request : %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error occurred during requesting NPM Cache : %w", err)
 	}
 	defer resp.Body.Close()
 	byteArray, err := ioutil.ReadAll(resp.Body)
@@ -303,10 +312,10 @@ func (c *Converter) getModulesFromRule(moduleList []*Module, ruleRes *pb.RuleRes
 			OptionValueMap := module.OptionValueMap
 			for k, v := range OptionValueMap {
 				if k == "dport" {
-					portNum, _ := strconv.ParseInt(v[0], 10, 32)
+					portNum, _ := strconv.ParseInt(v[0], Base, Bitsize)
 					ruleRes.DPort = int32(portNum)
 				} else {
-					portNum, _ := strconv.ParseInt(v[0], 10, 32)
+					portNum, _ := strconv.ParseInt(v[0], Base, Bitsize)
 					ruleRes.SPort = int32(portNum)
 				}
 			}
@@ -336,7 +345,7 @@ func (c *Converter) populateSetInfoObj(
 		return fmt.Errorf("set %v does not exist", ipsetHashedName)
 	}
 
-	if len(ipsetOrigin) > 3 {
+	if len(ipsetOrigin) > MinUnsortedIPSetLength {
 		ruleRes.UnsortedIpset[ipsetHashedName] = ipsetOrigin
 	}
 	if strings.Contains(ipsetOrigin, "src") {

@@ -160,12 +160,15 @@ func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *
 	} else {
 		tuple.RuleType = "NOT ALLOWED"
 	}
-	if rule.Direction == pb.Direction_EGRESS {
+	switch rule.Direction {
+	case pb.Direction_EGRESS:
 		tuple.Direction = "EGRESS"
-	} else if rule.Direction == pb.Direction_INGRESS {
+	case pb.Direction_INGRESS:
 		tuple.Direction = "INGRESS"
-	} else {
+	case pb.Direction_UNDEFINED:
 		// not sure if this is correct
+		tuple.Direction = ANY
+	default:
 		tuple.Direction = ANY
 	}
 	if len(rule.SrcList) == 0 {
