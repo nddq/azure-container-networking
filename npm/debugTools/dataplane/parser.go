@@ -94,7 +94,8 @@ func (p *Parser) parseIptablesChainObject(tableName string, iptableBuffer []byte
 	return chainMap
 }
 
-// parseLine parse the line starting from the given readIndex of the iptableBuffer. Returns a slice of line starting from given read index and the next index to read from.
+// parseLine parse the line starting from the given readIndex of the iptableBuffer.
+// Returns a slice of line starting from given read index and the next index to read from.
 func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 	curReadIndex := readIndex // index of iptableBuffer to start reading from
 
@@ -110,24 +111,29 @@ func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 	lastNonWhiteSpaceIndex := leftLineIndex // index of last seen non-white space character
 
 	for ; curReadIndex < len(iptableBuffer); curReadIndex++ {
-		if iptableBuffer[curReadIndex] == ' ' { // current index is a white space character
+		if iptableBuffer[curReadIndex] == ' ' {
+			// current index is a white space character
 			if rightLineIndex == -1 {
 				rightLineIndex = curReadIndex // update end index of line
 			}
-		} else if iptableBuffer[curReadIndex] == '\n' || curReadIndex == (len(iptableBuffer)-1) { // encountered end of line (indicate by the new line character) or end of buffer
+		} else if iptableBuffer[curReadIndex] == '\n' || curReadIndex == (len(iptableBuffer)-1) {
+			// encountered end of line (indicate by the new line character) or end of buffer
 			if rightLineIndex == -1 { // if end index of line is not set
 				rightLineIndex = curReadIndex
-				if curReadIndex == len(iptableBuffer)-1 && iptableBuffer[curReadIndex] != '\n' { // if end of buffer
+				if curReadIndex == len(iptableBuffer)-1 && iptableBuffer[curReadIndex] != '\n' {
+					// if end of buffer
 					rightLineIndex++ // increment right index to conver the last read character
 				}
 			}
-			return iptableBuffer[leftLineIndex:rightLineIndex], curReadIndex + 1 // return line slice and the next index to read from
+			// return line slice and the next index to read from
+			return iptableBuffer[leftLineIndex:rightLineIndex], curReadIndex + 1
 		} else {
 			lastNonWhiteSpaceIndex = curReadIndex // update index of last non-white space character
 			rightLineIndex = -1                   // reset right index of line
 		}
 	}
-	return iptableBuffer[leftLineIndex : lastNonWhiteSpaceIndex+1], curReadIndex // line with right spaces (unlikely to encounter)
+	// line with right spaces (unlikely to encounter)
+	return iptableBuffer[leftLineIndex : lastNonWhiteSpaceIndex+1], curReadIndex
 }
 
 // parseChainNameFromRule gets the chain name from given rule line
@@ -160,7 +166,7 @@ func (p *Parser) parseRuleFromLine(ruleLine []byte) *IptablesRule {
 		case util.IptablesProtFlag:
 			spaceIndex1 := bytes.Index(ruleLine[start+1:], util.SpaceBytes)
 			if spaceIndex1 == -1 {
-				panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(ruleLine)))
+				panic(fmt.Sprintf("Unexpected chain line in iptables-save : %v", string(ruleLine)))
 			}
 			end := start + 1 + spaceIndex1
 			protocol := string(ruleLine[start+1 : end])
@@ -230,7 +236,7 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 	currentOption := curOption
 	if spaceIndex == -1 {
 		if currentOption == "" {
-			panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(ruleLine)))
+			panic(fmt.Sprintf("Rule's value have no preceded option: %v", string(ruleLine)))
 		}
 		v := string(ruleLine[nextIndex:]) // TODO: assume that target is always at the end of each rule line
 		optionValueMap := target.OptionValueMap
@@ -255,7 +261,7 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 	}
 	// this is a value
 	if currentOption == "" {
-		panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(ruleLine)))
+		panic(fmt.Sprintf("Rule's value have no preceded option: %v", string(ruleLine)))
 	}
 	target.OptionValueMap[currentOption] = append(target.OptionValueMap[currentOption], ruleElement)
 	nextIndex = nextIndex + spaceIndex + 1
@@ -265,15 +271,21 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 func (p *Parser) parseModule(nextIndex int, module *Module, ruleLine []byte) int {
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
 	if spaceIndex == -1 {
-		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(ruleLine)))
+		panic(fmt.Sprintf("Unexpected chain line in iptables-save : %v", string(ruleLine)))
 	}
 	verb := string(ruleLine[nextIndex : nextIndex+spaceIndex])
 	module.Verb = verb
 	return p.parseModuleOptionAndValue(nextIndex+spaceIndex+1, module, "", ruleLine, true)
 }
 
-func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *Module, curOption string, ruleLine []byte, included bool) int {
-	// TODO: Assume that options and values don't locate at the end of a line
+func (p *Parser) parseModuleOptionAndValue(
+	nextIndex int,
+	module *Module,
+	curOption string,
+	ruleLine []byte,
+	included bool,
+) int {
+
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
 	currentOption := curOption
 	if spaceIndex == -1 {
@@ -286,7 +298,7 @@ func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *Module, curOpt
 		}
 		// else this is a value at end of line
 		if currentOption == "" {
-			panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(ruleLine)))
+			panic(fmt.Sprintf("Rule's value have no preceded option: %v", string(ruleLine)))
 		}
 		module.OptionValueMap[currentOption] = append(module.OptionValueMap[currentOption], v)
 		nextIndex = nextIndex + spaceIndex + 1
@@ -317,7 +329,7 @@ func (p *Parser) parseModuleOptionAndValue(nextIndex int, module *Module, curOpt
 	}
 	// this is a value
 	if currentOption == "" {
-		panic(fmt.Sprintf("Unexpected chain line in iptables-save output, value have no preceded option: %v", string(ruleLine)))
+		panic(fmt.Sprintf("Rule's value have no preceded option: %v", string(ruleLine)))
 	}
 	module.OptionValueMap[currentOption] = append(module.OptionValueMap[currentOption], ruleElement)
 	nextIndex = nextIndex + spaceIndex + 1

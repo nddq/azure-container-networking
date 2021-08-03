@@ -109,7 +109,12 @@ func (c *Converter) initConverterMaps() {
 }
 
 // Get a list of json rules from files
-func (c *Converter) GetJSONRulesFromIptableFile(tableName string, npmCacheFile string, iptableSaveFile string) ([][]byte, error) {
+func (c *Converter) GetJSONRulesFromIptableFile(
+	tableName string,
+	npmCacheFile string,
+	iptableSaveFile string,
+) ([][]byte, error) {
+
 	pbRuleObj, err := c.GetProtobufRulesFromIptableFile(tableName, npmCacheFile, iptableSaveFile)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting JSON rules from iptables : %w", err)
@@ -144,7 +149,12 @@ func (c *Converter) jsonRuleList(pbRuleObj []*pb.RuleResponse) ([][]byte, error)
 }
 
 // Get a list of protobuf rules from files
-func (c *Converter) GetProtobufRulesFromIptableFile(tableName string, npmCacheFile string, iptableSaveFile string) ([]*pb.RuleResponse, error) {
+func (c *Converter) GetProtobufRulesFromIptableFile(
+	tableName string,
+	npmCacheFile string,
+	iptableSaveFile string,
+) ([]*pb.RuleResponse, error) {
+
 	err := c.initConverterFile(npmCacheFile)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
@@ -307,7 +317,12 @@ func (c *Converter) getModulesFromRule(moduleList []*Module, ruleRes *pb.RuleRes
 	return nil
 }
 
-func (c *Converter) populateSetInfoObj(infoObj *pb.RuleResponse_SetInfo, values []string, ruleRes *pb.RuleResponse) error {
+func (c *Converter) populateSetInfoObj(
+	infoObj *pb.RuleResponse_SetInfo,
+	values []string,
+	ruleRes *pb.RuleResponse,
+) error {
+
 	ipsetHashedName := values[0]
 	ipsetOrigin := values[1]
 	infoObj.HashedSetName = ipsetHashedName

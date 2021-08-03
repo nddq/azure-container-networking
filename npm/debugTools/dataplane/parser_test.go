@@ -21,18 +21,34 @@ func TestParseLine(t *testing.T) {
 
 	p := &Parser{}
 
-	testL1 := "-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT"                // line with no left or right space
-	testL2 := "      -A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT"          // line with left space
-	testL3 := "-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT       "         // line with right space
-	testL4 := "        -A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT       " // line with left and right space
+	// line with no left or right space
+	testL1 := "-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment TEST -j AZURE-NPM-ACCEPT"
+	// line with left space
+	testL2 := "      -A AZURE-NPM -m mark --mark 0x3000 -m comment --comment TEST -j AZURE-NPM-ACCEPT"
+	// line with right space
+	testL3 := "-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment TEST -j AZURE-NPM-ACCEPT       "
+	// line with left and right space
+	testL4 := "        -A AZURE-NPM -m mark --mark 0x3000 -m comment --comment TEST -j AZURE-NPM-ACCEPT       "
 
-	expectByteArray := []byte("-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment ACCEPT-on-INGRESS-and-EGRESS-mark-0x3000 -j AZURE-NPM-ACCEPT")
+	expectByteArray := []byte("-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment TEST -j AZURE-NPM-ACCEPT")
 
 	tests := []test{
-		{input: testL1, expected: expectByteArray},
-		{input: testL2, expected: expectByteArray},
-		{input: testL3, expected: expectByteArray},
-		{input: testL4, expected: expectByteArray},
+		{
+			input:    testL1,
+			expected: expectByteArray,
+		},
+		{
+			input:    testL2,
+			expected: expectByteArray,
+		},
+		{
+			input:    testL3,
+			expected: expectByteArray,
+		},
+		{
+			input:    testL4,
+			expected: expectByteArray,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
@@ -51,17 +67,43 @@ func TestParseRuleFromLine(t *testing.T) {
 	}
 	p := &Parser{}
 
-	m1 := &Module{"set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}}}
-	m2 := &Module{"set", map[string][]string{"match-set": {"azure-npm-3260345197", "src"}}}
-	m3 := &Module{"tcp", map[string][]string{"dport": {"8000"}}}
-	m4 := &Module{"comment", map[string][]string{"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"}}}
+	m1 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-806075013", "dst"}},
+	}
+	m2 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-3260345197", "src"}},
+	}
+	m3 := &Module{
+		Verb:           "tcp",
+		OptionValueMap: map[string][]string{"dport": {"8000"}},
+	}
+	m4 := &Module{
+		Verb: "comment",
+		OptionValueMap: map[string][]string{
+			"comment": {"ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy"},
+		},
+	}
 
 	modules := []*Module{m1, m2, m3, m4}
 
-	testR1 := &IptablesRule{"tcp", &Target{"MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}}, modules}
+	testR1 := &IptablesRule{
+		Protocol: "tcp",
+		Target:   &Target{"MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}},
+		Modules:  modules,
+	}
 
 	tests := []test{
-		{input: "-p tcp -d 10.0.153.59/32 -m set --match-set azure-npm-806075013 dst -m set --match-set azure-npm-3260345197 src -m tcp --dport 8000 -m comment --comment ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy -j MARK --set-xmark 0x2000/0xffffffff", expected: testR1},
+		{
+			input: `-p tcp -d 10.0.153.59/32 ` +
+				`-m set --match-set azure-npm-806075013 dst ` +
+				`-m set --match-set azure-npm-3260345197 src ` +
+				`-m tcp --dport 8000 ` +
+				`-m comment --comment ALLOW-allow-ingress-in-ns-test-nwpolicy-0in-AND-TCP-PORT-8000-TO-ns-test-nwpolicy ` +
+				`-j MARK --set-xmark 0x2000/0xffffffff`,
+			expected: testR1,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
@@ -80,12 +122,24 @@ func TestParseTarget(t *testing.T) {
 	}
 	p := &Parser{}
 
-	testT1 := &Target{"MARK", map[string][]string{"set-xmark": {"0x2000/0xffffffff"}}} // target with option and value
-	testT2 := &Target{"RETURN", map[string][]string{}}                                 // target with no option or value
+	testT1 := &Target{
+		Name:           "MARK",
+		OptionValueMap: map[string][]string{"set-xmark": {"0x2000/0xffffffff"}},
+	} // target with option and value
+	testT2 := &Target{
+		Name:           "RETURN",
+		OptionValueMap: map[string][]string{},
+	} // target with no option or value
 
 	tests := []test{
-		{input: "MARK --set-xmark 0x2000/0xffffffff", expected: testT1},
-		{input: "RETURN", expected: testT2},
+		{
+			input:    "MARK --set-xmark 0x2000/0xffffffff",
+			expected: testT1,
+		},
+		{
+			input:    "RETURN",
+			expected: testT2,
+		},
 	}
 	for _, tc := range tests {
 		actualTarget := &Target{"", make(map[string][]string)}
@@ -106,13 +160,31 @@ func TestParseModule(t *testing.T) {
 
 	p := &Parser{}
 
-	testM1 := &Module{"set", map[string][]string{"match-set": {"azure-npm-806075013", "dst"}}}                          // single option
-	testM2 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-806075013", "dst"}, "packets-gt": {"0"}}} // multiple options
-	testM3 := &Module{"set", map[string][]string{"return-nomatch": {}}}                                                 // option with no values
+	testM1 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-806075013", "dst"}},
+	} // single option
+	testM2 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-806075013", "dst"}, "packets-gt": {"0"}},
+	} // multiple options
+	testM3 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"return-nomatch": {}},
+	} // option with no values
 	tests := []test{
-		{input: "set --match-set azure-npm-806075013 dst", expected: testM1},
-		{input: "set ! --match-set azure-npm-806075013 dst --packets-gt 0", expected: testM2},
-		{input: "set --return-nomatch", expected: testM3},
+		{
+			input:    "set --match-set azure-npm-806075013 dst",
+			expected: testM1,
+		},
+		{
+			input:    "set ! --match-set azure-npm-806075013 dst --packets-gt 0",
+			expected: testM2,
+		},
+		{
+			input:    "set --return-nomatch",
+			expected: testM3,
+		},
 	}
 
 	for _, tc := range tests {

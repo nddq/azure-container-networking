@@ -37,33 +37,141 @@ func TestGetNetworkTuple(t *testing.T) {
 	}
 	p := &Processor{}
 
-	i0 := &srcDstPair{src: &Input{Content: "z/b", Type: PODNAME}, dst: &Input{Content: "netpol-4537-x/a", Type: PODNAME}}
-	i1 := &srcDstPair{src: &Input{Content: "", Type: EXTERNAL}, dst: &Input{Content: "testnamespace/a", Type: PODNAME}}
-	i2 := &srcDstPair{src: &Input{Content: "testnamespace/a", Type: PODNAME}, dst: &Input{Content: "", Type: EXTERNAL}}
-	i3 := &srcDstPair{src: &Input{Content: "10.240.0.70", Type: IPADDRS}, dst: &Input{Content: "10.240.0.13", Type: IPADDRS}}
+	i0 := &srcDstPair{
+		src: &Input{Content: "z/b", Type: PODNAME},
+		dst: &Input{Content: "netpol-4537-x/a", Type: PODNAME},
+	}
+	i1 := &srcDstPair{
+		src: &Input{Content: "", Type: EXTERNAL},
+		dst: &Input{Content: "testnamespace/a", Type: PODNAME},
+	}
+	i2 := &srcDstPair{
+		src: &Input{Content: "testnamespace/a", Type: PODNAME},
+		dst: &Input{Content: "", Type: EXTERNAL},
+	}
+	i3 := &srcDstPair{
+		src: &Input{Content: "10.240.0.70", Type: IPADDRS},
+		dst: &Input{Content: "10.240.0.13", Type: IPADDRS},
+	}
 
 	expected0 := []*Tuple{
-		{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
+		{
+			RuleType:  "NOT ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "ANY",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.13",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
+		{
+			RuleType:  "ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "10.240.0.70",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.13",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
+		{
+			RuleType:  "ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "10.240.0.70",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.13",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
 	}
 
 	expected1 := []*Tuple{
-		{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.12", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.12", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.12", DstPort: "ANY", Protocol: "ANY"},
+		{
+			RuleType:  "NOT ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "ANY",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.12",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
+		{
+			RuleType:  "NOT ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "ANY",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.12",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
+		{
+			RuleType:  "ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "ANY",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.12",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
 	}
 
 	expected2 := []*Tuple{
-		{RuleType: "NOT ALLOWED", Direction: "EGRESS", SrcIP: "10.240.0.12", SrcPort: "ANY", DstIP: "ANY", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "EGRESS", SrcIP: "10.240.0.12", SrcPort: "ANY", DstIP: "ANY", DstPort: "53", Protocol: "udp"},
-		{RuleType: "ALLOWED", Direction: "EGRESS", SrcIP: "10.240.0.12", SrcPort: "ANY", DstIP: "ANY", DstPort: "53", Protocol: "tcp"},
+		{
+			RuleType:  "NOT ALLOWED",
+			Direction: "EGRESS",
+			SrcIP:     "10.240.0.12",
+			SrcPort:   "ANY",
+			DstIP:     "ANY",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
+		{
+			RuleType:  "ALLOWED",
+			Direction: "EGRESS",
+			SrcIP:     "10.240.0.12",
+			SrcPort:   "ANY",
+			DstIP:     "ANY",
+			DstPort:   "53",
+			Protocol:  "udp",
+		},
+		{
+			RuleType:  "ALLOWED",
+			Direction: "EGRESS",
+			SrcIP:     "10.240.0.12",
+			SrcPort:   "ANY",
+			DstIP:     "ANY",
+			DstPort:   "53",
+			Protocol:  "tcp",
+		},
 	}
 
 	expected3 := []*Tuple{
-		{RuleType: "NOT ALLOWED", Direction: "INGRESS", SrcIP: "ANY", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
-		{RuleType: "ALLOWED", Direction: "INGRESS", SrcIP: "10.240.0.70", SrcPort: "ANY", DstIP: "10.240.0.13", DstPort: "ANY", Protocol: "ANY"},
+		{
+			RuleType:  "NOT ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "ANY",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.13",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
+		{
+			RuleType:  "ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "10.240.0.70",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.13",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
+		{
+			RuleType:  "ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "10.240.0.70",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.13",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
 	}
 
 	tests := map[string]*testInput{
@@ -76,7 +184,12 @@ func TestGetNetworkTuple(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			sortedExpectedTupleList := hashTheSortTupleList(test.expected)
-			_, actualTupleList, err := p.GetNetworkTupleFile(test.input.src, test.input.dst, "../testFiles/npmCache.json", "../testFiles/iptableSave")
+			_, actualTupleList, err := p.GetNetworkTupleFile(
+				test.input.src,
+				test.input.dst,
+				"../testFiles/npmCache.json",
+				"../testFiles/iptableSave",
+			)
 			if err != nil {
 				t.Errorf("error during get network tuple : %w", err)
 			}

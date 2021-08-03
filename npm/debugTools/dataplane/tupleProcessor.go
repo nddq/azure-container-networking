@@ -37,7 +37,9 @@ const (
 	EXTERNAL InputType = 2
 )
 
-// GetNetworkTupleFile read from node's NPM cache and iptables-save and returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules.
+// GetNetworkTupleFile read from node's NPM cache and iptables-save and
+// returns a list of hit rules between the source and the destination in
+// JSON format and a list of tuples from those rules.
 func (p *Processor) GetNetworkTuple(src, dst *Input) ([][]byte, []*Tuple, error) {
 	c := &Converter{}
 
@@ -48,10 +50,16 @@ func (p *Processor) GetNetworkTuple(src, dst *Input) ([][]byte, []*Tuple, error)
 	return p.getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
 }
 
-// GetNetworkTupleFile read from NPM cache and iptables-save files and returns a list of hit rules between the source and the destination in JSON format and a list of tuples from those rules.
-func (p *Processor) GetNetworkTupleFile(src, dst *Input, npmCacheFile string, iptableSaveFile string) ([][]byte, []*Tuple, error) {
-	c := &Converter{}
+// GetNetworkTupleFile read from NPM cache and iptables-save files and
+// returns a list of hit rules between the source and the destination in
+// JSON format and a list of tuples from those rules.
+func (p *Processor) GetNetworkTupleFile(
+	src, dst *Input,
+	npmCacheFile string,
+	iptableSaveFile string,
+) ([][]byte, []*Tuple, error) {
 
+	c := &Converter{}
 	allRules, err := c.GetProtobufRulesFromIptableFile(util.IptablesFilterTable, npmCacheFile, iptableSaveFile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get network tuple : %w", err)
@@ -61,7 +69,12 @@ func (p *Processor) GetNetworkTupleFile(src, dst *Input, npmCacheFile string, ip
 }
 
 // Common function
-func (p *Processor) getNetworkTupleCommon(src, dst *Input, npmCache *NPMCache, allRules []*pb.RuleResponse) ([][]byte, []*Tuple, error) {
+func (p *Processor) getNetworkTupleCommon(
+	src, dst *Input,
+	npmCache *NPMCache,
+	allRules []*pb.RuleResponse,
+) ([][]byte, []*Tuple, error) {
+
 	srcPod, err := p.getCorrespondPod(src, npmCache)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get source pod : %w", err)
@@ -183,7 +196,12 @@ func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *
 	return tuple
 }
 
-func (p *Processor) GetHitRules(src, dst *npm.NpmPod, rules []*pb.RuleResponse, cacheObj *NPMCache) ([]*pb.RuleResponse, error) {
+func (p *Processor) GetHitRules(
+	src, dst *npm.NpmPod,
+	rules []*pb.RuleResponse,
+	cacheObj *NPMCache,
+) ([]*pb.RuleResponse, error) {
+
 	res := make([]*pb.RuleResponse, 0)
 	for _, rule := range rules {
 		matched := true

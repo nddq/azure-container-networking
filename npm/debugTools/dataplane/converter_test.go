@@ -11,7 +11,11 @@ import (
 
 func TestGetJSONRulesFromIptable(t *testing.T) {
 	c := &Converter{}
-	_, err := c.GetJSONRulesFromIptableFile(util.IptablesFilterTable, "../testFiles/npmCache.json", "../testFiles/iptableSave")
+	_, err := c.GetJSONRulesFromIptableFile(
+		util.IptablesFilterTable,
+		"../testFiles/npmCache.json",
+		"../testFiles/iptableSave",
+	)
 	if err != nil {
 		t.Errorf("error during TestGetJSONRulesFromIptable : %w", err)
 	}
@@ -19,7 +23,11 @@ func TestGetJSONRulesFromIptable(t *testing.T) {
 
 func TestGetProtobufRulesFromIptable(t *testing.T) {
 	c := &Converter{}
-	_, err := c.GetProtobufRulesFromIptableFile(util.IptablesFilterTable, "../testFiles/npmCache.json", "../testFiles/iptableSave")
+	_, err := c.GetProtobufRulesFromIptableFile(
+		util.IptablesFilterTable,
+		"../testFiles/npmCache.json",
+		"../testFiles/iptableSave",
+	)
 	if err != nil {
 		t.Errorf("error during TestGetJSONRulesFromIptable : %w", err)
 	}
@@ -31,13 +39,41 @@ func TestGetSetType(t *testing.T) {
 		inputMapName string
 		expected     pb.SetType
 	}{
-		"namespace":                    {inputSetName: "ns-testnamespace", inputMapName: "SetMap", expected: pb.SetType_NAMESPACE},
-		"key value label of pod":       {inputSetName: "app:frontend", inputMapName: "SetMap", expected: pb.SetType_KEYVALUELABELOFPOD},
-		"nested label of pod":          {inputSetName: "k1:v0:v1", inputMapName: "ListMap", expected: pb.SetType_NESTEDLABELOFPOD},
-		"key label of namespace":       {inputSetName: "all-namespaces", inputMapName: "ListMap", expected: pb.SetType_KEYLABELOFNAMESPACE},
-		"namedports":                   {inputSetName: "namedport:serve-80", inputMapName: "SetMap", expected: pb.SetType_NAMEDPORTS},
-		"key label of pod":             {inputSetName: "k0", inputMapName: "SetMap", expected: pb.SetType_KEYLABELOFPOD},
-		"key value lable of namespace": {inputSetName: "ns-namespace:test0", inputMapName: "ListMap", expected: pb.SetType_KEYVALUELABELOFNAMESPACE},
+		"namespace": {
+			inputSetName: "ns-testnamespace",
+			inputMapName: "SetMap",
+			expected:     pb.SetType_NAMESPACE,
+		},
+		"key value label of pod": {
+			inputSetName: "app:frontend",
+			inputMapName: "SetMap",
+			expected:     pb.SetType_KEYVALUELABELOFPOD,
+		},
+		"nested label of pod": {
+			inputSetName: "k1:v0:v1",
+			inputMapName: "ListMap",
+			expected:     pb.SetType_NESTEDLABELOFPOD,
+		},
+		"key label of namespace": {
+			inputSetName: "all-namespaces",
+			inputMapName: "ListMap",
+			expected:     pb.SetType_KEYLABELOFNAMESPACE,
+		},
+		"namedports": {
+			inputSetName: "namedport:serve-80",
+			inputMapName: "SetMap",
+			expected:     pb.SetType_NAMEDPORTS,
+		},
+		"key label of pod": {
+			inputSetName: "k0",
+			inputMapName: "SetMap",
+			expected:     pb.SetType_KEYLABELOFPOD,
+		},
+		"key value lable of namespace": {
+			inputSetName: "ns-namespace:test0",
+			inputMapName: "ListMap",
+			expected:     pb.SetType_KEYVALUELABELOFNAMESPACE,
+		},
 	}
 
 	c := &Converter{}
@@ -66,40 +102,151 @@ func TestGetRulesFromChain(t *testing.T) {
 	iptableChainAllowed := &IptablesChain{Rules: make([]*IptablesRule, 0)}
 	iptableChainNotAllowed := &IptablesChain{Rules: make([]*IptablesRule, 0)}
 
-	m0 := &Module{"set", map[string][]string{"match-set": {"azure-npm-2173871756", "dst"}}}     // ns-testnamespace - NAMESPACE
-	m1 := &Module{"set", map[string][]string{"match-set": {"azure-npm-837532042", "dst"}}}      // app:frontend - KEYVALUELABELOFPOD
-	m2 := &Module{"set", map[string][]string{"match-set": {"azure-npm-370790958", "dst"}}}      // k1:v0:v1 - NESTEDLABELOFPOD
-	m3 := &Module{"set", map[string][]string{"match-set": {"azure-npm-530439631", "dst"}}}      // all-namespaces - KEYLABELOFNAMESPACE
-	m4 := &Module{"set", map[string][]string{"match-set": {"azure-npm-3050895063", "dst,dst"}}} // namedport:serve-80 - NAMEDPORTS
-	m5 := &Module{"set", map[string][]string{"match-set": {"azure-npm-2537389870", "dst"}}}     // k0 - KEYLABELOFPOD
-	m6 := &Module{"set", map[string][]string{"match-set": {"azure-npm-1217484542", "dst"}}}     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
+	m0 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-2173871756", "dst"}},
+	} // ns-testnamespace - NAMESPACE
+	m1 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-837532042", "dst"}},
+	} // app:frontend - KEYVALUELABELOFPOD
+	m2 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-370790958", "dst"}},
+	} // k1:v0:v1 - NESTEDLABELOFPOD
+	m3 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-530439631", "dst"}},
+	} // all-namespaces - KEYLABELOFNAMESPACE
+	m4 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-3050895063", "dst,dst"}},
+	} // namedport:serve-80 - NAMEDPORTS
+	m5 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-2537389870", "dst"}},
+	} // k0 - KEYLABELOFPOD
+	m6 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-1217484542", "dst"}},
+	} // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
 
-	m7 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-2173871756", "dst"}}}      // ns-testnamespace - NAMESPACE
-	m8 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-837532042", "dst"}}}       // app:frontend - KEYVALUELABELOFPOD
-	m9 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-370790958", "dst"}}}       // k1:v0:v1 - NESTEDLABELOFPOD
-	m10 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-530439631", "dst"}}}      // all-namespaces - KEYLABELOFNAMESPACE
-	m11 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-3050895063", "dst,dst"}}} // namedport:serve-80 - NAMEDPORTS
-	m12 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-2537389870", "dst"}}}     // k0 - KEYLABELOFPOD
-	m13 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-1217484542", "dst"}}}     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
+	m7 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-2173871756", "dst"}},
+	} // ns-testnamespace - NAMESPACE
+	m8 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-837532042", "dst"}},
+	} // app:frontend - KEYVALUELABELOFPOD
+	m9 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-370790958", "dst"}},
+	} // k1:v0:v1 - NESTEDLABELOFPOD
+	m10 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-530439631", "dst"}},
+	} // all-namespaces - KEYLABELOFNAMESPACE
+	m11 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-3050895063", "dst,dst"}},
+	} // namedport:serve-80 - NAMEDPORTS
+	m12 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-2537389870", "dst"}},
+	} // k0 - KEYLABELOFPOD
+	m13 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-1217484542", "dst"}},
+	} // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
 
-	m14 := &Module{"tcp", map[string][]string{"dport": {"8000"}}}
-	m15 := &Module{"udp", map[string][]string{"sport": {"53"}}}
+	m14 := &Module{
+		Verb:           "tcp",
+		OptionValueMap: map[string][]string{"dport": {"8000"}},
+	}
+	m15 := &Module{
+		Verb:           "udp",
+		OptionValueMap: map[string][]string{"sport": {"53"}},
+	}
 
-	s0 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMESPACE, Name: "ns-testnamespace", HashedSetName: "azure-npm-2173871756", Included: true}
-	s1 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFPOD, Name: "app:frontend", HashedSetName: "azure-npm-837532042", Included: true}
-	s2 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NESTEDLABELOFPOD, Name: "k1:v0:v1", HashedSetName: "azure-npm-370790958", Included: true}
-	s3 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFNAMESPACE, Name: "all-namespaces", HashedSetName: "azure-npm-530439631", Included: true}
-	s4 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMEDPORTS, Name: "namedport:serve-80", HashedSetName: "azure-npm-3050895063", Included: true}
-	s5 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFPOD, Name: "k0", HashedSetName: "azure-npm-2537389870", Included: true}
-	s6 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFNAMESPACE, Name: "ns-namespace:test0", HashedSetName: "azure-npm-1217484542", Included: true}
+	s0 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NAMESPACE,
+		Name:          "ns-testnamespace",
+		HashedSetName: "azure-npm-2173871756",
+		Included:      true,
+	}
+	s1 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYVALUELABELOFPOD,
+		Name:          "app:frontend",
+		HashedSetName: "azure-npm-837532042",
+		Included:      true,
+	}
+	s2 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NESTEDLABELOFPOD,
+		Name:          "k1:v0:v1",
+		HashedSetName: "azure-npm-370790958",
+		Included:      true,
+	}
+	s3 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYLABELOFNAMESPACE,
+		Name:          "all-namespaces",
+		HashedSetName: "azure-npm-530439631",
+		Included:      true,
+	}
+	s4 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NAMEDPORTS,
+		Name:          "namedport:serve-80",
+		HashedSetName: "azure-npm-3050895063",
+		Included:      true,
+	}
+	s5 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYLABELOFPOD,
+		Name:          "k0",
+		HashedSetName: "azure-npm-2537389870",
+		Included:      true,
+	}
+	s6 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYVALUELABELOFNAMESPACE,
+		Name:          "ns-namespace:test0",
+		HashedSetName: "azure-npm-1217484542",
+		Included:      true,
+	}
 
-	s7 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMESPACE, Name: "ns-testnamespace", HashedSetName: "azure-npm-2173871756"}
-	s8 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFPOD, Name: "app:frontend", HashedSetName: "azure-npm-837532042"}
-	s9 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NESTEDLABELOFPOD, Name: "k1:v0:v1", HashedSetName: "azure-npm-370790958"}
-	s10 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFNAMESPACE, Name: "all-namespaces", HashedSetName: "azure-npm-530439631"}
-	s11 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMEDPORTS, Name: "namedport:serve-80", HashedSetName: "azure-npm-3050895063"}
-	s12 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFPOD, Name: "k0", HashedSetName: "azure-npm-2537389870"}
-	s13 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFNAMESPACE, Name: "ns-namespace:test0", HashedSetName: "azure-npm-1217484542"}
+	s7 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NAMESPACE,
+		Name:          "ns-testnamespace",
+		HashedSetName: "azure-npm-2173871756",
+	}
+	s8 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYVALUELABELOFPOD,
+		Name:          "app:frontend",
+		HashedSetName: "azure-npm-837532042",
+	}
+	s9 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NESTEDLABELOFPOD,
+		Name:          "k1:v0:v1",
+		HashedSetName: "azure-npm-370790958",
+	}
+	s10 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYLABELOFNAMESPACE,
+		Name:          "all-namespaces",
+		HashedSetName: "azure-npm-530439631",
+	}
+	s11 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NAMEDPORTS,
+		Name:          "namedport:serve-80",
+		HashedSetName: "azure-npm-3050895063",
+	}
+	s12 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYLABELOFPOD,
+		Name:          "k0",
+		HashedSetName: "azure-npm-2537389870",
+	}
+	s13 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYVALUELABELOFNAMESPACE,
+		Name:          "ns-namespace:test0",
+		HashedSetName: "azure-npm-1217484542",
+	}
 
 	modules := []*Module{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
 	dstList := []*pb.RuleResponse_SetInfo{s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13}
@@ -162,40 +309,151 @@ func TestGetRulesFromChain(t *testing.T) {
 }
 
 func TestGetModulesFromRule(t *testing.T) {
-	m0 := &Module{"set", map[string][]string{"match-set": {"azure-npm-2173871756", "dst"}}}     // ns-testnamespace - NAMESPACE
-	m1 := &Module{"set", map[string][]string{"match-set": {"azure-npm-837532042", "dst"}}}      // app:frontend - KEYVALUELABELOFPOD
-	m2 := &Module{"set", map[string][]string{"match-set": {"azure-npm-370790958", "dst"}}}      // k1:v0:v1 - NESTEDLABELOFPOD
-	m3 := &Module{"set", map[string][]string{"match-set": {"azure-npm-530439631", "dst"}}}      // all-namespaces - KEYLABELOFNAMESPACE
-	m4 := &Module{"set", map[string][]string{"match-set": {"azure-npm-3050895063", "dst,dst"}}} // namedport:serve-80 - NAMEDPORTS
-	m5 := &Module{"set", map[string][]string{"match-set": {"azure-npm-2537389870", "dst"}}}     // k0 - KEYLABELOFPOD
-	m6 := &Module{"set", map[string][]string{"match-set": {"azure-npm-1217484542", "dst"}}}     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
+	m0 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-2173871756", "dst"}},
+	} // ns-testnamespace - NAMESPACE
+	m1 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-837532042", "dst"}},
+	} // app:frontend - KEYVALUELABELOFPOD
+	m2 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-370790958", "dst"}},
+	} // k1:v0:v1 - NESTEDLABELOFPOD
+	m3 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-530439631", "dst"}},
+	} // all-namespaces - KEYLABELOFNAMESPACE
+	m4 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-3050895063", "dst,dst"}},
+	} // namedport:serve-80 - NAMEDPORTS
+	m5 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-2537389870", "dst"}},
+	} // k0 - KEYLABELOFPOD
+	m6 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"match-set": {"azure-npm-1217484542", "dst"}},
+	} // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
 
-	m7 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-2173871756", "dst"}}}      // ns-testnamespace - NAMESPACE
-	m8 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-837532042", "dst"}}}       // app:frontend - KEYVALUELABELOFPOD
-	m9 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-370790958", "dst"}}}       // k1:v0:v1 - NESTEDLABELOFPOD
-	m10 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-530439631", "dst"}}}      // all-namespaces - KEYLABELOFNAMESPACE
-	m11 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-3050895063", "dst,dst"}}} // namedport:serve-80 - NAMEDPORTS
-	m12 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-2537389870", "dst"}}}     // k0 - KEYLABELOFPOD
-	m13 := &Module{"set", map[string][]string{"not-match-set": {"azure-npm-1217484542", "dst"}}}     // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
+	m7 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-2173871756", "dst"}},
+	} // ns-testnamespace - NAMESPACE
+	m8 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-837532042", "dst"}},
+	} // app:frontend - KEYVALUELABELOFPOD
+	m9 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-370790958", "dst"}},
+	} // k1:v0:v1 - NESTEDLABELOFPOD
+	m10 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-530439631", "dst"}},
+	} // all-namespaces - KEYLABELOFNAMESPACE
+	m11 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-3050895063", "dst,dst"}},
+	} // namedport:serve-80 - NAMEDPORTS
+	m12 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-2537389870", "dst"}},
+	} // k0 - KEYLABELOFPOD
+	m13 := &Module{
+		Verb:           "set",
+		OptionValueMap: map[string][]string{"not-match-set": {"azure-npm-1217484542", "dst"}},
+	} // ns-namespace:test0 - KEYVALUELABELOFNAMESPACE
 
-	m14 := &Module{"tcp", map[string][]string{"dport": {"8000"}}}
-	m15 := &Module{"udp", map[string][]string{"sport": {"53"}}}
+	m14 := &Module{
+		Verb:           "tcp",
+		OptionValueMap: map[string][]string{"dport": {"8000"}},
+	}
+	m15 := &Module{
+		Verb:           "udp",
+		OptionValueMap: map[string][]string{"sport": {"53"}},
+	}
 
-	s0 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMESPACE, Name: "ns-testnamespace", HashedSetName: "azure-npm-2173871756", Included: true}
-	s1 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFPOD, Name: "app:frontend", HashedSetName: "azure-npm-837532042", Included: true}
-	s2 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NESTEDLABELOFPOD, Name: "k1:v0:v1", HashedSetName: "azure-npm-370790958", Included: true}
-	s3 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFNAMESPACE, Name: "all-namespaces", HashedSetName: "azure-npm-530439631", Included: true}
-	s4 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMEDPORTS, Name: "namedport:serve-80", HashedSetName: "azure-npm-3050895063", Included: true}
-	s5 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFPOD, Name: "k0", HashedSetName: "azure-npm-2537389870", Included: true}
-	s6 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFNAMESPACE, Name: "ns-namespace:test0", HashedSetName: "azure-npm-1217484542", Included: true}
+	s0 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NAMESPACE,
+		Name:          "ns-testnamespace",
+		HashedSetName: "azure-npm-2173871756",
+		Included:      true,
+	}
+	s1 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYVALUELABELOFPOD,
+		Name:          "app:frontend",
+		HashedSetName: "azure-npm-837532042",
+		Included:      true,
+	}
+	s2 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NESTEDLABELOFPOD,
+		Name:          "k1:v0:v1",
+		HashedSetName: "azure-npm-370790958",
+		Included:      true,
+	}
+	s3 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYLABELOFNAMESPACE,
+		Name:          "all-namespaces",
+		HashedSetName: "azure-npm-530439631",
+		Included:      true,
+	}
+	s4 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NAMEDPORTS,
+		Name:          "namedport:serve-80",
+		HashedSetName: "azure-npm-3050895063",
+		Included:      true,
+	}
+	s5 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYLABELOFPOD,
+		Name:          "k0",
+		HashedSetName: "azure-npm-2537389870",
+		Included:      true,
+	}
+	s6 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYVALUELABELOFNAMESPACE,
+		Name:          "ns-namespace:test0",
+		HashedSetName: "azure-npm-1217484542",
+		Included:      true,
+	}
 
-	s7 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMESPACE, Name: "ns-testnamespace", HashedSetName: "azure-npm-2173871756"}
-	s8 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFPOD, Name: "app:frontend", HashedSetName: "azure-npm-837532042"}
-	s9 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NESTEDLABELOFPOD, Name: "k1:v0:v1", HashedSetName: "azure-npm-370790958"}
-	s10 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFNAMESPACE, Name: "all-namespaces", HashedSetName: "azure-npm-530439631"}
-	s11 := &pb.RuleResponse_SetInfo{Type: pb.SetType_NAMEDPORTS, Name: "namedport:serve-80", HashedSetName: "azure-npm-3050895063"}
-	s12 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYLABELOFPOD, Name: "k0", HashedSetName: "azure-npm-2537389870"}
-	s13 := &pb.RuleResponse_SetInfo{Type: pb.SetType_KEYVALUELABELOFNAMESPACE, Name: "ns-namespace:test0", HashedSetName: "azure-npm-1217484542"}
+	s7 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NAMESPACE,
+		Name:          "ns-testnamespace",
+		HashedSetName: "azure-npm-2173871756",
+	}
+	s8 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYVALUELABELOFPOD,
+		Name:          "app:frontend",
+		HashedSetName: "azure-npm-837532042",
+	}
+	s9 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NESTEDLABELOFPOD,
+		Name:          "k1:v0:v1",
+		HashedSetName: "azure-npm-370790958",
+	}
+	s10 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYLABELOFNAMESPACE,
+		Name:          "all-namespaces",
+		HashedSetName: "azure-npm-530439631",
+	}
+	s11 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_NAMEDPORTS,
+		Name:          "namedport:serve-80",
+		HashedSetName: "azure-npm-3050895063",
+	}
+	s12 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYLABELOFPOD,
+		Name:          "k0",
+		HashedSetName: "azure-npm-2537389870",
+	}
+	s13 := &pb.RuleResponse_SetInfo{
+		Type:          pb.SetType_KEYVALUELABELOFNAMESPACE,
+		Name:          "ns-namespace:test0",
+		HashedSetName: "azure-npm-1217484542",
+	}
 
 	modules := []*Module{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
 	dstList := []*pb.RuleResponse_SetInfo{s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13}
