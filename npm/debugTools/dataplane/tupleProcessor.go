@@ -146,7 +146,7 @@ func (p *Processor) getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.Np
 func (p *Processor) GetInputType(input string) InputType {
 	if input == "External" {
 		return EXTERNAL
-	} else if _, _, err := net.ParseCIDR(input); err == nil {
+	} else if ip := net.ParseIP(input); ip != nil {
 		return IPADDRS
 	} else {
 		return PODNAME
@@ -343,7 +343,23 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 			}
 		}
 	case pb.SetType_CIDRBLOCKS:
-		// TODO
+		for _, entry := range setInfo.Contents {
+			entrySplitted := strings.Split(entry, " ")
+			if len(entrySplitted) > 1 { // nomatch condition. i.e [172.17.1.0/24 nomatch]
+				_, ipnet, _ := net.ParseCIDR(entrySplitted[0])
+				podIP := net.ParseIP(pod.PodIP)
+				if ipnet.Contains(podIP) {
+					matched = false
+					break
+				}
+			} else {
+				_, ipnet, _ := net.ParseCIDR(entrySplitted[0])
+				podIP := net.ParseIP(pod.PodIP)
+				if ipnet.Contains(podIP) {
+					break
+				}
+			}
+		}
 	default:
 		return false, fmt.Errorf("invalid set type")
 	}

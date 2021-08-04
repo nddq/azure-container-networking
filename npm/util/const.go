@@ -20,8 +20,9 @@ const (
 )
 
 var (
-	CommitBytes = []byte("COMMIT")
-	SpaceBytes  = []byte(" ")
+	CommitBytes  = []byte("COMMIT")
+	SpaceBytes   = []byte(" ")
+	MembersBytes = []byte("Members")
 )
 
 //iptables related constants.

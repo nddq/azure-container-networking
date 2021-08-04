@@ -1,12 +1,15 @@
 package dataplane
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -271,6 +274,9 @@ func (c *Converter) getSetType(name string, m string) pb.SetType {
 	if strings.Contains(name, util.IpsetLabelDelimter) {
 		return pb.SetType_KEYVALUELABELOFPOD
 	}
+	if matched, _ := regexp.MatchString(`(?i)[^ ]+-in-ns-[^ ]+-\d(out|in)\b`, name); matched {
+		return pb.SetType_CIDRBLOCKS
+	}
 	return pb.SetType_KEYLABELOFPOD
 }
 
@@ -341,6 +347,9 @@ func (c *Converter) populateSetInfoObj(
 	} else if v, ok := c.SetMap[ipsetHashedName]; ok {
 		infoObj.Name = v
 		infoObj.Type = c.getSetType(v, "SetMap")
+		if infoObj.Type == pb.SetType_CIDRBLOCKS {
+			handleCIDRBlockSetType(infoObj)
+		}
 	} else {
 		return fmt.Errorf("set %v does not exist", ipsetHashedName)
 	}
@@ -354,4 +363,39 @@ func (c *Converter) populateSetInfoObj(
 		ruleRes.DstList = append(ruleRes.DstList, infoObj)
 	}
 	return nil
+}
+
+// populate CIDRBlock set's content with ip addresses
+func handleCIDRBlockSetType(setInfoObj *pb.RuleResponse_SetInfo) {
+	ipsetBuffer := bytes.NewBuffer(nil)
+	cmdArgs := []string{"list", setInfoObj.HashedSetName}
+	cmd := exec.Command(util.Ipset, cmdArgs...) //nolint:gosec
+
+	cmd.Stdout = ipsetBuffer
+	stderrBuffer := bytes.NewBuffer(nil)
+	cmd.Stderr = stderrBuffer
+
+	err := cmd.Run()
+	if err != nil {
+		_, err = stderrBuffer.WriteTo(ipsetBuffer)
+		if err != nil {
+			panic(err)
+		}
+	}
+	curReadIndex := 0
+	p := Parser{}
+
+	// finding the members field
+	for curReadIndex < len(ipsetBuffer.Bytes()) {
+		line, nextReadIndex := p.parseLine(curReadIndex, ipsetBuffer.Bytes())
+		curReadIndex = nextReadIndex
+		if bytes.HasPrefix(line, util.MembersBytes) {
+			break
+		}
+	}
+	for curReadIndex < len(ipsetBuffer.Bytes()) {
+		member, nextReadIndex := p.parseLine(curReadIndex, ipsetBuffer.Bytes())
+		setInfoObj.Contents = append(setInfoObj.Contents, string(member))
+		curReadIndex = nextReadIndex
+	}
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestGetJSONRulesFromIptable(t *testing.T) {
+func TestGetJSONRulesFromIptableFile(t *testing.T) {
 	c := &Converter{}
 	_, err := c.GetJSONRulesFromIptableFile(
 		util.IptablesFilterTable,
@@ -21,7 +21,7 @@ func TestGetJSONRulesFromIptable(t *testing.T) {
 	}
 }
 
-func TestGetProtobufRulesFromIptable(t *testing.T) {
+func TestGetProtobufRulesFromIptableFile(t *testing.T) {
 	c := &Converter{}
 	_, err := c.GetProtobufRulesFromIptableFile(
 		util.IptablesFilterTable,

@@ -25,6 +25,27 @@ func hashTheSortTupleList(tupleList []*Tuple) []string {
 	return ret
 }
 
+func TestGetInputType(t *testing.T) {
+	type testInput struct {
+		input    string
+		expected InputType
+	}
+	tests := map[string]*testInput{
+		"external":  {input: "External", expected: EXTERNAL},
+		"podname":   {input: "test/server", expected: PODNAME},
+		"ipaddress": {input: "10.240.0.38", expected: IPADDRS},
+	}
+	p := &Processor{}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			actualInputType := p.GetInputType(test.input)
+			if actualInputType != test.expected {
+				t.Errorf("expected '%+v', got '%+v'", test.expected, actualInputType)
+			}
+		})
+	}
+}
+
 func TestGetNetworkTuple(t *testing.T) {
 	type srcDstPair struct {
 		src *Input
@@ -52,6 +73,10 @@ func TestGetNetworkTuple(t *testing.T) {
 	i3 := &srcDstPair{
 		src: &Input{Content: "10.240.0.70", Type: IPADDRS},
 		dst: &Input{Content: "10.240.0.13", Type: IPADDRS},
+	}
+	i4 := &srcDstPair{
+		src: &Input{Content: "", Type: EXTERNAL},
+		dst: &Input{Content: "test/server", Type: PODNAME},
 	}
 
 	expected0 := []*Tuple{
@@ -173,12 +198,33 @@ func TestGetNetworkTuple(t *testing.T) {
 			Protocol:  "ANY",
 		},
 	}
+	expected4 := []*Tuple{
+		{
+			RuleType:  "ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "ANY",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.38",
+			DstPort:   "80",
+			Protocol:  "tcp",
+		},
+		{
+			RuleType:  "NOT ALLOWED",
+			Direction: "INGRESS",
+			SrcIP:     "ANY",
+			SrcPort:   "ANY",
+			DstIP:     "10.240.0.38",
+			DstPort:   "ANY",
+			Protocol:  "ANY",
+		},
+	}
 
 	tests := map[string]*testInput{
 		"podname to podname":     {input: i0, expected: expected0},
 		"internet to podname":    {input: i1, expected: expected1},
 		"podname to internet":    {input: i2, expected: expected2},
 		"ipaddress to ipaddress": {input: i3, expected: expected3},
+		"namedport":              {input: i4, expected: expected4},
 	}
 
 	for name, test := range tests {

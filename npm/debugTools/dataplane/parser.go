@@ -11,7 +11,7 @@ import (
 
 type Parser struct{}
 
-// CreateIptableObject create a Go object from specified iptable. Optional read from iptable-save file
+// ParseIptablesObject create a Go object from specified iptable by calling iptables-save within node
 func (p *Parser) ParseIptablesObject(tableName string) *Iptables {
 	iptableBuffer := bytes.NewBuffer(nil)
 	// TODO: need to get iptable's lock
@@ -33,6 +33,7 @@ func (p *Parser) ParseIptablesObject(tableName string) *Iptables {
 	return &Iptables{Name: tableName, Chains: chains}
 }
 
+// ParseIptablesObjectFile create a Go object from specified iptable by reading from an iptables-save file
 func (p *Parser) ParseIptablesObjectFile(tableName string, iptableSaveFile string) *Iptables {
 	iptableBuffer := bytes.NewBuffer(nil)
 	byteArray, err := ioutil.ReadFile(iptableSaveFile)
@@ -83,7 +84,8 @@ func (p *Parser) parseIptablesChainObject(tableName string, iptableBuffer []byte
 				chainMap[chainName] = &IptablesChain{Name: chainName, Data: line, Rules: make([]*IptablesRule, 0)}
 			}
 		} else if line[0] == '-' && len(line) > 1 {
-			chainName, ruleStartIndex := p.parseChainNameFromRule(line)
+			// rules
+			chainName, ruleStartIndex := p.parseChainNameFromRuleLine(line)
 			val, ok := chainMap[chainName]
 			if !ok {
 				val = &IptablesChain{chainName, []byte{}, make([]*IptablesRule, 0)}
@@ -136,8 +138,8 @@ func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 	return iptableBuffer[leftLineIndex : lastNonWhiteSpaceIndex+1], curReadIndex
 }
 
-// parseChainNameFromRule gets the chain name from given rule line
-func (p *Parser) parseChainNameFromRule(line []byte) (string, int) {
+// parseChainNameFromRuleLine gets the chain name from given rule line
+func (p *Parser) parseChainNameFromRuleLine(line []byte) (string, int) {
 	spaceIndex1 := bytes.Index(line, util.SpaceBytes)
 	if spaceIndex1 == -1 {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(line)))
@@ -151,7 +153,7 @@ func (p *Parser) parseChainNameFromRule(line []byte) (string, int) {
 	return string(line[start:end]), end + 1
 }
 
-// parseRuleFromLine creates an iptable rule object from parsed rule line with chain name excluded from the byte array
+// parseRuleFromLine creates an iptable rule object from rule line with chain name excluded from the byte array
 func (p *Parser) parseRuleFromLine(ruleLine []byte) *IptablesRule {
 	iptableRule := &IptablesRule{}
 	nextIndex := 0
