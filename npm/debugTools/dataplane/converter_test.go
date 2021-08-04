@@ -83,6 +83,7 @@ func TestGetSetType(t *testing.T) {
 	}
 
 	for name, test := range tests {
+		test := test
 		t.Run(name, func(t *testing.T) {
 			actualType := c.getSetType(test.inputSetName, test.inputMapName)
 			diff := cmp.Diff(test.expected, actualType)
@@ -296,6 +297,7 @@ func TestGetRulesFromChain(t *testing.T) {
 	}
 
 	for name, test := range testCases {
+		test := test
 		t.Run(name, func(t *testing.T) {
 			actuatlReponsesArr, err := c.getRulesFromChain(test.input)
 			if err != nil {

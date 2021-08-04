@@ -37,6 +37,7 @@ func TestGetInputType(t *testing.T) {
 	}
 	p := &Processor{}
 	for name, test := range tests {
+		test := test
 		t.Run(name, func(t *testing.T) {
 			actualInputType := p.GetInputType(test.input)
 			if actualInputType != test.expected {
@@ -228,6 +229,7 @@ func TestGetNetworkTuple(t *testing.T) {
 	}
 
 	for name, test := range tests {
+		test := test
 		t.Run(name, func(t *testing.T) {
 			sortedExpectedTupleList := hashTheSortTupleList(test.expected)
 			_, actualTupleList, err := p.GetNetworkTupleFile(

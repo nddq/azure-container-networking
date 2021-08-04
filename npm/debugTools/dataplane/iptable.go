@@ -5,28 +5,33 @@ import (
 	"strings"
 )
 
+// Iptables struct
 type Iptables struct {
 	Name   string
 	Chains map[string]*IptablesChain
 }
 
+// IptablesChain struct
 type IptablesChain struct {
 	Name  string
 	Data  []byte
 	Rules []*IptablesRule
 }
 
+// IptablesRule struct
 type IptablesRule struct {
 	Protocol string
 	Target   *Target
 	Modules  []*Module
 }
 
+// Module struct
 type Module struct {
 	Verb           string
 	OptionValueMap map[string][]string
 }
 
+// Target struct
 type Target struct {
 	Name           string
 	OptionValueMap map[string][]string

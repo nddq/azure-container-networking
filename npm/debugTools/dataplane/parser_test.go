@@ -12,6 +12,7 @@ func TestParseIptablesObjectFile(t *testing.T) {
 	p := &Parser{}
 	p.ParseIptablesObjectFile(util.IptablesFilterTable, "../testFiles/iptableSave")
 }
+
 func TestParseIptablesObject(t *testing.T) {
 	p := &Parser{}
 	p.ParseIptablesObject(util.IptablesFilterTable)
@@ -55,6 +56,7 @@ func TestParseLine(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.input, func(t *testing.T) {
 			actualLine, _ := p.parseLine(0, []byte(tc.input))
 			if equal := bytes.Compare(expectByteArray, actualLine); equal != 0 {
@@ -110,6 +112,7 @@ func TestParseRuleFromLine(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.input, func(t *testing.T) {
 			actualRule := p.parseRuleFromLine([]byte(tc.input))
 			if !reflect.DeepEqual(tc.expected, actualRule) {
@@ -146,6 +149,7 @@ func TestParseTarget(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		actualTarget := &Target{"", make(map[string][]string)}
 		t.Run(tc.input, func(t *testing.T) {
 			p.parseTarget(0, actualTarget, []byte(tc.input))
@@ -192,6 +196,7 @@ func TestParseModule(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		actualModule := &Module{"", make(map[string][]string)}
 		t.Run(tc.input, func(t *testing.T) {
 			p.parseModule(0, actualModule, []byte(tc.input))

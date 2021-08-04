@@ -20,6 +20,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
+// Converter struct
 type Converter struct {
 	ListMap           map[string]string
 	SetMap            map[string]string
@@ -27,6 +28,7 @@ type Converter struct {
 	NPMCache          *NPMCache
 }
 
+// NPMCache struct
 type NPMCache struct {
 	Exec             interface{}
 	Nodename         string
@@ -37,7 +39,7 @@ type NPMCache struct {
 	TelemetryEnabled bool
 }
 
-// Initialize NPM cache from file
+// NpmCacheFromFile initialize NPM cache from file
 func (c *Converter) NpmCacheFromFile(npmCacheJSONFile string) error {
 	c.NPMCache = &NPMCache{}
 	// for dev
@@ -52,7 +54,7 @@ func (c *Converter) NpmCacheFromFile(npmCacheJSONFile string) error {
 	return nil
 }
 
-// Initialize NPM cache from node
+// NpmCache initialize NPM cache from node
 func (c *Converter) NpmCache() error {
 	c.NPMCache = &NPMCache{}
 	req, err := http.NewRequestWithContext(
@@ -120,7 +122,7 @@ func (c *Converter) initConverterMaps() {
 	}
 }
 
-// Get a list of json rules from files
+// GetJSONRulesFromIptableFile returns a list of json rules from npmCache and iptable-save files
 func (c *Converter) GetJSONRulesFromIptableFile(
 	tableName string,
 	npmCacheFile string,
@@ -134,7 +136,7 @@ func (c *Converter) GetJSONRulesFromIptableFile(
 	return c.jsonRuleList(pbRuleObj)
 }
 
-// Get a list of json rules from node
+// GetJSONRulesFromIptables returns a list of json rules from node
 func (c *Converter) GetJSONRulesFromIptables(tableName string) ([][]byte, error) {
 	pbRuleObj, err := c.GetProtobufRulesFromIptable(tableName)
 	if err != nil {
@@ -160,7 +162,7 @@ func (c *Converter) jsonRuleList(pbRuleObj []*pb.RuleResponse) ([][]byte, error)
 	return ruleResListJSON, nil
 }
 
-// Get a list of protobuf rules from files
+// GetProtobufRulesFromIptableFile returns a list of protobuf rules from npmCache and iptable-save files
 func (c *Converter) GetProtobufRulesFromIptableFile(
 	tableName string,
 	npmCacheFile string,
@@ -182,7 +184,7 @@ func (c *Converter) GetProtobufRulesFromIptableFile(
 	return ruleResList, nil
 }
 
-// Get a list of protobuf rules from node
+// GetProtobufRulesFromIptable returns a list of protobuf rules from node
 func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleResponse, error) {
 	err := c.initConverter()
 	if err != nil {
@@ -348,10 +350,10 @@ func (c *Converter) populateSetInfoObj(
 		infoObj.Name = v
 		infoObj.Type = c.getSetType(v, "SetMap")
 		if infoObj.Type == pb.SetType_CIDRBLOCKS {
-			handleCIDRBlockSetType(infoObj)
+			populateCIDRBlockSet(infoObj)
 		}
 	} else {
-		return fmt.Errorf("set %v does not exist", ipsetHashedName)
+		return fmt.Errorf("setNotExist %w : %v", errSetNotExist, ipsetHashedName)
 	}
 
 	if len(ipsetOrigin) > MinUnsortedIPSetLength {
@@ -366,7 +368,7 @@ func (c *Converter) populateSetInfoObj(
 }
 
 // populate CIDRBlock set's content with ip addresses
-func handleCIDRBlockSetType(setInfoObj *pb.RuleResponse_SetInfo) {
+func populateCIDRBlockSet(setInfoObj *pb.RuleResponse_SetInfo) {
 	ipsetBuffer := bytes.NewBuffer(nil)
 	cmdArgs := []string{"list", setInfoObj.HashedSetName}
 	cmd := exec.Command(util.Ipset, cmdArgs...) //nolint:gosec

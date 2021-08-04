@@ -1,15 +1,17 @@
 package dataplane
 
+import "errors"
+
 const (
 	// ANY string
 	ANY string = "ANY"
-	// Minimum length of an option
+	// MinOptionLength indicates the minimum length of an option
 	MinOptionLength int = 2
-	// Minimum length of an unsorted IP set's origin (i.e dst,dst)
+	// MinUnsortedIPSetLength indicates the minimum length of an unsorted IP set's origin (i.e dst,dst)
 	MinUnsortedIPSetLength int = 3
-	// Base
+	// Base indicate the base for ParseInt
 	Base int = 10
-	// Bitsize
+	// Bitsize indicate the bitsize for ParseInt
 	Bitsize int = 32
 )
 
@@ -22,3 +24,11 @@ var RequiredChains = []string{
 	"AZURE-NPM-EGRESS-PORT",
 	"AZURE-NPM-EGRESS-TO",
 }
+
+// error type
+var (
+	errSetNotExist      = errors.New("set does not exists")
+	errInvalidIPAddress = errors.New("invalid ipaddress, no equivalent pod found")
+	errInvalidInput     = errors.New("invalid input")
+	errSetType          = errors.New("invalid set type")
+)

@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/azure-container-networking/npm/util"
 )
 
+// Parser struct
 type Parser struct{}
 
 // ParseIptablesObject create a Go object from specified iptable by calling iptables-save within node
@@ -113,23 +114,22 @@ func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 	lastNonWhiteSpaceIndex := leftLineIndex // index of last seen non-white space character
 
 	for ; curReadIndex < len(iptableBuffer); curReadIndex++ {
-		if iptableBuffer[curReadIndex] == ' ' {
-			// current index is a white space character
+		switch iptableBuffer[curReadIndex] {
+		case ' ':
 			if rightLineIndex == -1 {
 				rightLineIndex = curReadIndex // update end index of line
 			}
-		} else if iptableBuffer[curReadIndex] == '\n' || curReadIndex == (len(iptableBuffer)-1) {
-			// encountered end of line (indicate by the new line character) or end of buffer
+		case '\n':
 			if rightLineIndex == -1 { // if end index of line is not set
 				rightLineIndex = curReadIndex
-				if curReadIndex == len(iptableBuffer)-1 && iptableBuffer[curReadIndex] != '\n' {
-					// if end of buffer
-					rightLineIndex++ // increment right index to include the last read character in final slice
+				if curReadIndex == len(iptableBuffer)-1 {
+					// if this is also the end of the buffer
+					return iptableBuffer[leftLineIndex:], curReadIndex + 1
 				}
 			}
 			// return line slice and the next index to read from
 			return iptableBuffer[leftLineIndex:rightLineIndex], curReadIndex + 1
-		} else {
+		default:
 			lastNonWhiteSpaceIndex = curReadIndex // update index of last non-white space character
 			rightLineIndex = -1                   // reset right index of line
 		}

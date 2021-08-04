@@ -12,8 +12,10 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+// Processor struct
 type Processor struct{}
 
+// Tuple struct
 type Tuple struct {
 	RuleType  string `json:"ruleType"`
 	Direction string `json:"direction"`
@@ -24,20 +26,25 @@ type Tuple struct {
 	Protocol  string `json:"protocol"`
 }
 
+// Input struct
 type Input struct {
 	Content string
 	Type    InputType
 }
 
+// InputType indicates allowed typle for source and destination input
 type InputType int32
 
 const (
-	IPADDRS  InputType = 0
-	PODNAME  InputType = 1
+	// IPADDRS indicates the IP Address input type
+	IPADDRS InputType = 0
+	// PODNAME indicates the podname input type
+	PODNAME InputType = 1
+	// EXTERNAL indicates the external input type
 	EXTERNAL InputType = 2
 )
 
-// GetNetworkTupleFile read from node's NPM cache and iptables-save and
+// GetNetworkTuple read from node's NPM cache and iptables-save and
 // returns a list of hit rules between the source and the destination in
 // JSON format and a list of tuples from those rules.
 func (p *Processor) GetNetworkTuple(src, dst *Input) ([][]byte, []*Tuple, error) {
@@ -85,7 +92,7 @@ func (p *Processor) getNetworkTupleCommon(
 		return nil, nil, fmt.Errorf("error occurred during get destination pod : %w", err)
 	}
 
-	hitRules, err := p.GetHitRules(srcPod, dstPod, allRules, npmCache)
+	hitRules, err := p.getHitRules(srcPod, dstPod, allRules, npmCache)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get hit rules : %w", err)
 	}
@@ -134,11 +141,11 @@ func (p *Processor) getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.Np
 				return pod, nil
 			}
 		}
-		return nil, fmt.Errorf("invalid ipaddress, no equivalent pod found")
+		return nil, errInvalidIPAddress
 	case EXTERNAL:
 		return &npm.NpmPod{}, nil
 	default:
-		return nil, fmt.Errorf("invalid input")
+		return nil, errInvalidInput
 	}
 }
 
@@ -199,7 +206,7 @@ func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *
 	return tuple
 }
 
-func (p *Processor) GetHitRules(
+func (p *Processor) getHitRules(
 	src, dst *npm.NpmPod,
 	rules []*pb.RuleResponse,
 	cacheObj *NPMCache,
@@ -247,126 +254,162 @@ func (p *Processor) GetHitRules(
 	return res, nil
 }
 
-// evalute an ipset to find out wether the pod's attributes match with the set
-func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetInfo, pod *npm.NpmPod, rule *pb.RuleResponse, cacheObj *NPMCache) (bool, error) {
-	matched := true
+// evalute an ipset to find out whether the pod's attributes match with the set
+func (p *Processor) evaluateSetInfo(
+	origin string,
+	setInfo *pb.RuleResponse_SetInfo,
+	pod *npm.NpmPod,
+	rule *pb.RuleResponse,
+	cacheObj *NPMCache,
+) (bool, error) {
+
 	switch setInfo.Type {
 	case pb.SetType_KEYVALUELABELOFNAMESPACE:
-		srcNamespace := util.NamespacePrefix + pod.Namespace
-		key, expectedValue := processKeyValueLabelOfNameSpace(setInfo.Name)
-		actualValue := cacheObj.NsMap[srcNamespace].LabelsMap[key]
-		if expectedValue != actualValue {
-			// if the value is required but does not match
-			if setInfo.Included {
-				matched = false
-			}
-		} else {
-			if !setInfo.Included {
-				matched = false
-			}
-		}
+		return matchKEYVALUELABELOFNAMESPACE(pod, cacheObj, setInfo), nil
 	case pb.SetType_NESTEDLABELOFPOD:
-		// a function to split the key and the values and then combine the key with each value
-		// return list of key value pairs which are keyvaluelabel of pod
-		// one match then break
-		kvList := processNestedLabelOfPod(setInfo.Name)
-		hasOneKeyValuePair := false
-		for _, kvPair := range kvList {
-			key, value := processKeyValueLabelOfPod(kvPair)
-			if pod.Labels[key] == value {
-				if !setInfo.Included {
-					matched = false
-					break
-				}
-				hasOneKeyValuePair = true
+		return matchNESTEDLABELOFPOD(pod, setInfo), nil
+	case pb.SetType_KEYLABELOFNAMESPACE:
+		return matchKEYLABELOFNAMESPACE(pod, cacheObj, setInfo), nil
+	case pb.SetType_NAMESPACE:
+		return matchNAMESPACE(pod, setInfo), nil
+	case pb.SetType_KEYVALUELABELOFPOD:
+		return matchKEYVALUELABELOFPOD(pod, setInfo), nil
+	case pb.SetType_KEYLABELOFPOD:
+		return matchKEYLABELOFPOD(pod, setInfo), nil
+	case pb.SetType_NAMEDPORTS:
+		return matchNAMEDPORTS(pod, setInfo, rule, origin), nil
+	case pb.SetType_CIDRBLOCKS:
+		return matchCIDRBLOCKS(pod, setInfo), nil
+	default:
+		return false, errSetType
+	}
+}
+
+func matchKEYVALUELABELOFNAMESPACE(pod *npm.NpmPod, cacheObj *NPMCache, setInfo *pb.RuleResponse_SetInfo) bool {
+	srcNamespace := util.NamespacePrefix + pod.Namespace
+	key, expectedValue := processKeyValueLabelOfNameSpace(setInfo.Name)
+	actualValue := cacheObj.NsMap[srcNamespace].LabelsMap[key]
+	if expectedValue != actualValue {
+		// if the value is required but does not match
+		if setInfo.Included {
+			return false
+		}
+	} else {
+		if !setInfo.Included {
+			return false
+		}
+	}
+	return true
+}
+
+func matchNESTEDLABELOFPOD(pod *npm.NpmPod, setInfo *pb.RuleResponse_SetInfo) bool {
+	// a function to split the key and the values and then combine the key with each value
+	// return list of key value pairs which are keyvaluelabel of pod
+	// one match then break
+	kvList := processNestedLabelOfPod(setInfo.Name)
+	hasOneKeyValuePair := false
+	for _, kvPair := range kvList {
+		key, value := processKeyValueLabelOfPod(kvPair)
+		if pod.Labels[key] == value {
+			if !setInfo.Included {
+				return false
+			}
+			hasOneKeyValuePair = true
+			break
+		}
+	}
+	if !hasOneKeyValuePair && setInfo.Included {
+		return false
+	}
+	return true
+}
+
+func matchKEYLABELOFNAMESPACE(pod *npm.NpmPod, cacheObj *NPMCache, setInfo *pb.RuleResponse_SetInfo) bool {
+	srcNamespace := util.NamespacePrefix + pod.Namespace
+	key := strings.TrimPrefix(setInfo.Name, util.NamespacePrefix)
+	if _, ok := cacheObj.NsMap[srcNamespace].LabelsMap[key]; ok {
+		return setInfo.Included
+	}
+	if setInfo.Included {
+		// if key does not exist but required in rule
+		return false
+	}
+	return true
+}
+
+func matchNAMESPACE(pod *npm.NpmPod, setInfo *pb.RuleResponse_SetInfo) bool {
+	srcNamespace := util.NamespacePrefix + pod.Namespace
+	if setInfo.Name != srcNamespace || (setInfo.Name == srcNamespace && !setInfo.Included) {
+		return false
+	}
+	return true
+}
+
+func matchKEYVALUELABELOFPOD(pod *npm.NpmPod, setInfo *pb.RuleResponse_SetInfo) bool {
+	key, value := processKeyValueLabelOfPod(setInfo.Name)
+	if pod.Labels[key] != value || (pod.Labels[key] == value && !setInfo.Included) {
+		return false
+	}
+	return true
+}
+
+func matchKEYLABELOFPOD(pod *npm.NpmPod, setInfo *pb.RuleResponse_SetInfo) bool {
+	key := setInfo.Name
+	if _, ok := pod.Labels[key]; ok {
+		return setInfo.Included
+	}
+	if setInfo.Included {
+		// if key does not exist but required in rule
+		return false
+	}
+	return true
+}
+
+func matchNAMEDPORTS(pod *npm.NpmPod, setInfo *pb.RuleResponse_SetInfo, rule *pb.RuleResponse, origin string) bool {
+	portname := strings.TrimPrefix(setInfo.Name, util.NamedPortIPSetPrefix)
+	for _, namedPort := range pod.ContainerPorts {
+		if namedPort.Name == portname {
+			if !setInfo.Included {
+				return false
+			}
+			if rule.Protocol != "" && rule.Protocol != strings.ToLower(string(namedPort.Protocol)) {
+				return false
+			}
+			if rule.Protocol == "" {
+				rule.Protocol = strings.ToLower(string(namedPort.Protocol))
+			}
+			if origin == "src" {
+				rule.SPort = namedPort.ContainerPort
+			} else {
+				rule.DPort = namedPort.ContainerPort
+			}
+			return true
+		}
+	}
+	return false
+}
+
+func matchCIDRBLOCKS(pod *npm.NpmPod, setInfo *pb.RuleResponse_SetInfo) bool {
+	matched := false
+	for _, entry := range setInfo.Contents {
+		entrySplitted := strings.Split(entry, " ")
+		if len(entrySplitted) > 1 { // nomatch condition. i.e [172.17.1.0/24 nomatch]
+			_, ipnet, _ := net.ParseCIDR(entrySplitted[0])
+			podIP := net.ParseIP(pod.PodIP)
+
+			if ipnet.Contains(podIP) {
+				matched = false
 				break
 			}
-		}
-		if !hasOneKeyValuePair && setInfo.Included {
-			matched = false
-		}
-	case pb.SetType_KEYLABELOFNAMESPACE:
-		srcNamespace := util.NamespacePrefix + pod.Namespace
-		key := strings.TrimPrefix(setInfo.Name, util.NamespacePrefix)
-		if _, ok := cacheObj.NsMap[srcNamespace].LabelsMap[key]; ok {
-			// if the key exists
-			if !setInfo.Included {
-				// negation contidition
-				matched = false
+		} else {
+			_, ipnet, _ := net.ParseCIDR(entrySplitted[0])
+			podIP := net.ParseIP(pod.PodIP)
+			if ipnet.Contains(podIP) {
+				matched = true
 			}
 		}
-		if setInfo.Included {
-			// if key does not exist but required in rule
-			matched = false
-		}
-	case pb.SetType_NAMESPACE:
-		srcNamespace := util.NamespacePrefix + pod.Namespace
-		if setInfo.Name != srcNamespace || (setInfo.Name == srcNamespace && !setInfo.Included) {
-			matched = false
-		}
-	case pb.SetType_KEYVALUELABELOFPOD:
-		key, value := processKeyValueLabelOfPod(setInfo.Name)
-		if pod.Labels[key] != value || (pod.Labels[key] == value && !setInfo.Included) {
-			matched = false
-		}
-	case pb.SetType_KEYLABELOFPOD:
-		key := setInfo.Name
-		if _, ok := pod.Labels[key]; ok {
-			if !setInfo.Included {
-				matched = false
-			}
-		}
-		if setInfo.Included {
-			// if key does not exist but required in rule
-			matched = false
-		}
-	case pb.SetType_NAMEDPORTS:
-		portname := strings.TrimPrefix(setInfo.Name, util.NamedPortIPSetPrefix)
-		for _, namedPort := range pod.ContainerPorts {
-			if namedPort.Name == portname {
-				if !setInfo.Included {
-					matched = false
-					break
-				}
-				if rule.Protocol != "" && rule.Protocol != strings.ToLower(string(namedPort.Protocol)) {
-					matched = false
-					break
-				}
-				if rule.Protocol == "" {
-					rule.Protocol = strings.ToLower(string(namedPort.Protocol))
-				}
-				if origin == "src" {
-					rule.SPort = namedPort.ContainerPort
-				} else {
-					rule.DPort = namedPort.ContainerPort
-				}
-			}
-		}
-	case pb.SetType_CIDRBLOCKS:
-		matched = false
-		for _, entry := range setInfo.Contents {
-			entrySplitted := strings.Split(entry, " ")
-			if len(entrySplitted) > 1 { // nomatch condition. i.e [172.17.1.0/24 nomatch]
-				_, ipnet, _ := net.ParseCIDR(entrySplitted[0])
-				podIP := net.ParseIP(pod.PodIP)
-
-				if ipnet.Contains(podIP) {
-					matched = false
-					break
-				}
-			} else {
-				_, ipnet, _ := net.ParseCIDR(entrySplitted[0])
-				podIP := net.ParseIP(pod.PodIP)
-				if ipnet.Contains(podIP) {
-					matched = true
-				}
-			}
-		}
-	default:
-		return false, fmt.Errorf("invalid set type")
 	}
-
-	return matched, nil
+	return matched
 }
 
 func processKeyValueLabelOfNameSpace(kv string) (string, string) {
