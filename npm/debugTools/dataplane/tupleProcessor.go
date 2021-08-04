@@ -343,11 +343,13 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 			}
 		}
 	case pb.SetType_CIDRBLOCKS:
+		matched = false
 		for _, entry := range setInfo.Contents {
 			entrySplitted := strings.Split(entry, " ")
 			if len(entrySplitted) > 1 { // nomatch condition. i.e [172.17.1.0/24 nomatch]
 				_, ipnet, _ := net.ParseCIDR(entrySplitted[0])
 				podIP := net.ParseIP(pod.PodIP)
+
 				if ipnet.Contains(podIP) {
 					matched = false
 					break
@@ -356,7 +358,7 @@ func (p *Processor) evaluateSetInfo(origin string, setInfo *pb.RuleResponse_SetI
 				_, ipnet, _ := net.ParseCIDR(entrySplitted[0])
 				podIP := net.ParseIP(pod.PodIP)
 				if ipnet.Contains(podIP) {
-					break
+					matched = true
 				}
 			}
 		}

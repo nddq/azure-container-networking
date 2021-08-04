@@ -8,9 +8,13 @@ import (
 	"github.com/Azure/azure-container-networking/npm/util"
 )
 
-func TestParseIptablesObject(t *testing.T) {
+func TestParseIptablesObjectFile(t *testing.T) {
 	p := &Parser{}
 	p.ParseIptablesObjectFile(util.IptablesFilterTable, "../testFiles/iptableSave")
+}
+func TestParseIptablesObject(t *testing.T) {
+	p := &Parser{}
+	p.ParseIptablesObject(util.IptablesFilterTable)
 }
 
 func TestParseLine(t *testing.T) {

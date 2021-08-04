@@ -692,10 +692,31 @@
             ],
             "Phase": "Running"
         },
-        "myproject/frontend": {
-            "Name": "c",
+        "myproject/frontend1": {
+            "Name": "frontend1",
             "Namespace": "project",
             "PodIP": "172.17.0.0",
+            "Labels": {
+                "project": "myproject"
+            },
+            "ContainerPorts": [
+                {
+                    "name": "serve-80-tcp",
+                    "containerPort": 80,
+                    "protocol": "TCP"
+                },
+                {
+                    "name": "serve-80-udp",
+                    "containerPort": 80,
+                    "protocol": "UDP"
+                }
+            ],
+            "Phase": "Running"
+        },
+        "myproject/frontend2": {
+            "Name": "frontend",
+            "Namespace": "project",
+            "PodIP": "172.17.1.0",
             "Labels": {
                 "project": "myproject"
             },
