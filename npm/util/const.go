@@ -24,7 +24,7 @@ var (
 	CommitBytes = []byte("COMMIT")
 	// SpaceBytes is white space in bytes array
 	SpaceBytes = []byte(" ")
-	// MemberBytes is the string "Members" in bytes array
+	// MembersBytes is the string "Members" in bytes array
 	MembersBytes = []byte("Members")
 )
 
