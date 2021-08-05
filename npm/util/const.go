@@ -20,11 +20,11 @@ const (
 )
 
 var (
-	// CommitBytes
+	// CommitBytes is the string "COMMIT" in bytes array
 	CommitBytes = []byte("COMMIT")
-	// SpaceBytes
+	// SpaceBytes is white space in bytes array
 	SpaceBytes = []byte(" ")
-	// MemberBytes
+	// MemberBytes is the string "Members" in bytes array
 	MembersBytes = []byte("Members")
 )
 
