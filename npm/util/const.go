@@ -20,8 +20,11 @@ const (
 )
 
 var (
-	CommitBytes  = []byte("COMMIT")
-	SpaceBytes   = []byte(" ")
+	// CommitBytes
+	CommitBytes = []byte("COMMIT")
+	// SpaceBytes
+	SpaceBytes = []byte(" ")
+	// MemberBytes
 	MembersBytes = []byte("Members")
 )
 
