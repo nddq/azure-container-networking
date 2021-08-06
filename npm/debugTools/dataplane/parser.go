@@ -221,7 +221,6 @@ func (p *Parser) jumpToNextFlag(nextIndex int, ruleLine []byte) int {
 }
 
 func (p *Parser) parseTarget(nextIndex int, target *Target, ruleLine []byte) int {
-	// TODO: Assume that target is always at the end of every line of rule
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
 	if spaceIndex == -1 {
 		targetName := string(ruleLine[nextIndex:])
@@ -240,7 +239,7 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 		if currentOption == "" {
 			panic(fmt.Sprintf("Rule's value have no preceded option: %v", string(ruleLine)))
 		}
-		v := string(ruleLine[nextIndex:]) // TODO: assume that target is always at the end of each rule line
+		v := string(ruleLine[nextIndex:])
 		optionValueMap := target.OptionValueMap
 		optionValueMap[currentOption] = append(optionValueMap[currentOption], v)
 		nextIndex = nextIndex + spaceIndex + 1
