@@ -13,10 +13,8 @@ const (
 	Bitsize int = 32
 )
 
-var (
-	// MembersBytes is the string "Members" in bytes array
-	MembersBytes = []byte("Members")
-)
+// MembersBytes is the string "Members" in bytes array
+var MembersBytes = []byte("Members")
 
 // RequiredChains contains names of chain that will be include in the result of the converter
 var AzureNPMChains = []string{

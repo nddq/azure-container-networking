@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 
-	npm_iptables "github.com/Azure/azure-container-networking/npm/debugTools/dataplane/iptables"
+	NPMIPtable "github.com/Azure/azure-container-networking/npm/debugTools/dataplane/iptables"
 	"github.com/Azure/azure-container-networking/npm/util"
 )
 
@@ -16,11 +16,11 @@ var (
 	// SpaceBytes is white space in bytes array
 	SpaceBytes = []byte(" ")
 	// MinOptionLength indicates the minimum length of an option
-	MinOptionLength int = 2
+	MinOptionLength = 2
 )
 
 // IptablesObject creates a Go object from specified iptable by calling iptables-save within node.
-func IptablesObject(tableName string) *npm_iptables.Table {
+func IptablesObject(tableName string) (*NPMIPtable.Table, error) {
 	iptableBuffer := bytes.NewBuffer(nil)
 	// TODO: need to get iptable's lock
 	cmdArgs := []string{util.IptablesTableFlag, string(tableName)}
@@ -34,30 +34,32 @@ func IptablesObject(tableName string) *npm_iptables.Table {
 	if err != nil {
 		_, err = stderrBuffer.WriteTo(iptableBuffer)
 		if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("%w", err)
 		}
+	} else {
+		return nil, fmt.Errorf("%w", err)
 	}
 	chains := parseIptablesChainObject(tableName, iptableBuffer.Bytes())
-	return &npm_iptables.Table{Name: tableName, Chains: chains}
+	return &NPMIPtable.Table{Name: tableName, Chains: chains}, nil
 }
 
 // IptablesObjectFile creates a Go object from specified iptable by reading from an iptables-save file.
-func IptablesObjectFile(tableName string, iptableSaveFile string) *npm_iptables.Table {
+func IptablesObjectFile(tableName string, iptableSaveFile string) (*NPMIPtable.Table, error) {
 	iptableBuffer := bytes.NewBuffer(nil)
 	byteArray, err := ioutil.ReadFile(iptableSaveFile)
 	if err != nil {
-		fmt.Print(err)
+		return nil, fmt.Errorf("%w", err)
 	}
 	for _, b := range byteArray {
 		iptableBuffer.WriteByte(b)
 	}
 	chains := parseIptablesChainObject(tableName, iptableBuffer.Bytes())
-	return &npm_iptables.Table{Name: tableName, Chains: chains}
+	return &NPMIPtable.Table{Name: tableName, Chains: chains}, nil
 }
 
 // parseIptablesChainObject creates a map of iptable chain name and iptable chain object.
-func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string]*npm_iptables.Chain {
-	chainMap := make(map[string]*npm_iptables.Chain)
+func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string]*NPMIPtable.Chain {
+	chainMap := make(map[string]*NPMIPtable.Chain)
 	tablePrefix := []byte("*" + tableName)
 	curReadIndex := 0
 	for curReadIndex < len(iptableBuffer) {
@@ -88,14 +90,14 @@ func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string
 			if iptableChain, ok := chainMap[chainName]; ok {
 				iptableChain.Data = line
 			} else {
-				chainMap[chainName] = &npm_iptables.Chain{Name: chainName, Data: line, Rules: make([]*npm_iptables.Rule, 0)}
+				chainMap[chainName] = &NPMIPtable.Chain{Name: chainName, Data: line, Rules: make([]*NPMIPtable.Rule, 0)}
 			}
 		} else if line[0] == '-' && len(line) > 1 {
 			// rules
 			chainName, ruleStartIndex := parseChainNameFromRuleLine(line)
 			iptableChain, ok := chainMap[chainName]
 			if !ok {
-				iptableChain = &npm_iptables.Chain{Name: chainName, Data: []byte{}, Rules: make([]*npm_iptables.Rule, 0)}
+				iptableChain = &NPMIPtable.Chain{Name: chainName, Data: []byte{}, Rules: make([]*NPMIPtable.Rule, 0)}
 			}
 			iptableChain.Rules = append(iptableChain.Rules, parseRuleFromLine(line[ruleStartIndex:]))
 		}
@@ -150,18 +152,18 @@ func parseChainNameFromRuleLine(ruleLine []byte) (string, int) {
 	if spaceIndex == -1 {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(ruleLine)))
 	}
-	chainStart := spaceIndex + 1
-	spaceIndex = bytes.Index(ruleLine[chainStart:], SpaceBytes)
+	chainNameStart := spaceIndex + 1
+	spaceIndex = bytes.Index(ruleLine[chainNameStart:], SpaceBytes)
 	if spaceIndex == -1 {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(ruleLine)))
 	}
-	chainEnd := chainStart + spaceIndex
-	return string(ruleLine[chainStart:chainEnd]), chainEnd + 1
+	chainNameEnd := chainNameStart + spaceIndex
+	return string(ruleLine[chainNameStart:chainNameEnd]), chainNameEnd + 1
 }
 
 // parseRuleFromLine creates an iptable rule object from rule line with chain name excluded from the byte array.
-func parseRuleFromLine(ruleLine []byte) *npm_iptables.Rule {
-	iptableRule := &npm_iptables.Rule{}
+func parseRuleFromLine(ruleLine []byte) *NPMIPtable.Rule {
+	iptableRule := &NPMIPtable.Rule{}
 	currentIndex := 0
 	for currentIndex < len(ruleLine) {
 		spaceIndex := bytes.Index(ruleLine[currentIndex:], SpaceBytes)
@@ -182,13 +184,13 @@ func parseRuleFromLine(ruleLine []byte) *npm_iptables.Rule {
 			currentIndex = end + 1
 		case util.IptablesJumpFlag:
 			// parse target with format -j target (option) (value)
-			target := &npm_iptables.Target{}
+			target := &NPMIPtable.Target{}
 			target.OptionValueMap = map[string][]string{}
 			currentIndex = parseTarget(start+1, target, ruleLine)
 			iptableRule.Target = target
 		case util.IptablesModuleFlag:
 			// parse module with format -m verb {--option {value}}
-			module := &npm_iptables.Module{}
+			module := &NPMIPtable.Module{}
 			module.OptionValueMap = map[string][]string{}
 			currentIndex = parseModule(start+1, module, ruleLine)
 			iptableRule.Modules = append(iptableRule.Modules, module)
@@ -224,7 +226,7 @@ func jumpToNextFlag(nextIndex int, ruleLine []byte) int {
 	return jumpToNextFlag(nextIndex, ruleLine)
 }
 
-func parseTarget(nextIndex int, target *npm_iptables.Target, ruleLine []byte) int {
+func parseTarget(nextIndex int, target *NPMIPtable.Target, ruleLine []byte) int {
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	if spaceIndex == -1 {
 		targetName := string(ruleLine[nextIndex:])
@@ -236,7 +238,7 @@ func parseTarget(nextIndex int, target *npm_iptables.Target, ruleLine []byte) in
 	return parseTargetOptionAndValue(nextIndex+spaceIndex+1, target, "", ruleLine)
 }
 
-func parseTargetOptionAndValue(nextIndex int, target *npm_iptables.Target, curOption string, ruleLine []byte) int {
+func parseTargetOptionAndValue(nextIndex int, target *NPMIPtable.Target, curOption string, ruleLine []byte) int {
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	currentOption := curOption
 	if spaceIndex == -1 {
@@ -273,7 +275,7 @@ func parseTargetOptionAndValue(nextIndex int, target *npm_iptables.Target, curOp
 	return parseTargetOptionAndValue(nextIndex, target, currentOption, ruleLine)
 }
 
-func parseModule(nextIndex int, module *npm_iptables.Module, ruleLine []byte) int {
+func parseModule(nextIndex int, module *NPMIPtable.Module, ruleLine []byte) int {
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	if spaceIndex == -1 {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save : %v", string(ruleLine)))
@@ -285,7 +287,7 @@ func parseModule(nextIndex int, module *npm_iptables.Module, ruleLine []byte) in
 
 func parseModuleOptionAndValue(
 	nextIndex int,
-	module *npm_iptables.Module,
+	module *NPMIPtable.Module,
 	curOption string,
 	ruleLine []byte,
 	included bool,

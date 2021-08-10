@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-container-networking/npm"
-	npm_iptables "github.com/Azure/azure-container-networking/npm/debugTools/dataplane/iptables"
+	NPMIPtable "github.com/Azure/azure-container-networking/npm/debugTools/dataplane/iptables"
 	"github.com/Azure/azure-container-networking/npm/debugTools/dataplane/parse"
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 	"github.com/Azure/azure-container-networking/npm/http/api"
@@ -177,7 +177,10 @@ func (c *Converter) GetProtobufRulesFromIptableFile(
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
 
-	ipTableObj := parse.IptablesObjectFile(tableName, iptableSaveFile)
+	ipTableObj, err := parse.IptablesObjectFile(tableName, iptableSaveFile)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred during parsing iptables : %w", err)
+	}
 	ruleResList, err := c.pbRuleList(ipTableObj)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
@@ -193,7 +196,10 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleRes
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
 
-	ipTableObj := parse.IptablesObject(tableName)
+	ipTableObj, err := parse.IptablesObject(tableName)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred during parsing iptables : %w", err)
+	}
 	ruleResList, err := c.pbRuleList(ipTableObj)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
@@ -203,7 +209,7 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleRes
 }
 
 // Create a list of protobuf rules from iptable
-func (c *Converter) pbRuleList(ipTable *npm_iptables.Table) ([]*pb.RuleResponse, error) {
+func (c *Converter) pbRuleList(ipTable *NPMIPtable.Table) ([]*pb.RuleResponse, error) {
 	ruleResList := make([]*pb.RuleResponse, 0)
 	for _, v := range ipTable.Chains {
 		chainRules, err := c.getRulesFromChain(v)
@@ -216,7 +222,7 @@ func (c *Converter) pbRuleList(ipTable *npm_iptables.Table) ([]*pb.RuleResponse,
 	return ruleResList, nil
 }
 
-func (c *Converter) getRulesFromChain(iptableChain *npm_iptables.Chain) ([]*pb.RuleResponse, error) {
+func (c *Converter) getRulesFromChain(iptableChain *NPMIPtable.Chain) ([]*pb.RuleResponse, error) {
 	rules := make([]*pb.RuleResponse, 0)
 	for _, v := range iptableChain.Rules {
 		rule := &pb.RuleResponse{}
@@ -280,7 +286,7 @@ func (c *Converter) getSetType(name string, m string) pb.SetType {
 	return pb.SetType_KEYLABELOFPOD
 }
 
-func (c *Converter) getModulesFromRule(moduleList []*npm_iptables.Module, ruleRes *pb.RuleResponse) error {
+func (c *Converter) getModulesFromRule(moduleList []*NPMIPtable.Module, ruleRes *pb.RuleResponse) error {
 	ruleRes.SrcList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.DstList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.UnsortedIpset = make(map[string]string)

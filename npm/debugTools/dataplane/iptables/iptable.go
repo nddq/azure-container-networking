@@ -1,4 +1,4 @@
-package npm_iptables
+package NPMIPtable
 
 import (
 	"fmt"
