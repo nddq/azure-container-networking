@@ -42,7 +42,7 @@ type NPMCache struct {
 	TelemetryEnabled bool
 }
 
-// NpmCacheFromFile initialize NPM cache from file
+// NpmCacheFromFile initialize NPM cache from file.
 func (c *Converter) NpmCacheFromFile(npmCacheJSONFile string) error {
 	c.NPMCache = &NPMCache{}
 	// for dev
@@ -57,7 +57,7 @@ func (c *Converter) NpmCacheFromFile(npmCacheJSONFile string) error {
 	return nil
 }
 
-// NpmCache initialize NPM cache from node
+// NpmCache initialize NPM cache from node.
 func (c *Converter) NpmCache() error {
 	c.NPMCache = &NPMCache{}
 	req, err := http.NewRequestWithContext(
@@ -85,7 +85,7 @@ func (c *Converter) NpmCache() error {
 	return nil
 }
 
-// Initialize converter from file
+// Initialize converter from file.
 func (c *Converter) initConverterFile(npmCacheJSONFile string) error {
 	err := c.NpmCacheFromFile(npmCacheJSONFile)
 	if err != nil {
@@ -95,7 +95,7 @@ func (c *Converter) initConverterFile(npmCacheJSONFile string) error {
 	return nil
 }
 
-// Initialize converter from node
+// Initialize converter from node.
 func (c *Converter) initConverter() error {
 	err := c.NpmCache()
 	if err != nil {
@@ -106,7 +106,7 @@ func (c *Converter) initConverter() error {
 	return nil
 }
 
-// Initialize all converter's maps
+// Initialize all converter's maps.
 func (c *Converter) initConverterMaps() {
 	c.AzureNPMChains = make(map[string]bool)
 	for _, chain := range AzureNPMChains {
@@ -125,7 +125,7 @@ func (c *Converter) initConverterMaps() {
 	}
 }
 
-// GetJSONRulesFromIptableFile returns a list of json rules from npmCache and iptable-save files
+// GetJSONRulesFromIptableFile returns a list of json rules from npmCache and iptable-save files.
 func (c *Converter) GetJSONRulesFromIptableFile(
 	tableName string,
 	npmCacheFile string,
@@ -148,7 +148,7 @@ func (c *Converter) GetJSONRulesFromIptables(tableName string) ([][]byte, error)
 	return c.jsonRuleList(pbRule)
 }
 
-// Convert list of protobuf rules to list of JSON rules
+// Convert list of protobuf rules to list of JSON rules.
 func (c *Converter) jsonRuleList(pbRuleObj []*pb.RuleResponse) ([][]byte, error) {
 	ruleResListJSON := make([][]byte, 0)
 	m := protojson.MarshalOptions{
@@ -165,7 +165,7 @@ func (c *Converter) jsonRuleList(pbRuleObj []*pb.RuleResponse) ([][]byte, error)
 	return ruleResListJSON, nil
 }
 
-// GetProtobufRulesFromIptableFile returns a list of protobuf rules from npmCache and iptable-save files
+// GetProtobufRulesFromIptableFile returns a list of protobuf rules from npmCache and iptable-save files.
 func (c *Converter) GetProtobufRulesFromIptableFile(
 	tableName string,
 	npmCacheFile string,
@@ -189,7 +189,7 @@ func (c *Converter) GetProtobufRulesFromIptableFile(
 	return ruleResList, nil
 }
 
-// GetProtobufRulesFromIptable returns a list of protobuf rules from node
+// GetProtobufRulesFromIptable returns a list of protobuf rules from node.
 func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleResponse, error) {
 	err := c.initConverter()
 	if err != nil {
@@ -208,7 +208,7 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleRes
 	return ruleResList, nil
 }
 
-// Create a list of protobuf rules from iptable
+// Create a list of protobuf rules from iptable.
 func (c *Converter) pbRuleList(ipTable *NPMIPtable.Table) ([]*pb.RuleResponse, error) {
 	ruleResList := make([]*pb.RuleResponse, 0)
 	for _, v := range ipTable.Chains {

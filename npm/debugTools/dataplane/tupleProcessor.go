@@ -72,7 +72,7 @@ func GetNetworkTupleFile(
 	return getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
 }
 
-// Common function
+// Common function.
 func getNetworkTupleCommon(
 	src, dst *Input,
 	npmCache *NPMCache,
@@ -146,7 +146,7 @@ func getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.NpmPod, error) {
 	}
 }
 
-// GetInputType returns the type of the input for GetNetworkTuple
+// GetInputType returns the type of the input for GetNetworkTuple.
 func GetInputType(input string) InputType {
 	if input == "External" {
 		return EXTERNAL
