@@ -15,6 +15,15 @@ const (
 	Bitsize int = 32
 )
 
+var (
+	// CommitBytes is the string "COMMIT" in bytes array
+	CommitBytes = []byte("COMMIT")
+	// SpaceBytes is white space in bytes array
+	SpaceBytes = []byte(" ")
+	// MembersBytes is the string "Members" in bytes array
+	MembersBytes = []byte("Members")
+)
+
 // RequiredChains contains names of chain that will be include in the result of the converter
 var RequiredChains = []string{
 	"AZURE-NPM-INGRESS-DROPS",

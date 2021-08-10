@@ -15,6 +15,7 @@ import (
 
 	"github.com/Azure/azure-container-networking/npm"
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
+	"github.com/Azure/azure-container-networking/npm/http/api"
 	"github.com/Azure/azure-container-networking/npm/util"
 	"google.golang.org/protobuf/encoding/protojson"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -60,7 +61,7 @@ func (c *Converter) NpmCache() error {
 	req, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		"http://localhost:10091/npm/v1/debug/manager",
+		fmt.Sprintf("http://localhost:%v%v", api.DefaultHttpPort, api.NPMMgrPath),
 		nil,
 	)
 	if err != nil {
@@ -174,8 +175,7 @@ func (c *Converter) GetProtobufRulesFromIptableFile(
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
 
-	p := &Parser{}
-	ipTableObj := p.ParseIptablesObjectFile(tableName, iptableSaveFile)
+	ipTableObj := ParseIptablesObjectFile(tableName, iptableSaveFile)
 	ruleResList, err := c.pbRuleList(ipTableObj)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
@@ -191,8 +191,7 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleRes
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
 
-	p := &Parser{}
-	ipTableObj := p.ParseIptablesObject(tableName)
+	ipTableObj := ParseIptablesObject(tableName)
 	ruleResList, err := c.pbRuleList(ipTableObj)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
@@ -385,18 +384,17 @@ func populateCIDRBlockSet(setInfoObj *pb.RuleResponse_SetInfo) {
 		}
 	}
 	curReadIndex := 0
-	p := Parser{}
 
 	// finding the members field
 	for curReadIndex < len(ipsetBuffer.Bytes()) {
-		line, nextReadIndex := p.parseLine(curReadIndex, ipsetBuffer.Bytes())
+		line, nextReadIndex := parseLine(curReadIndex, ipsetBuffer.Bytes())
 		curReadIndex = nextReadIndex
-		if bytes.HasPrefix(line, util.MembersBytes) {
+		if bytes.HasPrefix(line, MembersBytes) {
 			break
 		}
 	}
 	for curReadIndex < len(ipsetBuffer.Bytes()) {
-		member, nextReadIndex := p.parseLine(curReadIndex, ipsetBuffer.Bytes())
+		member, nextReadIndex := parseLine(curReadIndex, ipsetBuffer.Bytes())
 		setInfoObj.Contents = append(setInfoObj.Contents, string(member))
 		curReadIndex = nextReadIndex
 	}

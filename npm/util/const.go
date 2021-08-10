@@ -19,15 +19,6 @@ const (
 	k8sMinorVerForNewPolicyDef string = "11"
 )
 
-var (
-	// CommitBytes is the string "COMMIT" in bytes array
-	CommitBytes = []byte("COMMIT")
-	// SpaceBytes is white space in bytes array
-	SpaceBytes = []byte(" ")
-	// MembersBytes is the string "Members" in bytes array
-	MembersBytes = []byte("Members")
-)
-
 //iptables related constants.
 const (
 	Iptables                  string = "iptables"
@@ -109,6 +100,7 @@ const (
 	IptablesAzureEgressMarkHex string = "0x1000"
 	IptablesAzureAcceptMarkHex string = "0x3000"
 	IptablesAzureClearMarkHex  string = "0x0"
+	IptablesTableFlag          string = "-t"
 )
 
 //ipset related constants.

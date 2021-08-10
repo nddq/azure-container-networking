@@ -9,14 +9,11 @@ import (
 	"github.com/Azure/azure-container-networking/npm/util"
 )
 
-// Parser struct
-type Parser struct{}
-
-// ParseIptablesObject create a Go object from specified iptable by calling iptables-save within node
-func (p *Parser) ParseIptablesObject(tableName string) *Iptables {
+// ParseIptablesObject creates a Go object from specified iptable by calling iptables-save within node.
+func ParseIptablesObject(tableName string) *Iptables {
 	iptableBuffer := bytes.NewBuffer(nil)
 	// TODO: need to get iptable's lock
-	cmdArgs := []string{"-t", string(tableName)}
+	cmdArgs := []string{util.IptablesTableFlag, string(tableName)}
 	cmd := exec.Command(util.IptablesSave, cmdArgs...) //nolint:gosec
 
 	cmd.Stdout = iptableBuffer
@@ -30,12 +27,12 @@ func (p *Parser) ParseIptablesObject(tableName string) *Iptables {
 			panic(err)
 		}
 	}
-	chains := p.parseIptablesChainObject(tableName, iptableBuffer.Bytes())
+	chains := parseIptablesChainObject(tableName, iptableBuffer.Bytes())
 	return &Iptables{Name: tableName, Chains: chains}
 }
 
-// ParseIptablesObjectFile create a Go object from specified iptable by reading from an iptables-save file
-func (p *Parser) ParseIptablesObjectFile(tableName string, iptableSaveFile string) *Iptables {
+// ParseIptablesObjectFile creates a Go object from specified iptable by reading from an iptables-save file.
+func ParseIptablesObjectFile(tableName string, iptableSaveFile string) *Iptables {
 	iptableBuffer := bytes.NewBuffer(nil)
 	byteArray, err := ioutil.ReadFile(iptableSaveFile)
 	if err != nil {
@@ -44,17 +41,17 @@ func (p *Parser) ParseIptablesObjectFile(tableName string, iptableSaveFile strin
 	for _, b := range byteArray {
 		iptableBuffer.WriteByte(b)
 	}
-	chains := p.parseIptablesChainObject(tableName, iptableBuffer.Bytes())
+	chains := parseIptablesChainObject(tableName, iptableBuffer.Bytes())
 	return &Iptables{Name: tableName, Chains: chains}
 }
 
-// parseIptablesChainObject create a map of iptable chain name and iptable chain object
-func (p *Parser) parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string]*IptablesChain {
+// parseIptablesChainObject creates a map of iptable chain name and iptable chain object.
+func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string]*IptablesChain {
 	chainMap := make(map[string]*IptablesChain)
 	tablePrefix := []byte("*" + tableName)
 	curReadIndex := 0
 	for curReadIndex < len(iptableBuffer) {
-		line, nextReadIndex := p.parseLine(curReadIndex, iptableBuffer)
+		line, nextReadIndex := parseLine(curReadIndex, iptableBuffer)
 		curReadIndex = nextReadIndex
 		if bytes.HasPrefix(line, tablePrefix) {
 			break
@@ -62,44 +59,43 @@ func (p *Parser) parseIptablesChainObject(tableName string, iptableBuffer []byte
 	}
 
 	for curReadIndex < len(iptableBuffer) {
-		line, nextReadIndex := p.parseLine(curReadIndex, iptableBuffer)
+		line, nextReadIndex := parseLine(curReadIndex, iptableBuffer)
 		curReadIndex = nextReadIndex
 		if len(line) == 0 {
 			continue
 		}
-		if bytes.HasPrefix(line, util.CommitBytes) || line[0] == '*' {
+		if bytes.HasPrefix(line, CommitBytes) || line[0] == '*' {
 			break
 		}
 		if line[0] == ':' && len(line) > 1 {
 			// We assume that the <line> contains space - chain lines have 3 fields,
 			// space delimited. If there is no space, this line will panic.
-			spaceIndex := bytes.Index(line, util.SpaceBytes)
+			spaceIndex := bytes.Index(line, SpaceBytes)
 			if spaceIndex == -1 {
 				panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(line)))
 			}
 			chainName := string(line[1:spaceIndex])
-			if val, ok := chainMap[chainName]; ok {
-				val.Data = line
-				chainMap[chainName] = val
+			if iptableChain, ok := chainMap[chainName]; ok {
+				iptableChain.Data = line
 			} else {
 				chainMap[chainName] = &IptablesChain{Name: chainName, Data: line, Rules: make([]*IptablesRule, 0)}
 			}
 		} else if line[0] == '-' && len(line) > 1 {
 			// rules
-			chainName, ruleStartIndex := p.parseChainNameFromRuleLine(line)
-			val, ok := chainMap[chainName]
+			chainName, ruleStartIndex := parseChainNameFromRuleLine(line)
+			iptableChain, ok := chainMap[chainName]
 			if !ok {
-				val = &IptablesChain{chainName, []byte{}, make([]*IptablesRule, 0)}
+				iptableChain = &IptablesChain{chainName, []byte{}, make([]*IptablesRule, 0)}
 			}
-			val.Rules = append(val.Rules, p.parseRuleFromLine(line[ruleStartIndex:]))
+			iptableChain.Rules = append(iptableChain.Rules, parseRuleFromLine(line[ruleStartIndex:]))
 		}
 	}
 	return chainMap
 }
 
-// parseLine parse the line starting from the given readIndex of the iptableBuffer.
+// parseLine parses the line starting from the given readIndex of the iptableBuffer.
 // Returns a slice of line starting from given read index and the next index to read from.
-func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
+func parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 	curReadIndex := readIndex // index of iptableBuffer to start reading from
 
 	// consume left spaces
@@ -138,67 +134,65 @@ func (p *Parser) parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
 	return iptableBuffer[leftLineIndex : lastNonWhiteSpaceIndex+1], curReadIndex
 }
 
-// parseChainNameFromRuleLine gets the chain name from given rule line
-func (p *Parser) parseChainNameFromRuleLine(line []byte) (string, int) {
-	spaceIndex1 := bytes.Index(line, util.SpaceBytes)
-	if spaceIndex1 == -1 {
-		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(line)))
+// parseChainNameFromRuleLine gets the chain name from given rule line.
+func parseChainNameFromRuleLine(ruleLine []byte) (string, int) {
+	spaceIndex := bytes.Index(ruleLine, SpaceBytes)
+	if spaceIndex == -1 {
+		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(ruleLine)))
 	}
-	start := spaceIndex1 + 1
-	spaceIndex2 := bytes.Index(line[start:], util.SpaceBytes)
-	if spaceIndex2 == -1 {
-		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(line)))
+	chainStart := spaceIndex + 1
+	spaceIndex = bytes.Index(ruleLine[chainStart:], SpaceBytes)
+	if spaceIndex == -1 {
+		panic(fmt.Sprintf("Unexpected chain line in iptables-save output: %v", string(ruleLine)))
 	}
-	end := start + spaceIndex2
-	return string(line[start:end]), end + 1
+	chainEnd := chainStart + spaceIndex
+	return string(ruleLine[chainStart:chainEnd]), chainEnd + 1
 }
 
-// parseRuleFromLine creates an iptable rule object from rule line with chain name excluded from the byte array
-func (p *Parser) parseRuleFromLine(ruleLine []byte) *IptablesRule {
+// parseRuleFromLine creates an iptable rule object from rule line with chain name excluded from the byte array.
+func parseRuleFromLine(ruleLine []byte) *IptablesRule {
 	iptableRule := &IptablesRule{}
-	nextIndex := 0
-	for nextIndex < len(ruleLine) {
-		spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
+	currentIndex := 0
+	for currentIndex < len(ruleLine) {
+		spaceIndex := bytes.Index(ruleLine[currentIndex:], SpaceBytes)
 		if spaceIndex == -1 {
 			break
 		}
-		start := spaceIndex + nextIndex           // offset start index
-		flag := string(ruleLine[nextIndex:start]) // can be -m, -,j -p
+		start := spaceIndex + currentIndex           // offset start index
+		flag := string(ruleLine[currentIndex:start]) // can be -m, -j -p
 		switch flag {
 		case util.IptablesProtFlag:
-			spaceIndex1 := bytes.Index(ruleLine[start+1:], util.SpaceBytes)
-			if spaceIndex1 == -1 {
+			spaceIndex = bytes.Index(ruleLine[start+1:], SpaceBytes)
+			if spaceIndex == -1 {
 				panic(fmt.Sprintf("Unexpected chain line in iptables-save : %v", string(ruleLine)))
 			}
-			end := start + 1 + spaceIndex1
+			end := start + 1 + spaceIndex
 			protocol := string(ruleLine[start+1 : end])
 			iptableRule.Protocol = protocol
-			nextIndex = end + 1
+			currentIndex = end + 1
 		case util.IptablesJumpFlag:
 			// parse target with format -j target (option) (value)
 			target := &Target{}
 			target.OptionValueMap = map[string][]string{}
-			n := p.parseTarget(start+1, target, ruleLine)
+			currentIndex = parseTarget(start+1, target, ruleLine)
 			iptableRule.Target = target
-			nextIndex = n
 		case util.IptablesModuleFlag:
 			// parse module with format -m verb {--option {value}}
 			module := &Module{}
 			module.OptionValueMap = map[string][]string{}
-			n := p.parseModule(start+1, module, ruleLine)
+			currentIndex = parseModule(start+1, module, ruleLine)
 			iptableRule.Modules = append(iptableRule.Modules, module)
-			nextIndex = n
 		default:
-			nextIndex = p.jumpToNextFlag(start+1, ruleLine)
+			currentIndex = jumpToNextFlag(start+1, ruleLine)
 			continue
 		}
 	}
 	return iptableRule
 }
 
-// handle unrecognized flags
-func (p *Parser) jumpToNextFlag(nextIndex int, ruleLine []byte) int {
-	spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
+// handle unrecognized flags.
+func jumpToNextFlag(nextIndex int, ruleLine []byte) int {
+	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	if spaceIndex == -1 {
 		nextIndex = nextIndex + spaceIndex + 1
 		return nextIndex
@@ -210,18 +204,18 @@ func (p *Parser) jumpToNextFlag(nextIndex int, ruleLine []byte) int {
 				// this is an option
 				nextIndex = nextIndex + spaceIndex + 1
 				// recursively parsing unrecognized flag's options and their value until a new flag is encounter
-				return p.jumpToNextFlag(nextIndex, ruleLine)
+				return jumpToNextFlag(nextIndex, ruleLine)
 			}
 			// this is a new flag
 			return nextIndex
 		}
 	}
 	nextIndex = nextIndex + spaceIndex + 1
-	return p.jumpToNextFlag(nextIndex, ruleLine)
+	return jumpToNextFlag(nextIndex, ruleLine)
 }
 
-func (p *Parser) parseTarget(nextIndex int, target *Target, ruleLine []byte) int {
-	spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
+func parseTarget(nextIndex int, target *Target, ruleLine []byte) int {
+	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	if spaceIndex == -1 {
 		targetName := string(ruleLine[nextIndex:])
 		target.Name = targetName
@@ -229,11 +223,11 @@ func (p *Parser) parseTarget(nextIndex int, target *Target, ruleLine []byte) int
 	}
 	targetName := string(ruleLine[nextIndex : nextIndex+spaceIndex])
 	target.Name = targetName
-	return p.parseTargetOptionAndValue(nextIndex+spaceIndex+1, target, "", ruleLine)
+	return parseTargetOptionAndValue(nextIndex+spaceIndex+1, target, "", ruleLine)
 }
 
-func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOption string, ruleLine []byte) int {
-	spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
+func parseTargetOptionAndValue(nextIndex int, target *Target, curOption string, ruleLine []byte) int {
+	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	currentOption := curOption
 	if spaceIndex == -1 {
 		if currentOption == "" {
@@ -254,7 +248,7 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 				target.OptionValueMap[currentOption] = make([]string, 0)
 				nextIndex = nextIndex + spaceIndex + 1
 				// recursively parsing options and their value until a new flag is encounter
-				return p.parseTargetOptionAndValue(nextIndex, target, currentOption, ruleLine)
+				return parseTargetOptionAndValue(nextIndex, target, currentOption, ruleLine)
 			}
 			// this is a new flag
 			return nextIndex
@@ -266,20 +260,20 @@ func (p *Parser) parseTargetOptionAndValue(nextIndex int, target *Target, curOpt
 	}
 	target.OptionValueMap[currentOption] = append(target.OptionValueMap[currentOption], ruleElement)
 	nextIndex = nextIndex + spaceIndex + 1
-	return p.parseTargetOptionAndValue(nextIndex, target, currentOption, ruleLine)
+	return parseTargetOptionAndValue(nextIndex, target, currentOption, ruleLine)
 }
 
-func (p *Parser) parseModule(nextIndex int, module *Module, ruleLine []byte) int {
-	spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
+func parseModule(nextIndex int, module *Module, ruleLine []byte) int {
+	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	if spaceIndex == -1 {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save : %v", string(ruleLine)))
 	}
 	verb := string(ruleLine[nextIndex : nextIndex+spaceIndex])
 	module.Verb = verb
-	return p.parseModuleOptionAndValue(nextIndex+spaceIndex+1, module, "", ruleLine, true)
+	return parseModuleOptionAndValue(nextIndex+spaceIndex+1, module, "", ruleLine, true)
 }
 
-func (p *Parser) parseModuleOptionAndValue(
+func parseModuleOptionAndValue(
 	nextIndex int,
 	module *Module,
 	curOption string,
@@ -287,7 +281,7 @@ func (p *Parser) parseModuleOptionAndValue(
 	included bool,
 ) int {
 
-	spaceIndex := bytes.Index(ruleLine[nextIndex:], util.SpaceBytes)
+	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	currentOption := curOption
 	if spaceIndex == -1 {
 		v := string(ruleLine[nextIndex:])
@@ -309,7 +303,7 @@ func (p *Parser) parseModuleOptionAndValue(
 	if ruleElement == "!" {
 		// negation to options
 		nextIndex = nextIndex + spaceIndex + 1
-		return p.parseModuleOptionAndValue(nextIndex, module, currentOption, ruleLine, false)
+		return parseModuleOptionAndValue(nextIndex, module, currentOption, ruleLine, false)
 	}
 
 	if len(ruleElement) >= MinOptionLength {
@@ -323,7 +317,7 @@ func (p *Parser) parseModuleOptionAndValue(
 				module.OptionValueMap[currentOption] = make([]string, 0)
 				nextIndex = nextIndex + spaceIndex + 1
 				// recursively parsing options and their value until a new flag is encounter
-				return p.parseModuleOptionAndValue(nextIndex, module, currentOption, ruleLine, true)
+				return parseModuleOptionAndValue(nextIndex, module, currentOption, ruleLine, true)
 			}
 			return nextIndex
 		}
@@ -334,5 +328,5 @@ func (p *Parser) parseModuleOptionAndValue(
 	}
 	module.OptionValueMap[currentOption] = append(module.OptionValueMap[currentOption], ruleElement)
 	nextIndex = nextIndex + spaceIndex + 1
-	return p.parseModuleOptionAndValue(nextIndex, module, currentOption, ruleLine, true)
+	return parseModuleOptionAndValue(nextIndex, module, currentOption, ruleLine, true)
 }

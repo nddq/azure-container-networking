@@ -304,7 +304,7 @@ func TestGetRulesFromChain(t *testing.T) {
 				t.Errorf("error during get rules : %w", err)
 			}
 			if !reflect.DeepEqual(test.expected, actuatlReponsesArr) {
-				t.Errorf("expected '%+v', got '%+v'", test.expected, actuatlReponsesArr)
+				t.Errorf("got '%+v', expected '%+v'", actuatlReponsesArr, test.expected)
 			}
 		})
 	}
@@ -491,6 +491,6 @@ func TestGetModulesFromRule(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(expectedRuleResponse, actualRuleResponse) {
-		t.Errorf("expected '%+v', got '%+v'", expectedRuleResponse, actualRuleResponse)
+		t.Errorf("got '%+v', expected '%+v'", actualRuleResponse, expectedRuleResponse)
 	}
 }

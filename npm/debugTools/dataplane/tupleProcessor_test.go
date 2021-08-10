@@ -35,13 +35,12 @@ func TestGetInputType(t *testing.T) {
 		"podname":   {input: "test/server", expected: PODNAME},
 		"ipaddress": {input: "10.240.0.38", expected: IPADDRS},
 	}
-	p := &Processor{}
 	for name, test := range tests {
 		test := test
 		t.Run(name, func(t *testing.T) {
-			actualInputType := p.GetInputType(test.input)
+			actualInputType := GetInputType(test.input)
 			if actualInputType != test.expected {
-				t.Errorf("expected '%+v', got '%+v'", test.expected, actualInputType)
+				t.Errorf("got '%+v', expected '%+v'", actualInputType, test.expected)
 			}
 		})
 	}
@@ -57,7 +56,6 @@ func TestGetNetworkTuple(t *testing.T) {
 		input    *srcDstPair
 		expected []*Tuple
 	}
-	p := &Processor{}
 
 	i0 := &srcDstPair{
 		src: &Input{Content: "z/b", Type: PODNAME},
@@ -232,7 +230,7 @@ func TestGetNetworkTuple(t *testing.T) {
 		test := test
 		t.Run(name, func(t *testing.T) {
 			sortedExpectedTupleList := hashTheSortTupleList(test.expected)
-			_, actualTupleList, err := p.GetNetworkTupleFile(
+			_, actualTupleList, err := GetNetworkTupleFile(
 				test.input.src,
 				test.input.dst,
 				"../testFiles/npmCache.json",
@@ -243,7 +241,7 @@ func TestGetNetworkTuple(t *testing.T) {
 			}
 			sortedActualTupleList := hashTheSortTupleList(actualTupleList)
 			if !reflect.DeepEqual(sortedExpectedTupleList, sortedActualTupleList) {
-				t.Errorf("expected '%+v', got '%+v'", sortedExpectedTupleList, sortedActualTupleList)
+				t.Errorf("got '%+v', expected '%+v'", sortedActualTupleList, sortedExpectedTupleList)
 			}
 		})
 	}

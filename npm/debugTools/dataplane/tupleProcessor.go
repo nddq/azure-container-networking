@@ -12,9 +12,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-// Processor struct
-type Processor struct{}
-
 // Tuple struct
 type Tuple struct {
 	RuleType  string `json:"ruleType"`
@@ -47,20 +44,20 @@ const (
 // GetNetworkTuple read from node's NPM cache and iptables-save and
 // returns a list of hit rules between the source and the destination in
 // JSON format and a list of tuples from those rules.
-func (p *Processor) GetNetworkTuple(src, dst *Input) ([][]byte, []*Tuple, error) {
+func GetNetworkTuple(src, dst *Input) ([][]byte, []*Tuple, error) {
 	c := &Converter{}
 
 	allRules, err := c.GetProtobufRulesFromIptable("filter")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get network tuple : %w", err)
 	}
-	return p.getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
+	return getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
 }
 
 // GetNetworkTupleFile read from NPM cache and iptables-save files and
 // returns a list of hit rules between the source and the destination in
 // JSON format and a list of tuples from those rules.
-func (p *Processor) GetNetworkTupleFile(
+func GetNetworkTupleFile(
 	src, dst *Input,
 	npmCacheFile string,
 	iptableSaveFile string,
@@ -72,27 +69,27 @@ func (p *Processor) GetNetworkTupleFile(
 		return nil, nil, fmt.Errorf("error occurred during get network tuple : %w", err)
 	}
 
-	return p.getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
+	return getNetworkTupleCommon(src, dst, c.NPMCache, allRules)
 }
 
 // Common function
-func (p *Processor) getNetworkTupleCommon(
+func getNetworkTupleCommon(
 	src, dst *Input,
 	npmCache *NPMCache,
 	allRules []*pb.RuleResponse,
 ) ([][]byte, []*Tuple, error) {
 
-	srcPod, err := p.getCorrespondPod(src, npmCache)
+	srcPod, err := getCorrespondPod(src, npmCache)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get source pod : %w", err)
 	}
 
-	dstPod, err := p.getCorrespondPod(dst, npmCache)
+	dstPod, err := getCorrespondPod(dst, npmCache)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get destination pod : %w", err)
 	}
 
-	hitRules, err := p.getHitRules(srcPod, dstPod, allRules, npmCache)
+	hitRules, err := getHitRules(srcPod, dstPod, allRules, npmCache)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get hit rules : %w", err)
 	}
@@ -117,7 +114,7 @@ func (p *Processor) getNetworkTupleCommon(
 
 	resTupleList := make([]*Tuple, 0)
 	for _, rule := range hitRules {
-		tuple := p.generateTuple(srcPod, dstPod, rule)
+		tuple := generateTuple(srcPod, dstPod, rule)
 		resTupleList = append(resTupleList, tuple)
 	}
 	// tupleResListJson := make([][]byte, 0)
@@ -131,7 +128,7 @@ func (p *Processor) getNetworkTupleCommon(
 	return ruleResListJSON, resTupleList, nil
 }
 
-func (p *Processor) getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.NpmPod, error) {
+func getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.NpmPod, error) {
 	switch origin.Type {
 	case PODNAME:
 		return cacheObj.PodMap[origin.Content], nil
@@ -150,7 +147,7 @@ func (p *Processor) getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.Np
 }
 
 // GetInputType returns the type of the input for GetNetworkTuple
-func (p *Processor) GetInputType(input string) InputType {
+func GetInputType(input string) InputType {
 	if input == "External" {
 		return EXTERNAL
 	} else if ip := net.ParseIP(input); ip != nil {
@@ -160,7 +157,7 @@ func (p *Processor) GetInputType(input string) InputType {
 	}
 }
 
-func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *Tuple {
+func generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *Tuple {
 	tuple := &Tuple{}
 	if rule.Allowed {
 		tuple.RuleType = "ALLOWED"
@@ -206,7 +203,7 @@ func (p *Processor) generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *
 	return tuple
 }
 
-func (p *Processor) getHitRules(
+func getHitRules(
 	src, dst *npm.NpmPod,
 	rules []*pb.RuleResponse,
 	cacheObj *NPMCache,
@@ -222,7 +219,7 @@ func (p *Processor) getHitRules(
 				matched = false
 				break
 			}
-			matchedSource, err := p.evaluateSetInfo("src", setInfo, src, rule, cacheObj)
+			matchedSource, err := evaluateSetInfo("src", setInfo, src, rule, cacheObj)
 			if err != nil {
 				return nil, fmt.Errorf("error occurred during evaluating source's set info : %w", err)
 			}
@@ -238,7 +235,7 @@ func (p *Processor) getHitRules(
 				matched = false
 				break
 			}
-			matchedDestination, err := p.evaluateSetInfo("dst", setInfo, dst, rule, cacheObj)
+			matchedDestination, err := evaluateSetInfo("dst", setInfo, dst, rule, cacheObj)
 			if err != nil {
 				return nil, fmt.Errorf("error occurred during evaluating destination's set info : %w", err)
 			}
@@ -255,7 +252,7 @@ func (p *Processor) getHitRules(
 }
 
 // evalute an ipset to find out whether the pod's attributes match with the set
-func (p *Processor) evaluateSetInfo(
+func evaluateSetInfo(
 	origin string,
 	setInfo *pb.RuleResponse_SetInfo,
 	pod *npm.NpmPod,

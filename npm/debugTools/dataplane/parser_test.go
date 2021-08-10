@@ -9,13 +9,11 @@ import (
 )
 
 func TestParseIptablesObjectFile(t *testing.T) {
-	p := &Parser{}
-	p.ParseIptablesObjectFile(util.IptablesFilterTable, "../testFiles/iptableSave")
+	ParseIptablesObjectFile(util.IptablesFilterTable, "../testFiles/iptableSave")
 }
 
 func TestParseIptablesObject(t *testing.T) {
-	p := &Parser{}
-	p.ParseIptablesObject(util.IptablesFilterTable)
+	ParseIptablesObject(util.IptablesFilterTable)
 }
 
 func TestParseLine(t *testing.T) {
@@ -23,8 +21,6 @@ func TestParseLine(t *testing.T) {
 		input    string
 		expected []byte
 	}
-
-	p := &Parser{}
 
 	// line with no left or right space
 	testL1 := "-A AZURE-NPM -m mark --mark 0x3000 -m comment --comment TEST -j AZURE-NPM-ACCEPT"
@@ -58,9 +54,9 @@ func TestParseLine(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.input, func(t *testing.T) {
-			actualLine, _ := p.parseLine(0, []byte(tc.input))
+			actualLine, _ := parseLine(0, []byte(tc.input))
 			if equal := bytes.Compare(expectByteArray, actualLine); equal != 0 {
-				t.Errorf("expected '%+v', got '%+v'", tc.expected, actualLine)
+				t.Errorf("got '%+v', expected '%+v'", actualLine, tc.expected)
 			}
 		})
 	}
@@ -71,7 +67,6 @@ func TestParseRuleFromLine(t *testing.T) {
 		input    string
 		expected *IptablesRule
 	}
-	p := &Parser{}
 
 	m1 := &Module{
 		Verb:           "set",
@@ -114,9 +109,9 @@ func TestParseRuleFromLine(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.input, func(t *testing.T) {
-			actualRule := p.parseRuleFromLine([]byte(tc.input))
+			actualRule := parseRuleFromLine([]byte(tc.input))
 			if !reflect.DeepEqual(tc.expected, actualRule) {
-				t.Errorf("expected '%+v', got '%+v'", tc.expected, actualRule)
+				t.Errorf("got '%+v', expected '%+v'", actualRule, tc.expected)
 			}
 		})
 	}
@@ -127,7 +122,6 @@ func TestParseTarget(t *testing.T) {
 		input    string
 		expected *Target
 	}
-	p := &Parser{}
 
 	testT1 := &Target{
 		Name:           "MARK",
@@ -152,9 +146,9 @@ func TestParseTarget(t *testing.T) {
 		tc := tc
 		actualTarget := &Target{"", make(map[string][]string)}
 		t.Run(tc.input, func(t *testing.T) {
-			p.parseTarget(0, actualTarget, []byte(tc.input))
+			parseTarget(0, actualTarget, []byte(tc.input))
 			if !reflect.DeepEqual(tc.expected, actualTarget) {
-				t.Errorf("expected '%+v', got '%+v'", tc.expected, actualTarget)
+				t.Errorf("got '%+v', expected '%+v'", actualTarget, tc.expected)
 			}
 		})
 	}
@@ -165,8 +159,6 @@ func TestParseModule(t *testing.T) {
 		input    string
 		expected *Module
 	}
-
-	p := &Parser{}
 
 	testM1 := &Module{
 		Verb:           "set",
@@ -199,9 +191,9 @@ func TestParseModule(t *testing.T) {
 		tc := tc
 		actualModule := &Module{"", make(map[string][]string)}
 		t.Run(tc.input, func(t *testing.T) {
-			p.parseModule(0, actualModule, []byte(tc.input))
+			parseModule(0, actualModule, []byte(tc.input))
 			if !reflect.DeepEqual(tc.expected, actualModule) {
-				t.Errorf("expected '%+v', got '%+v'", tc.expected, actualModule)
+				t.Errorf("got '%+v', expected '%+v'", actualModule, tc.expected)
 			}
 		})
 	}
