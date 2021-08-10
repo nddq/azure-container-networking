@@ -57,7 +57,8 @@ func IptablesObjectFile(tableName string, iptableSaveFile string) (*NPMIPtable.T
 	return &NPMIPtable.Table{Name: tableName, Chains: chains}, nil
 }
 
-// parseIptablesChainObject creates a map of iptable chain name and iptable chain object.
+// parseIptablesChainObject creates a map of iptable chain name and iptable chain object. There are some unimplemented flags but
+// they should not affect the current desired functionalities.
 func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string]*NPMIPtable.Chain {
 	chainMap := make(map[string]*NPMIPtable.Chain)
 	tablePrefix := []byte("*" + tableName)
