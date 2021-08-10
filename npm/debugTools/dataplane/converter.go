@@ -14,6 +14,8 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-container-networking/npm"
+	npm_iptables "github.com/Azure/azure-container-networking/npm/debugTools/dataplane/iptables"
+	"github.com/Azure/azure-container-networking/npm/debugTools/dataplane/parse"
 	"github.com/Azure/azure-container-networking/npm/debugTools/pb"
 	"github.com/Azure/azure-container-networking/npm/http/api"
 	"github.com/Azure/azure-container-networking/npm/util"
@@ -23,10 +25,10 @@ import (
 
 // Converter struct
 type Converter struct {
-	ListMap           map[string]string
-	SetMap            map[string]string
-	RequiredChainsMap map[string]bool
-	NPMCache          *NPMCache
+	ListMap        map[string]string // key: hash(value), value: one of namespace, label of namespace, multiple values
+	SetMap         map[string]string // key: hash(value), value: one of label of pods, cidr, namedport
+	AzureNPMChains map[string]bool
+	NPMCache       *NPMCache
 }
 
 // NPMCache struct
@@ -106,18 +108,18 @@ func (c *Converter) initConverter() error {
 
 // Initialize all converter's maps
 func (c *Converter) initConverterMaps() {
-	c.RequiredChainsMap = make(map[string]bool)
-	for _, chain := range RequiredChains {
-		c.RequiredChainsMap[chain] = true
+	c.AzureNPMChains = make(map[string]bool)
+	for _, chain := range AzureNPMChains {
+		c.AzureNPMChains[chain] = true
 	}
 	c.ListMap = make(map[string]string)
 	c.SetMap = make(map[string]string)
 
-	for k := range c.NPMCache.NsMap["all-namespaces"].IpsMgr.ListMap {
+	for k := range c.NPMCache.NsMap[util.KubeAllNamespacesFlag].IpsMgr.ListMap {
 		hashedName := util.GetHashedName(k)
 		c.ListMap[hashedName] = k
 	}
-	for k := range c.NPMCache.NsMap["all-namespaces"].IpsMgr.SetMap {
+	for k := range c.NPMCache.NsMap[util.KubeAllNamespacesFlag].IpsMgr.SetMap {
 		hashedName := util.GetHashedName(k)
 		c.SetMap[hashedName] = k
 	}
@@ -130,20 +132,20 @@ func (c *Converter) GetJSONRulesFromIptableFile(
 	iptableSaveFile string,
 ) ([][]byte, error) {
 
-	pbRuleObj, err := c.GetProtobufRulesFromIptableFile(tableName, npmCacheFile, iptableSaveFile)
+	pbRule, err := c.GetProtobufRulesFromIptableFile(tableName, npmCacheFile, iptableSaveFile)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting JSON rules from iptables : %w", err)
 	}
-	return c.jsonRuleList(pbRuleObj)
+	return c.jsonRuleList(pbRule)
 }
 
 // GetJSONRulesFromIptables returns a list of json rules from node
 func (c *Converter) GetJSONRulesFromIptables(tableName string) ([][]byte, error) {
-	pbRuleObj, err := c.GetProtobufRulesFromIptable(tableName)
+	pbRule, err := c.GetProtobufRulesFromIptable(tableName)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting JSON rules from iptables : %w", err)
 	}
-	return c.jsonRuleList(pbRuleObj)
+	return c.jsonRuleList(pbRule)
 }
 
 // Convert list of protobuf rules to list of JSON rules
@@ -175,7 +177,7 @@ func (c *Converter) GetProtobufRulesFromIptableFile(
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
 
-	ipTableObj := ParseIptablesObjectFile(tableName, iptableSaveFile)
+	ipTableObj := parse.IptablesObjectFile(tableName, iptableSaveFile)
 	ruleResList, err := c.pbRuleList(ipTableObj)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
@@ -191,7 +193,7 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleRes
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
 
-	ipTableObj := ParseIptablesObject(tableName)
+	ipTableObj := parse.IptablesObject(tableName)
 	ruleResList, err := c.pbRuleList(ipTableObj)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
@@ -201,9 +203,9 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleRes
 }
 
 // Create a list of protobuf rules from iptable
-func (c *Converter) pbRuleList(ipTableObj *Iptables) ([]*pb.RuleResponse, error) {
+func (c *Converter) pbRuleList(ipTable *npm_iptables.Table) ([]*pb.RuleResponse, error) {
 	ruleResList := make([]*pb.RuleResponse, 0)
-	for _, v := range ipTableObj.Chains {
+	for _, v := range ipTable.Chains {
 		chainRules, err := c.getRulesFromChain(v)
 		if err != nil {
 			return nil, fmt.Errorf("error occurred during getting protobuf rule list : %w", err)
@@ -214,28 +216,26 @@ func (c *Converter) pbRuleList(ipTableObj *Iptables) ([]*pb.RuleResponse, error)
 	return ruleResList, nil
 }
 
-func (c *Converter) getRulesFromChain(iptableChainObj *IptablesChain) ([]*pb.RuleResponse, error) {
+func (c *Converter) getRulesFromChain(iptableChain *npm_iptables.Chain) ([]*pb.RuleResponse, error) {
 	rules := make([]*pb.RuleResponse, 0)
-	for _, v := range iptableChainObj.Rules {
+	for _, v := range iptableChain.Rules {
 		rule := &pb.RuleResponse{}
-		rule.Chain = iptableChainObj.Name
-		if _, ok := c.RequiredChainsMap[rule.Chain]; !ok {
+		rule.Chain = iptableChain.Name
+		// filter other chains except for Azure NPM specific chains.
+		if _, ok := c.AzureNPMChains[rule.Chain]; !ok {
 			continue
 		}
 		rule.Protocol = v.Protocol
 		switch v.Target.Name {
-		case "MARK":
+		case util.IptablesMark:
 			rule.Allowed = true
-		case "DROP":
+		case util.IptablesDrop:
 			rule.Allowed = false
 		default:
 			// ignore other targets
 			continue
 		}
-		direction := c.getRuleDirection(iptableChainObj.Name)
-		if direction >= 0 {
-			rule.Direction = direction
-		}
+		rule.Direction = c.getRuleDirection(iptableChain.Name)
 
 		err := c.getModulesFromRule(v.Modules, rule)
 		if err != nil {
@@ -256,7 +256,6 @@ func (c *Converter) getRuleDirection(iptableChainObjName string) pb.Direction {
 }
 
 func (c *Converter) getSetType(name string, m string) pb.SetType {
-	// TODO: Handle CIDR blocks
 	if m == "ListMap" { // labels of namespace
 		if strings.Contains(name, util.IpsetLabelDelimter) {
 			if strings.Count(name, util.IpsetLabelDelimter) > 1 {
@@ -281,7 +280,7 @@ func (c *Converter) getSetType(name string, m string) pb.SetType {
 	return pb.SetType_KEYLABELOFPOD
 }
 
-func (c *Converter) getModulesFromRule(moduleList []*Module, ruleRes *pb.RuleResponse) error {
+func (c *Converter) getModulesFromRule(moduleList []*npm_iptables.Module, ruleRes *pb.RuleResponse) error {
 	ruleRes.SrcList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.DstList = make([]*pb.RuleResponse_SetInfo, 0)
 	ruleRes.UnsortedIpset = make(map[string]string)
@@ -293,21 +292,21 @@ func (c *Converter) getModulesFromRule(moduleList []*Module, ruleRes *pb.RuleRes
 			for option, values := range OptionValueMap {
 				switch option {
 				case "match-set":
-					infoObj := &pb.RuleResponse_SetInfo{}
+					setInfo := &pb.RuleResponse_SetInfo{}
 
-					err := c.populateSetInfoObj(infoObj, values, ruleRes)
+					err := c.populateSetInfoObj(setInfo, values, ruleRes)
 					if err != nil {
 						return fmt.Errorf("error occurred during getting modules from rules : %w", err)
 					}
-					infoObj.Included = true
+					setInfo.Included = true
 
 				case "not-match-set":
-					infoObj := &pb.RuleResponse_SetInfo{}
-					err := c.populateSetInfoObj(infoObj, values, ruleRes)
+					setInfo := &pb.RuleResponse_SetInfo{}
+					err := c.populateSetInfoObj(setInfo, values, ruleRes)
 					if err != nil {
 						return fmt.Errorf("error occurred during getting modules from rules : %w", err)
 					}
-					infoObj.Included = false
+					setInfo.Included = false
 				default:
 					// todo add warning log
 					log.Printf("%v option have not been implemented\n", option)
@@ -334,42 +333,42 @@ func (c *Converter) getModulesFromRule(moduleList []*Module, ruleRes *pb.RuleRes
 }
 
 func (c *Converter) populateSetInfoObj(
-	infoObj *pb.RuleResponse_SetInfo,
+	setInfo *pb.RuleResponse_SetInfo,
 	values []string,
 	ruleRes *pb.RuleResponse,
 ) error {
 
 	ipsetHashedName := values[0]
 	ipsetOrigin := values[1]
-	infoObj.HashedSetName = ipsetHashedName
+	setInfo.HashedSetName = ipsetHashedName
 	if v, ok := c.ListMap[ipsetHashedName]; ok {
-		infoObj.Name = v
-		infoObj.Type = c.getSetType(v, "ListMap")
+		setInfo.Name = v
+		setInfo.Type = c.getSetType(v, "ListMap")
 	} else if v, ok := c.SetMap[ipsetHashedName]; ok {
-		infoObj.Name = v
-		infoObj.Type = c.getSetType(v, "SetMap")
-		if infoObj.Type == pb.SetType_CIDRBLOCKS {
-			populateCIDRBlockSet(infoObj)
+		setInfo.Name = v
+		setInfo.Type = c.getSetType(v, "SetMap")
+		if setInfo.Type == pb.SetType_CIDRBLOCKS {
+			populateCIDRBlockSet(setInfo)
 		}
 	} else {
-		return fmt.Errorf("setNotExist %w : %v", errSetNotExist, ipsetHashedName)
+		return fmt.Errorf("%w : %v", errSetNotExist, ipsetHashedName)
 	}
 
 	if len(ipsetOrigin) > MinUnsortedIPSetLength {
 		ruleRes.UnsortedIpset[ipsetHashedName] = ipsetOrigin
 	}
 	if strings.Contains(ipsetOrigin, "src") {
-		ruleRes.SrcList = append(ruleRes.SrcList, infoObj)
+		ruleRes.SrcList = append(ruleRes.SrcList, setInfo)
 	} else {
-		ruleRes.DstList = append(ruleRes.DstList, infoObj)
+		ruleRes.DstList = append(ruleRes.DstList, setInfo)
 	}
 	return nil
 }
 
 // populate CIDRBlock set's content with ip addresses
-func populateCIDRBlockSet(setInfoObj *pb.RuleResponse_SetInfo) {
+func populateCIDRBlockSet(setInfo *pb.RuleResponse_SetInfo) {
 	ipsetBuffer := bytes.NewBuffer(nil)
-	cmdArgs := []string{"list", setInfoObj.HashedSetName}
+	cmdArgs := []string{"list", setInfo.HashedSetName}
 	cmd := exec.Command(util.Ipset, cmdArgs...) //nolint:gosec
 
 	cmd.Stdout = ipsetBuffer
@@ -387,15 +386,15 @@ func populateCIDRBlockSet(setInfoObj *pb.RuleResponse_SetInfo) {
 
 	// finding the members field
 	for curReadIndex < len(ipsetBuffer.Bytes()) {
-		line, nextReadIndex := parseLine(curReadIndex, ipsetBuffer.Bytes())
+		line, nextReadIndex := parse.Line(curReadIndex, ipsetBuffer.Bytes())
 		curReadIndex = nextReadIndex
 		if bytes.HasPrefix(line, MembersBytes) {
 			break
 		}
 	}
 	for curReadIndex < len(ipsetBuffer.Bytes()) {
-		member, nextReadIndex := parseLine(curReadIndex, ipsetBuffer.Bytes())
-		setInfoObj.Contents = append(setInfoObj.Contents, string(member))
+		member, nextReadIndex := parse.Line(curReadIndex, ipsetBuffer.Bytes())
+		setInfo.Contents = append(setInfo.Contents, string(member))
 		curReadIndex = nextReadIndex
 	}
 }

@@ -1,4 +1,4 @@
-package dataplane
+package npm_iptables
 
 import (
 	"fmt"
@@ -6,20 +6,20 @@ import (
 )
 
 // Iptables struct
-type Iptables struct {
+type Table struct {
 	Name   string
-	Chains map[string]*IptablesChain
+	Chains map[string]*Chain
 }
 
 // IptablesChain struct
-type IptablesChain struct {
+type Chain struct {
 	Name  string
 	Data  []byte
-	Rules []*IptablesRule
+	Rules []*Rule
 }
 
 // IptablesRule struct
-type IptablesRule struct {
+type Rule struct {
 	Protocol string
 	Target   *Target
 	Modules  []*Module
@@ -38,11 +38,11 @@ type Target struct {
 }
 
 // for debugging
-func (t *Iptables) String() string {
+func (t *Table) String() string {
 	return fmt.Sprintf("IPTABLE NAME - %v\n%s\n", t.Name, t.printIptableChains())
 }
 
-func (t *Iptables) printIptableChains() string {
+func (t *Table) printIptableChains() string {
 	var ret strings.Builder
 	for k, v := range t.Chains {
 		ret.WriteString(fmt.Sprintf("\tIPTABLE CHAIN NAME - %v\n%s\n", k, t.printIptableChainRules(v)))
@@ -50,7 +50,7 @@ func (t *Iptables) printIptableChains() string {
 	return ret.String()
 }
 
-func (t *Iptables) printIptableChainRules(chain *IptablesChain) string {
+func (t *Table) printIptableChainRules(chain *Chain) string {
 	var ret strings.Builder
 	for k, v := range chain.Rules {
 		ret.WriteString(fmt.Sprintf("\t\tRULE %v\n", k))
@@ -61,7 +61,7 @@ func (t *Iptables) printIptableChainRules(chain *IptablesChain) string {
 	return ret.String()
 }
 
-func (t *Iptables) printIptableRuleModules(mList []*Module) string {
+func (t *Table) printIptableRuleModules(mList []*Module) string {
 	var ret strings.Builder
 	ret.WriteString("\t\t\tRULE'S MODULES\n")
 
@@ -73,7 +73,7 @@ func (t *Iptables) printIptableRuleModules(mList []*Module) string {
 	return ret.String()
 }
 
-func (t *Iptables) printIptableRuleTarget(target *Target) string {
+func (t *Table) printIptableRuleTarget(target *Target) string {
 	var ret strings.Builder
 	ret.WriteString("\t\t\tRULE'S TARGET\n")
 	ret.WriteString(fmt.Sprintf("\t\t\t\tNAME - %v\n", target.Name))

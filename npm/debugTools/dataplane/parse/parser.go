@@ -1,4 +1,4 @@
-package dataplane
+package parse
 
 import (
 	"bytes"
@@ -6,11 +6,21 @@ import (
 	"io/ioutil"
 	"os/exec"
 
+	npm_iptables "github.com/Azure/azure-container-networking/npm/debugTools/dataplane/iptables"
 	"github.com/Azure/azure-container-networking/npm/util"
 )
 
-// ParseIptablesObject creates a Go object from specified iptable by calling iptables-save within node.
-func ParseIptablesObject(tableName string) *Iptables {
+var (
+	// CommitBytes is the string "COMMIT" in bytes array
+	CommitBytes = []byte("COMMIT")
+	// SpaceBytes is white space in bytes array
+	SpaceBytes = []byte(" ")
+	// MinOptionLength indicates the minimum length of an option
+	MinOptionLength int = 2
+)
+
+// IptablesObject creates a Go object from specified iptable by calling iptables-save within node.
+func IptablesObject(tableName string) *npm_iptables.Table {
 	iptableBuffer := bytes.NewBuffer(nil)
 	// TODO: need to get iptable's lock
 	cmdArgs := []string{util.IptablesTableFlag, string(tableName)}
@@ -28,11 +38,11 @@ func ParseIptablesObject(tableName string) *Iptables {
 		}
 	}
 	chains := parseIptablesChainObject(tableName, iptableBuffer.Bytes())
-	return &Iptables{Name: tableName, Chains: chains}
+	return &npm_iptables.Table{Name: tableName, Chains: chains}
 }
 
-// ParseIptablesObjectFile creates a Go object from specified iptable by reading from an iptables-save file.
-func ParseIptablesObjectFile(tableName string, iptableSaveFile string) *Iptables {
+// IptablesObjectFile creates a Go object from specified iptable by reading from an iptables-save file.
+func IptablesObjectFile(tableName string, iptableSaveFile string) *npm_iptables.Table {
 	iptableBuffer := bytes.NewBuffer(nil)
 	byteArray, err := ioutil.ReadFile(iptableSaveFile)
 	if err != nil {
@@ -42,16 +52,16 @@ func ParseIptablesObjectFile(tableName string, iptableSaveFile string) *Iptables
 		iptableBuffer.WriteByte(b)
 	}
 	chains := parseIptablesChainObject(tableName, iptableBuffer.Bytes())
-	return &Iptables{Name: tableName, Chains: chains}
+	return &npm_iptables.Table{Name: tableName, Chains: chains}
 }
 
 // parseIptablesChainObject creates a map of iptable chain name and iptable chain object.
-func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string]*IptablesChain {
-	chainMap := make(map[string]*IptablesChain)
+func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string]*npm_iptables.Chain {
+	chainMap := make(map[string]*npm_iptables.Chain)
 	tablePrefix := []byte("*" + tableName)
 	curReadIndex := 0
 	for curReadIndex < len(iptableBuffer) {
-		line, nextReadIndex := parseLine(curReadIndex, iptableBuffer)
+		line, nextReadIndex := Line(curReadIndex, iptableBuffer)
 		curReadIndex = nextReadIndex
 		if bytes.HasPrefix(line, tablePrefix) {
 			break
@@ -59,7 +69,7 @@ func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string
 	}
 
 	for curReadIndex < len(iptableBuffer) {
-		line, nextReadIndex := parseLine(curReadIndex, iptableBuffer)
+		line, nextReadIndex := Line(curReadIndex, iptableBuffer)
 		curReadIndex = nextReadIndex
 		if len(line) == 0 {
 			continue
@@ -78,14 +88,14 @@ func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string
 			if iptableChain, ok := chainMap[chainName]; ok {
 				iptableChain.Data = line
 			} else {
-				chainMap[chainName] = &IptablesChain{Name: chainName, Data: line, Rules: make([]*IptablesRule, 0)}
+				chainMap[chainName] = &npm_iptables.Chain{Name: chainName, Data: line, Rules: make([]*npm_iptables.Rule, 0)}
 			}
 		} else if line[0] == '-' && len(line) > 1 {
 			// rules
 			chainName, ruleStartIndex := parseChainNameFromRuleLine(line)
 			iptableChain, ok := chainMap[chainName]
 			if !ok {
-				iptableChain = &IptablesChain{chainName, []byte{}, make([]*IptablesRule, 0)}
+				iptableChain = &npm_iptables.Chain{Name: chainName, Data: []byte{}, Rules: make([]*npm_iptables.Rule, 0)}
 			}
 			iptableChain.Rules = append(iptableChain.Rules, parseRuleFromLine(line[ruleStartIndex:]))
 		}
@@ -93,9 +103,9 @@ func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string
 	return chainMap
 }
 
-// parseLine parses the line starting from the given readIndex of the iptableBuffer.
+// Line parses the line starting from the given readIndex of the iptableBuffer.
 // Returns a slice of line starting from given read index and the next index to read from.
-func parseLine(readIndex int, iptableBuffer []byte) ([]byte, int) {
+func Line(readIndex int, iptableBuffer []byte) ([]byte, int) {
 	curReadIndex := readIndex // index of iptableBuffer to start reading from
 
 	// consume left spaces
@@ -150,8 +160,8 @@ func parseChainNameFromRuleLine(ruleLine []byte) (string, int) {
 }
 
 // parseRuleFromLine creates an iptable rule object from rule line with chain name excluded from the byte array.
-func parseRuleFromLine(ruleLine []byte) *IptablesRule {
-	iptableRule := &IptablesRule{}
+func parseRuleFromLine(ruleLine []byte) *npm_iptables.Rule {
+	iptableRule := &npm_iptables.Rule{}
 	currentIndex := 0
 	for currentIndex < len(ruleLine) {
 		spaceIndex := bytes.Index(ruleLine[currentIndex:], SpaceBytes)
@@ -172,13 +182,13 @@ func parseRuleFromLine(ruleLine []byte) *IptablesRule {
 			currentIndex = end + 1
 		case util.IptablesJumpFlag:
 			// parse target with format -j target (option) (value)
-			target := &Target{}
+			target := &npm_iptables.Target{}
 			target.OptionValueMap = map[string][]string{}
 			currentIndex = parseTarget(start+1, target, ruleLine)
 			iptableRule.Target = target
 		case util.IptablesModuleFlag:
 			// parse module with format -m verb {--option {value}}
-			module := &Module{}
+			module := &npm_iptables.Module{}
 			module.OptionValueMap = map[string][]string{}
 			currentIndex = parseModule(start+1, module, ruleLine)
 			iptableRule.Modules = append(iptableRule.Modules, module)
@@ -190,7 +200,7 @@ func parseRuleFromLine(ruleLine []byte) *IptablesRule {
 	return iptableRule
 }
 
-// handle unrecognized flags.
+// jumpToNextFlag skips other flags except for -m, -j, and -p and whitespace.
 func jumpToNextFlag(nextIndex int, ruleLine []byte) int {
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	if spaceIndex == -1 {
@@ -214,7 +224,7 @@ func jumpToNextFlag(nextIndex int, ruleLine []byte) int {
 	return jumpToNextFlag(nextIndex, ruleLine)
 }
 
-func parseTarget(nextIndex int, target *Target, ruleLine []byte) int {
+func parseTarget(nextIndex int, target *npm_iptables.Target, ruleLine []byte) int {
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	if spaceIndex == -1 {
 		targetName := string(ruleLine[nextIndex:])
@@ -226,7 +236,7 @@ func parseTarget(nextIndex int, target *Target, ruleLine []byte) int {
 	return parseTargetOptionAndValue(nextIndex+spaceIndex+1, target, "", ruleLine)
 }
 
-func parseTargetOptionAndValue(nextIndex int, target *Target, curOption string, ruleLine []byte) int {
+func parseTargetOptionAndValue(nextIndex int, target *npm_iptables.Target, curOption string, ruleLine []byte) int {
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	currentOption := curOption
 	if spaceIndex == -1 {
@@ -263,7 +273,7 @@ func parseTargetOptionAndValue(nextIndex int, target *Target, curOption string, 
 	return parseTargetOptionAndValue(nextIndex, target, currentOption, ruleLine)
 }
 
-func parseModule(nextIndex int, module *Module, ruleLine []byte) int {
+func parseModule(nextIndex int, module *npm_iptables.Module, ruleLine []byte) int {
 	spaceIndex := bytes.Index(ruleLine[nextIndex:], SpaceBytes)
 	if spaceIndex == -1 {
 		panic(fmt.Sprintf("Unexpected chain line in iptables-save : %v", string(ruleLine)))
@@ -275,7 +285,7 @@ func parseModule(nextIndex int, module *Module, ruleLine []byte) int {
 
 func parseModuleOptionAndValue(
 	nextIndex int,
-	module *Module,
+	module *npm_iptables.Module,
 	curOption string,
 	ruleLine []byte,
 	included bool,
