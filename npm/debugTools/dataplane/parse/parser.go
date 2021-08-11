@@ -36,8 +36,6 @@ func Iptables(tableName string) (*NPMIPtable.Table, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w", err)
 		}
-	} else {
-		return nil, fmt.Errorf("%w", err)
 	}
 	chains := parseIptablesChainObject(tableName, iptableBuffer.Bytes())
 	return &NPMIPtable.Table{Name: tableName, Chains: chains}, nil
