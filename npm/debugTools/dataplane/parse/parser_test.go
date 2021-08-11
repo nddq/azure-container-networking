@@ -17,13 +17,6 @@ func TestParseIptablesObjectFile(t *testing.T) {
 	}
 }
 
-func TestParseIptablesObject(t *testing.T) {
-	_, err := Iptables(util.IptablesFilterTable)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestParseLine(t *testing.T) {
 	type test struct {
 		input    string
