@@ -11,14 +11,14 @@ import (
 )
 
 func TestParseIptablesObjectFile(t *testing.T) {
-	_, err := IptablesObjectFile(util.IptablesFilterTable, "../../testFiles/iptableSave")
+	_, err := IptablesFile(util.IptablesFilterTable, "../../testFiles/iptableSave")
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestParseIptablesObject(t *testing.T) {
-	_, err := IptablesObject(util.IptablesFilterTable)
+	_, err := Iptables(util.IptablesFilterTable)
 	if err != nil {
 		t.Fatal(err)
 	}

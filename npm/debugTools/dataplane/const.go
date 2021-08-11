@@ -1,6 +1,9 @@
 package dataplane
 
-import "errors"
+import (
+	"errors"
+	"regexp"
+)
 
 const (
 	// ANY string
@@ -16,7 +19,7 @@ const (
 // MembersBytes is the string "Members" in bytes array
 var MembersBytes = []byte("Members")
 
-// RequiredChains contains names of chain that will be include in the result of the converter
+// AzureNPMChains contains names of chain that will be include in the result of the converter
 var AzureNPMChains = []string{
 	"AZURE-NPM-INGRESS-DROPS",
 	"AZURE-NPM-INGRESS-FROM",
@@ -25,6 +28,8 @@ var AzureNPMChains = []string{
 	"AZURE-NPM-EGRESS-PORT",
 	"AZURE-NPM-EGRESS-TO",
 }
+
+var matcher = regexp.MustCompile(`(?i)[^ ]+-in-ns-[^ ]+-\d(out|in)\b`)
 
 // error type
 var (

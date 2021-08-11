@@ -41,6 +41,8 @@ const (
 	EXTERNAL InputType = 2
 )
 
+var IPPodMap = make(map[string]*npm.NpmPod)
+
 // GetNetworkTuple read from node's NPM cache and iptables-save and
 // returns a list of hit rules between the source and the destination in
 // JSON format and a list of tuples from those rules.
@@ -79,24 +81,23 @@ func getNetworkTupleCommon(
 	allRules []*pb.RuleResponse,
 ) ([][]byte, []*Tuple, error) {
 
-	srcPod, err := getCorrespondPod(src, npmCache)
+	for _, pod := range npmCache.PodMap {
+		IPPodMap[pod.PodIP] = pod
+	}
+
+	srcPod, err := getNPMPod(src, npmCache)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get source pod : %w", err)
 	}
 
-	dstPod, err := getCorrespondPod(dst, npmCache)
+	dstPod, err := getNPMPod(dst, npmCache)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error occurred during get destination pod : %w", err)
 	}
 
 	hitRules, err := getHitRules(srcPod, dstPod, allRules, npmCache)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error occurred during get hit rules : %w", err)
-	}
-
-	if len(hitRules) == 0 {
-		// either no hit rules or no rules at all. Both cases allow all traffic
-		hitRules = append(hitRules, &pb.RuleResponse{Allowed: true})
+		return nil, nil, fmt.Errorf("%w", err)
 	}
 
 	ruleResListJSON := make([][]byte, 0)
@@ -128,15 +129,13 @@ func getNetworkTupleCommon(
 	return ruleResListJSON, resTupleList, nil
 }
 
-func getCorrespondPod(origin *Input, cacheObj *NPMCache) (*npm.NpmPod, error) {
-	switch origin.Type {
+func getNPMPod(input *Input, npmCache *NPMCache) (*npm.NpmPod, error) {
+	switch input.Type {
 	case PODNAME:
-		return cacheObj.PodMap[origin.Content], nil
+		return npmCache.PodMap[input.Content], nil
 	case IPADDRS:
-		for _, pod := range cacheObj.PodMap {
-			if pod.PodIP == origin.Content {
-				return pod, nil
-			}
+		if pod, ok := IPPodMap[input.Content]; ok {
+			return pod, nil
 		}
 		return nil, errInvalidIPAddress
 	case EXTERNAL:
@@ -206,7 +205,7 @@ func generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *Tuple {
 func getHitRules(
 	src, dst *npm.NpmPod,
 	rules []*pb.RuleResponse,
-	cacheObj *NPMCache,
+	npmCache *NPMCache,
 ) ([]*pb.RuleResponse, error) {
 
 	res := make([]*pb.RuleResponse, 0)
@@ -219,7 +218,7 @@ func getHitRules(
 				matched = false
 				break
 			}
-			matchedSource, err := evaluateSetInfo("src", setInfo, src, rule, cacheObj)
+			matchedSource, err := evaluateSetInfo("src", setInfo, src, rule, npmCache)
 			if err != nil {
 				return nil, fmt.Errorf("error occurred during evaluating source's set info : %w", err)
 			}
@@ -228,6 +227,9 @@ func getHitRules(
 				break
 			}
 		}
+		if !matched {
+			continue
+		}
 		for _, setInfo := range rule.DstList {
 			// evaluate all match set in dst
 			if dst.Namespace == "" {
@@ -235,7 +237,7 @@ func getHitRules(
 				matched = false
 				break
 			}
-			matchedDestination, err := evaluateSetInfo("dst", setInfo, dst, rule, cacheObj)
+			matchedDestination, err := evaluateSetInfo("dst", setInfo, dst, rule, npmCache)
 			if err != nil {
 				return nil, fmt.Errorf("error occurred during evaluating destination's set info : %w", err)
 			}
@@ -248,6 +250,10 @@ func getHitRules(
 			res = append(res, rule)
 		}
 	}
+	if len(res) == 0 {
+		// either no hit rules or no rules at all. Both cases allow all traffic
+		res = append(res, &pb.RuleResponse{Allowed: true})
+	}
 	return res, nil
 }
 
@@ -257,16 +263,16 @@ func evaluateSetInfo(
 	setInfo *pb.RuleResponse_SetInfo,
 	pod *npm.NpmPod,
 	rule *pb.RuleResponse,
-	cacheObj *NPMCache,
+	npmCache *NPMCache,
 ) (bool, error) {
 
 	switch setInfo.Type {
 	case pb.SetType_KEYVALUELABELOFNAMESPACE:
-		return matchKEYVALUELABELOFNAMESPACE(pod, cacheObj, setInfo), nil
+		return matchKEYVALUELABELOFNAMESPACE(pod, npmCache, setInfo), nil
 	case pb.SetType_NESTEDLABELOFPOD:
 		return matchNESTEDLABELOFPOD(pod, setInfo), nil
 	case pb.SetType_KEYLABELOFNAMESPACE:
-		return matchKEYLABELOFNAMESPACE(pod, cacheObj, setInfo), nil
+		return matchKEYLABELOFNAMESPACE(pod, npmCache, setInfo), nil
 	case pb.SetType_NAMESPACE:
 		return matchNAMESPACE(pod, setInfo), nil
 	case pb.SetType_KEYVALUELABELOFPOD:
@@ -282,10 +288,10 @@ func evaluateSetInfo(
 	}
 }
 
-func matchKEYVALUELABELOFNAMESPACE(pod *npm.NpmPod, cacheObj *NPMCache, setInfo *pb.RuleResponse_SetInfo) bool {
+func matchKEYVALUELABELOFNAMESPACE(pod *npm.NpmPod, npmCache *NPMCache, setInfo *pb.RuleResponse_SetInfo) bool {
 	srcNamespace := util.NamespacePrefix + pod.Namespace
 	key, expectedValue := processKeyValueLabelOfNameSpace(setInfo.Name)
-	actualValue := cacheObj.NsMap[srcNamespace].LabelsMap[key]
+	actualValue := npmCache.NsMap[srcNamespace].LabelsMap[key]
 	if expectedValue != actualValue {
 		// if the value is required but does not match
 		if setInfo.Included {
@@ -321,10 +327,10 @@ func matchNESTEDLABELOFPOD(pod *npm.NpmPod, setInfo *pb.RuleResponse_SetInfo) bo
 	return true
 }
 
-func matchKEYLABELOFNAMESPACE(pod *npm.NpmPod, cacheObj *NPMCache, setInfo *pb.RuleResponse_SetInfo) bool {
+func matchKEYLABELOFNAMESPACE(pod *npm.NpmPod, npmCache *NPMCache, setInfo *pb.RuleResponse_SetInfo) bool {
 	srcNamespace := util.NamespacePrefix + pod.Namespace
 	key := strings.TrimPrefix(setInfo.Name, util.NamespacePrefix)
-	if _, ok := cacheObj.NsMap[srcNamespace].LabelsMap[key]; ok {
+	if _, ok := npmCache.NsMap[srcNamespace].LabelsMap[key]; ok {
 		return setInfo.Included
 	}
 	if setInfo.Included {

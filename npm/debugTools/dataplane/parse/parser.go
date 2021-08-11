@@ -19,8 +19,8 @@ var (
 	MinOptionLength = 2
 )
 
-// IptablesObject creates a Go object from specified iptable by calling iptables-save within node.
-func IptablesObject(tableName string) (*NPMIPtable.Table, error) {
+// Iptables creates a Go object from specified iptable by calling iptables-save within node.
+func Iptables(tableName string) (*NPMIPtable.Table, error) {
 	iptableBuffer := bytes.NewBuffer(nil)
 	// TODO: need to get iptable's lock
 	cmdArgs := []string{util.IptablesTableFlag, string(tableName)}
@@ -43,8 +43,8 @@ func IptablesObject(tableName string) (*NPMIPtable.Table, error) {
 	return &NPMIPtable.Table{Name: tableName, Chains: chains}, nil
 }
 
-// IptablesObjectFile creates a Go object from specified iptable by reading from an iptables-save file.
-func IptablesObjectFile(tableName string, iptableSaveFile string) (*NPMIPtable.Table, error) {
+// IptablesFile creates a Go object from specified iptable by reading from an iptables-save file.
+func IptablesFile(tableName string, iptableSaveFile string) (*NPMIPtable.Table, error) {
 	iptableBuffer := bytes.NewBuffer(nil)
 	byteArray, err := ioutil.ReadFile(iptableSaveFile)
 	if err != nil {
@@ -57,8 +57,8 @@ func IptablesObjectFile(tableName string, iptableSaveFile string) (*NPMIPtable.T
 	return &NPMIPtable.Table{Name: tableName, Chains: chains}, nil
 }
 
-// parseIptablesChainObject creates a map of iptable chain name and iptable chain object. There are some unimplemented flags but
-// they should not affect the current desired functionalities.
+// parseIptablesChainObject creates a map of iptable chain name and iptable chain object.
+// There are some unimplemented flags but they should not affect the current desired functionalities.
 func parseIptablesChainObject(tableName string, iptableBuffer []byte) map[string]*NPMIPtable.Chain {
 	chainMap := make(map[string]*NPMIPtable.Chain)
 	tablePrefix := []byte("*" + tableName)

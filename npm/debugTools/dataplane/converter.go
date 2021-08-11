@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -149,13 +148,13 @@ func (c *Converter) GetJSONRulesFromIptables(tableName string) ([][]byte, error)
 }
 
 // Convert list of protobuf rules to list of JSON rules.
-func (c *Converter) jsonRuleList(pbRuleObj []*pb.RuleResponse) ([][]byte, error) {
+func (c *Converter) jsonRuleList(pbRules []*pb.RuleResponse) ([][]byte, error) {
 	ruleResListJSON := make([][]byte, 0)
 	m := protojson.MarshalOptions{
 		Indent:          "  ",
 		EmitUnpopulated: true,
 	}
-	for _, rule := range pbRuleObj {
+	for _, rule := range pbRules {
 		ruleJSON, err := m.Marshal(rule) // pretty print
 		if err != nil {
 			return nil, fmt.Errorf("error occurred during marshaling : %w", err)
@@ -177,11 +176,11 @@ func (c *Converter) GetProtobufRulesFromIptableFile(
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
 
-	ipTableObj, err := parse.IptablesObjectFile(tableName, iptableSaveFile)
+	ipTable, err := parse.IptablesFile(tableName, iptableSaveFile)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during parsing iptables : %w", err)
 	}
-	ruleResList, err := c.pbRuleList(ipTableObj)
+	ruleResList, err := c.pbRuleList(ipTable)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
@@ -196,11 +195,11 @@ func (c *Converter) GetProtobufRulesFromIptable(tableName string) ([]*pb.RuleRes
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
 
-	ipTableObj, err := parse.IptablesObject(tableName)
+	ipTable, err := parse.Iptables(tableName)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during parsing iptables : %w", err)
 	}
-	ruleResList, err := c.pbRuleList(ipTableObj)
+	ruleResList, err := c.pbRuleList(ipTable)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred during getting protobuf rules from iptables : %w", err)
 	}
@@ -252,10 +251,10 @@ func (c *Converter) getRulesFromChain(iptableChain *NPMIPtable.Chain) ([]*pb.Rul
 	return rules, nil
 }
 
-func (c *Converter) getRuleDirection(iptableChainObjName string) pb.Direction {
-	if strings.Contains(iptableChainObjName, "EGRESS") {
+func (c *Converter) getRuleDirection(iptableChainName string) pb.Direction {
+	if strings.Contains(iptableChainName, "EGRESS") {
 		return pb.Direction_EGRESS
-	} else if strings.Contains(iptableChainObjName, "INGRESS") {
+	} else if strings.Contains(iptableChainName, "INGRESS") {
 		return pb.Direction_INGRESS
 	}
 	return pb.Direction_UNDEFINED
@@ -280,7 +279,8 @@ func (c *Converter) getSetType(name string, m string) pb.SetType {
 	if strings.Contains(name, util.IpsetLabelDelimter) {
 		return pb.SetType_KEYVALUELABELOFPOD
 	}
-	if matched, _ := regexp.MatchString(`(?i)[^ ]+-in-ns-[^ ]+-\d(out|in)\b`, name); matched {
+	matcher.Match([]byte(name))
+	if matched := matcher.Match([]byte(name)); matched {
 		return pb.SetType_CIDRBLOCKS
 	}
 	return pb.SetType_KEYLABELOFPOD
@@ -300,7 +300,7 @@ func (c *Converter) getModulesFromRule(moduleList []*NPMIPtable.Module, ruleRes 
 				case "match-set":
 					setInfo := &pb.RuleResponse_SetInfo{}
 
-					err := c.populateSetInfoObj(setInfo, values, ruleRes)
+					err := c.populateSetInfo(setInfo, values, ruleRes)
 					if err != nil {
 						return fmt.Errorf("error occurred during getting modules from rules : %w", err)
 					}
@@ -308,7 +308,7 @@ func (c *Converter) getModulesFromRule(moduleList []*NPMIPtable.Module, ruleRes 
 
 				case "not-match-set":
 					setInfo := &pb.RuleResponse_SetInfo{}
-					err := c.populateSetInfoObj(setInfo, values, ruleRes)
+					err := c.populateSetInfo(setInfo, values, ruleRes)
 					if err != nil {
 						return fmt.Errorf("error occurred during getting modules from rules : %w", err)
 					}
@@ -338,7 +338,7 @@ func (c *Converter) getModulesFromRule(moduleList []*NPMIPtable.Module, ruleRes 
 	return nil
 }
 
-func (c *Converter) populateSetInfoObj(
+func (c *Converter) populateSetInfo(
 	setInfo *pb.RuleResponse_SetInfo,
 	values []string,
 	ruleRes *pb.RuleResponse,

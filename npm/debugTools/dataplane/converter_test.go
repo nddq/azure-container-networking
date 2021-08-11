@@ -70,10 +70,15 @@ func TestGetSetType(t *testing.T) {
 			inputMapName: "SetMap",
 			expected:     pb.SetType_KEYLABELOFPOD,
 		},
-		"key value lable of namespace": {
+		"key value label of namespace": {
 			inputSetName: "ns-namespace:test0",
 			inputMapName: "ListMap",
 			expected:     pb.SetType_KEYVALUELABELOFNAMESPACE,
+		},
+		"CIDRBlock": {
+			inputSetName: "k8s-example-policy-in-ns-default-0in",
+			inputMapName: "SetMap",
+			expected:     pb.SetType_CIDRBLOCKS,
 		},
 	}
 

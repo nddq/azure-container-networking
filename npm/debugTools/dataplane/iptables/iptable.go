@@ -5,20 +5,20 @@ import (
 	"strings"
 )
 
-// Iptables struct
+// Table struct
 type Table struct {
 	Name   string
 	Chains map[string]*Chain
 }
 
-// IptablesChain struct
+// Chain struct
 type Chain struct {
 	Name  string
 	Data  []byte
 	Rules []*Rule
 }
 
-// IptablesRule struct
+// Rule struct
 type Rule struct {
 	Protocol string
 	Target   *Target
