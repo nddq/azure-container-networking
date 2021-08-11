@@ -41,7 +41,7 @@ const (
 	EXTERNAL InputType = 2
 )
 
-var IPPodMap = make(map[string]*npm.NpmPod)
+var ipPodMap = make(map[string]*npm.NpmPod)
 
 // GetNetworkTuple read from node's NPM cache and iptables-save and
 // returns a list of hit rules between the source and the destination in
@@ -82,7 +82,7 @@ func getNetworkTupleCommon(
 ) ([][]byte, []*Tuple, error) {
 
 	for _, pod := range npmCache.PodMap {
-		IPPodMap[pod.PodIP] = pod
+		ipPodMap[pod.PodIP] = pod
 	}
 
 	srcPod, err := getNPMPod(src, npmCache)
@@ -134,7 +134,7 @@ func getNPMPod(input *Input, npmCache *NPMCache) (*npm.NpmPod, error) {
 	case PODNAME:
 		return npmCache.PodMap[input.Content], nil
 	case IPADDRS:
-		if pod, ok := IPPodMap[input.Content]; ok {
+		if pod, ok := ipPodMap[input.Content]; ok {
 			return pod, nil
 		}
 		return nil, errInvalidIPAddress
