@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-container-networking/npm/debugTools/dataplane/parse"
-
 	"github.com/spf13/cobra"
 )
 

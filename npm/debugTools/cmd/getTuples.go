@@ -14,11 +14,11 @@ var getTuplesCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		src, _ := cmd.Flags().GetString("src")
 		if src == "" {
-			return fmt.Errorf("no source specified")
+			return fmt.Errorf("%w", errSrcNotSpecified)
 		}
 		dst, _ := cmd.Flags().GetString("dst")
 		if dst == "" {
-			return fmt.Errorf("no destination specified")
+			return fmt.Errorf("%w", errDstNotSpecified)
 		}
 		npmCacheF, _ := cmd.Flags().GetString("npmF")
 		iptableSaveF, _ := cmd.Flags().GetString("iptF")

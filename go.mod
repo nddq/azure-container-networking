@@ -9,6 +9,7 @@ require (
 	github.com/Microsoft/hcsshim v0.8.10-0.20200506181021-222e9efadbe0
 	github.com/billgraziano/dpapi v0.3.0
 	github.com/containernetworking/cni v0.7.0-rc2
+	github.com/daixiang0/gci v0.2.9 // indirect
 	github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/libnetwork v0.8.0-dev.2.0.20210525090646-64b7a4574d14

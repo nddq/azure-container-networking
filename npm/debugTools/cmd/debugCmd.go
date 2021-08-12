@@ -15,5 +15,4 @@ func init() {
 	debugCmd.PersistentFlags().StringP("npmF", "n", "", "Set the NPM cache file path (optional)")
 	debugCmd.PersistentFlags().StringP("iptF", "i", "", "Set the iptable-save file path (optional)")
 	debugCmd.PersistentFlags().StringP("table", "t", "", "Set table name (default to filter)")
-
 }
