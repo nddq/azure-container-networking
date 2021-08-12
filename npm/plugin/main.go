@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 	"k8s.io/utils/exec"
 )
 
@@ -47,11 +48,12 @@ func main() {
 			log.Logf("invalid command")
 		}
 	} else {
-		var err error
+		klog.Infof("Start NPM version: %s", version)
 
+		var err error
 		defer func() {
 			if r := recover(); r != nil {
-				log.Logf("recovered from error: %v", err)
+				klog.Infof("recovered from error: %v", err)
 			}
 		}()
 
@@ -70,7 +72,7 @@ func main() {
 		// Creates the clientset
 		clientset, err := kubernetes.NewForConfig(config)
 		if err != nil {
-			log.Logf("clientset creation failed with error %v.", err)
+			klog.Infof("clientset creation failed with error %v.", err)
 			panic(err.Error())
 		}
 
@@ -81,20 +83,20 @@ func main() {
 		factor := rand.Float64() + 1
 		resyncPeriod := time.Duration(float64(minResyncPeriod.Nanoseconds()) * factor)
 
-		log.Logf("[INFO] Resync period for NPM pod is set to %d.", int(resyncPeriod/time.Minute))
+		klog.Infof("Resync period for NPM pod is set to %d.", int(resyncPeriod/time.Minute))
 		factory := informers.NewSharedInformerFactory(clientset, resyncPeriod)
 
 		npMgr := npm.NewNetworkPolicyManager(clientset, factory, exec.New(), version)
-		metrics.CreateTelemetryHandle(npMgr.GetAppVersion(), npm.GetAIMetadata())
+		metrics.CreateTelemetryHandle(version, npm.GetAIMetadata())
 
 		restserver := restserver.NewNpmRestServer(restserver.DefaultHTTPListeningAddress)
 		go restserver.NPMRestServerListenAndServe(npMgr)
 
 		if err = npMgr.Start(wait.NeverStop); err != nil {
-			log.Logf("npm failed with error %v.", err)
+			klog.Infof("npm failed with error %v.", err)
 			panic(err.Error)
 		}
-		select {}
 
+		select {}
 	}
 }
