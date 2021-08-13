@@ -20,13 +20,13 @@ var parseIPtableCmd = &cobra.Command{
 		if iptableSaveF == "" {
 			iptable, err := parse.Iptables(iptableName)
 			if err != nil {
-				fmt.Println(err)
+				return fmt.Errorf("%w", err)
 			}
 			fmt.Println(iptable.String())
 		} else {
 			iptable, err := parse.IptablesFile(iptableName, iptableSaveF)
 			if err != nil {
-				fmt.Println(err)
+				return fmt.Errorf("%w", err)
 			}
 			fmt.Println(iptable.String())
 		}

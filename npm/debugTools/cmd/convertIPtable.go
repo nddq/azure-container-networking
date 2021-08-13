@@ -22,13 +22,13 @@ var convertIPtableCmd = &cobra.Command{
 		if npmCacheF == "" && iptableSaveF == "" {
 			ipTableRulesRes, err := c.GetJSONRulesFromIptables(iptableName)
 			if err != nil {
-				fmt.Printf("%+v\n", err)
+				return fmt.Errorf("%w", err)
 			}
 			fmt.Printf("%s\n", ipTableRulesRes)
 		} else {
 			ipTableRulesRes, err := c.GetJSONRulesFromIptableFile(iptableName, npmCacheF, iptableSaveF)
 			if err != nil {
-				fmt.Printf("%+v\n", err)
+				return fmt.Errorf("%w", err)
 			}
 			fmt.Printf("%s\n", ipTableRulesRes)
 		}

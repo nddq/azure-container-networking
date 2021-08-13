@@ -26,10 +26,10 @@ var getTuplesCmd = &cobra.Command{
 		dstType := dataplane.GetInputType(dst)
 		srcInput := &dataplane.Input{Content: src, Type: srcType}
 		dstInput := &dataplane.Input{Content: dst, Type: dstType}
-		if npmCacheF == "" && iptableSaveF == "" {
+		if npmCacheF == "" || iptableSaveF == "" {
 			_, tuples, err := dataplane.GetNetworkTuple(srcInput, dstInput)
 			if err != nil {
-				fmt.Printf("%+v\n", err)
+				return fmt.Errorf("%w", err)
 			}
 			for _, tuple := range tuples {
 				fmt.Printf("%+v\n", tuple)
@@ -37,7 +37,7 @@ var getTuplesCmd = &cobra.Command{
 		} else {
 			_, tuples, err := dataplane.GetNetworkTupleFile(srcInput, dstInput, npmCacheF, iptableSaveF)
 			if err != nil {
-				fmt.Printf("%+v\n", err)
+				return fmt.Errorf("%w", err)
 			}
 			for _, tuple := range tuples {
 				fmt.Printf("%+v\n", tuple)
