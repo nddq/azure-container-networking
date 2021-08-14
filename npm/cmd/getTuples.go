@@ -9,7 +9,7 @@ import (
 
 // getTuplesCmd represents the getTuples command
 var getTuplesCmd = &cobra.Command{
-	Use:   "getTuples",
+	Use:   "gettuples",
 	Short: "Get a list of hit rule tuples between specified source and destination",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		src, _ := cmd.Flags().GetString("src")
@@ -52,4 +52,6 @@ func init() {
 	debugCmd.AddCommand(getTuplesCmd)
 	getTuplesCmd.Flags().StringP("src", "s", "", "set the source")
 	getTuplesCmd.Flags().StringP("dst", "d", "", "set the destination")
+	getTuplesCmd.Flags().StringP("iptF", "i", "", "Set the iptable-save file path (optional)")
+	getTuplesCmd.Flags().StringP("npmF", "n", "", "Set the NPM cache file path (optional)")
 }

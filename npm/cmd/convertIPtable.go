@@ -9,7 +9,7 @@ import (
 
 // convertIptableCmd represents the convertIptable command
 var convertIPtableCmd = &cobra.Command{
-	Use:   "convertIPtable",
+	Use:   "convertiptable",
 	Short: "Get list of iptable's rules in JSON format",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		iptableName, _ := cmd.Flags().GetString("table")
@@ -38,4 +38,6 @@ var convertIPtableCmd = &cobra.Command{
 
 func init() {
 	debugCmd.AddCommand(convertIPtableCmd)
+	convertIPtableCmd.Flags().StringP("iptF", "i", "", "Set the iptable-save file path (optional)")
+	convertIPtableCmd.Flags().StringP("npmF", "n", "", "Set the NPM cache file path (optional)")
 }

@@ -9,22 +9,18 @@ import (
 
 // parseIPtableCmd represents the parseIPtable command
 var parseIPtableCmd = &cobra.Command{
-	Use:   "parseIPtable",
+	Use:   "parseiptable",
 	Short: "Parse iptable into Go object, dumping it to the console",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		iptableName, _ := cmd.Flags().GetString("table")
-		if iptableName == "" {
-			iptableName = "filter"
-		}
 		iptableSaveF, _ := cmd.Flags().GetString("iptF")
 		if iptableSaveF == "" {
-			iptable, err := parse.Iptables(iptableName)
+			iptable, err := parse.Iptables("filter")
 			if err != nil {
 				return fmt.Errorf("%w", err)
 			}
 			fmt.Println(iptable.String())
 		} else {
-			iptable, err := parse.IptablesFile(iptableName, iptableSaveF)
+			iptable, err := parse.IptablesFile("filter", iptableSaveF)
 			if err != nil {
 				return fmt.Errorf("%w", err)
 			}
@@ -37,4 +33,5 @@ var parseIPtableCmd = &cobra.Command{
 
 func init() {
 	debugCmd.AddCommand(parseIPtableCmd)
+	parseIPtableCmd.Flags().StringP("iptF", "i", "", "Set the iptable-save file path (optional)")
 }

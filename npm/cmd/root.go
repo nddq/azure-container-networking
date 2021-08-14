@@ -25,7 +25,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.azure-npm-debug-cli.yaml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -38,10 +38,10 @@ func initConfig() {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".cli" (without extension).
+		// Search config in home directory with name ".azure-npm-debug-cli" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".cli")
+		viper.SetConfigName(".azure-npm-debug-cli")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
