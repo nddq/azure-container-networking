@@ -25,7 +25,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.azure-npm-debug-cli.yaml)")
+	rootCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.azure-npm-debug-cli.yaml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
