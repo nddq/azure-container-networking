@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/Azure/azure-container-networking/npm/debugTools/dataplane"
@@ -32,7 +33,8 @@ var getTuplesCmd = &cobra.Command{
 				return fmt.Errorf("%w", err)
 			}
 			for _, tuple := range tuples {
-				fmt.Printf("%+v\n", tuple)
+				tupleJson, _ := json.MarshalIndent(tuple, "", "  ")
+				fmt.Printf("%s\n", tupleJson)
 			}
 		} else {
 			_, tuples, err := dataplane.GetNetworkTupleFile(srcInput, dstInput, npmCacheF, iptableSaveF)

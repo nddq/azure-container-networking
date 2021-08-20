@@ -331,6 +331,13 @@ func (c *Converter) getModulesFromRule(moduleList []*NPMIPtable.Module, ruleRes 
 					ruleRes.SPort = int32(portNum)
 				}
 			}
+		case "comment":
+			OptionValueMap := module.OptionValueMap
+			for k, v := range OptionValueMap {
+				if k == "comment" {
+					ruleRes.Description = v[0]
+				}
+			}
 		default:
 			continue
 		}

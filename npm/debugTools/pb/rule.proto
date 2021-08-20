@@ -35,5 +35,6 @@ message RuleResponse {
     bool Allowed = 7;
     Direction Direction = 8;
     map<string, string> UnsortedIpset = 9;
+    string Description = 10;
   }
   

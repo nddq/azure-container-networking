@@ -14,13 +14,14 @@ import (
 
 // Tuple struct
 type Tuple struct {
-	RuleType  string `json:"ruleType"`
-	Direction string `json:"direction"`
-	SrcIP     string `json:"srcIP"`
-	SrcPort   string `json:"srcPort"`
-	DstIP     string `json:"dstIP"`
-	DstPort   string `json:"dstPort"`
-	Protocol  string `json:"protocol"`
+	RuleType    string `json:"ruleType"`
+	Description string `json:"description"`
+	Direction   string `json:"direction"`
+	SrcIP       string `json:"srcIP"`
+	SrcPort     string `json:"srcPort"`
+	DstIP       string `json:"dstIP"`
+	DstPort     string `json:"dstPort"`
+	Protocol    string `json:"protocol"`
 }
 
 // Input struct
@@ -202,6 +203,7 @@ func generateTuple(src, dst *npm.NpmPod, rule *pb.RuleResponse) *Tuple {
 	} else {
 		tuple.Protocol = ANY
 	}
+	tuple.Description = rule.Description
 	return tuple
 }
 
