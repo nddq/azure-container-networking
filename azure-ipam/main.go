@@ -22,14 +22,10 @@ func main() {
 func executePlugin() error {
 	// logger config
 	loggerCfg := &logger.Config{
-		Level: 		  "debug",
-		OutputPaths: 	  "stdout",
-		ErrorOutputPaths: "stderr"
+		Level:            "debug",
+		OutputPaths:      "var/log/azure-ipam.log",
+		ErrorOutputPaths: "stderr",
 	}
-	loggerCfg.Level = "debug"
-	loggerCfg.OutputPaths = "stdout"
-	loggerCfg.ErrorOutputPaths = "stderr"
-
 	// Create logger
 	pluginLogger, cleanup, err := logger.New(loggerCfg)
 	if err != nil {
