@@ -21,7 +21,7 @@ func main() {
 
 func executePlugin() error {
 	// logger config
-	var loggerCfg *logger.Config
+	loggerCfg := &logger.Config{}
 	loggerCfg.Level = "debug"
 	loggerCfg.OutputPaths = "stdout"
 	loggerCfg.ErrorOutputPaths = "stderr"
