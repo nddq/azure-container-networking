@@ -48,5 +48,11 @@ func executePlugin() error {
 	}
 
 	// Execute CNI plugin
-	return skel.PluginMainWithError(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDel, version.All, bv.BuildString(pluginName))
+	cniErr := skel.PluginMainWithError(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDel, version.All, bv.BuildString(pluginName))
+	if cniErr != nil {
+		cniErr.Print()
+		return cniErr
+	}
+
+	return nil
 }
