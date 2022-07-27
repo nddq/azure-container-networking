@@ -45,7 +45,9 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+
 require (
+	github.com/coreos/go-iptables v0.6.0 // indirect
 	code.cloudfoundry.org/clock v1.0.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/internal v0.5.0 // indirect
