@@ -363,7 +363,11 @@ func (service *HTTPRestService) CreateOrUpdateNetworkContainerInternal(req *cns.
 		logger.Errorf(returnMessage)
 	}
 
+<<<<<<< HEAD
 	if service.Options[common.OptProgramSNATIPTables] == true {
+=======
+	if service.Options[common.OptDelegatedIPAM] == true {
+>>>>>>> 6be91b87 (add cns config option for running delegated ipam)
 		returnCode, returnMessage = service.programSNATIPTableRules(req)
 		if returnCode != 0 {
 			logger.Errorf(returnMessage)
