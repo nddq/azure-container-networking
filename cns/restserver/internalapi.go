@@ -384,19 +384,11 @@ func (service *HTTPRestService) programSNATIPTableRules(req *cns.CreateNetworkCo
 		return types.Success, ""
 	}
 
+	// Parse primary ip and ipnet from nnc
 	ncPrimaryIP, ncIPNet, _ := net.ParseCIDR(req.IPConfiguration.IPSubnet.IPAddress + "/" + fmt.Sprintf("%d", req.IPConfiguration.IPSubnet.PrefixLength))
-
-	// azureDNSUDPMatch := fmt.Sprintf("-m addrtype ! --dst-type local -s %s -d %s -p %s --dport %d", ncIPNet.String(), networkutils.AzureDNS, iptables.UDP, iptables.DNSPort)
-	// azureDNSTCPMatch := fmt.Sprintf("-m addrtype ! --dst-type local -s %s -d %s -p %s --dport %d", ncIPNet.String(), networkutils.AzureDNS, iptables.TCP, iptables.DNSPort)
-	// azureIMDSMatch := fmt.Sprintf("-m addrtype ! --dst-type local -s %s -d %s -p %s --dport %d", ncIPNet.String(), networkutils.AzureIMDS, iptables.TCP, iptables.HTTPPort)
-
-	// snatPrimaryIPJump := fmt.Sprintf("-j %s --to %s", iptables.Snat, ncPrimaryIP)
-	// // we need to snat IMDS traffic to node IP, this sets up snat '--to'
-	// snatHostIPJump := fmt.Sprintf("-j %s --to %s", iptables.Snat, req.HostPrimaryIP)
-
 	ipt, err := goiptables.New()
 	if err != nil {
-		return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to create iptables: %v", err)
+		return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to create iptables interface : %v", err)
 	}
 
 	chainExist, err := ipt.ChainExists(iptables.Nat, iptables.Swift)
@@ -404,55 +396,58 @@ func (service *HTTPRestService) programSNATIPTableRules(req *cns.CreateNetworkCo
 		return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of SWIFT chain: %v", err)
 	}
 
-	rule1exist, err := ipt.Exists(iptables.Nat, iptables.Postrouting, "-j", iptables.Swift)
-	if err != nil {
-		return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of rule 1: %v", err)
+	// Only check for existence of other iptables rule if SWIFT chain exists.
+	if chainExist {
+		rule1exist, err := ipt.Exists(iptables.Nat, iptables.Postrouting, "-j", iptables.Swift)
+		if err != nil {
+			return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of POSTROUTING to SWIFT chain jump: %v", err)
+		}
+
+		rule2exist, err := ipt.Exists(iptables.Nat, iptables.Swift, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureDNS, "-p", iptables.UDP, "--dport", strconv.Itoa(iptables.DNSPort), "-j", iptables.Snat, "--to", ncPrimaryIP.String())
+		if err != nil {
+			return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of SNAT UDP rule : %v", err)
+		}
+
+		rule3exist, err := ipt.Exists(iptables.Nat, iptables.Swift, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureDNS, "-p", iptables.TCP, "--dport", strconv.Itoa(iptables.DNSPort), "-j", iptables.Snat, "--to", ncPrimaryIP.String())
+		if err != nil {
+			return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of SNAT TCP rule : %v", err)
+		}
+
+		rule4exist, err := ipt.Exists(iptables.Nat, iptables.Swift, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureIMDS, "-p", iptables.TCP, "--dport", strconv.Itoa(iptables.HTTPPort), "-j", iptables.Snat, "--to", req.HostPrimaryIP)
+		if err != nil {
+			return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of SNAT IMDS rule : %v", err)
+		}
+		if rule1exist && rule2exist && rule3exist && rule4exist {
+			logger.Printf("[Azure CNS] SNAT IPTables rules already programmed")
+			service.programmedIPtables = true
+			return types.Success, ""
+		}
 	}
 
-	rule2exist, err := ipt.Exists(iptables.Nat, iptables.Swift, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureDNS, "-p", iptables.UDP, "--dport", strconv.Itoa(iptables.DNSPort), "-j", iptables.Snat, "--to", ncPrimaryIP.String())
-	if err != nil {
-		return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of rule 2: %v", err)
-	}
-
-	rule3exist, err := ipt.Exists(iptables.Nat, iptables.Swift, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureDNS, "-p", iptables.TCP, "--dport", strconv.Itoa(iptables.DNSPort), "-j", iptables.Snat, "--to", ncPrimaryIP.String())
-	if err != nil {
-		return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of rule 3: %v", err)
-	}
-
-	rule4exist, err := ipt.Exists(iptables.Nat, iptables.Swift, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureIMDS, "-p", iptables.TCP, "--dport", strconv.Itoa(iptables.HTTPPort), "-j", iptables.Snat, "--to", req.HostPrimaryIP)
-	if err != nil {
-		return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of rule 4: %v", err)
-	}
-	if chainExist && rule1exist && rule2exist && rule3exist && rule4exist {
-		logger.Printf("[Azure CNS] SNAT IPTables rules already programmed")
-		service.programmedIPtables = true
-		return types.Success, ""
-	}
-
-	logger.Printf("Creating SWIFT Chain ...")
+	logger.Printf("[Azure CNS] Creating SWIFT Chain ...")
 	err = ipt.NewChain(iptables.Nat, iptables.Swift)
 	if err != nil {
-		return types.FailedToRunIPTableCmd, "failed to run iptable cmd: " + err.Error()
+		return types.FailedToRunIPTableCmd, "[Azure CNS] failed to create SWIFT chain : " + err.Error()
 	}
-	logger.Printf("Append SWIFT Chain to POSTROUTING ...")
+	logger.Printf("[Azure CNS] Append SWIFT Chain to POSTROUTING ...")
 	err = ipt.Append(iptables.Nat, iptables.Postrouting, "-j", iptables.Swift)
 	if err != nil {
-		return types.FailedToRunIPTableCmd, "failed to run iptable cmd: " + err.Error()
+		return types.FailedToRunIPTableCmd, "[Azure CNS] failed to append SWIFT chain : " + err.Error()
 	}
-	logger.Printf("Inserting SNAT UDP rule ...")
+	logger.Printf("[Azure CNS] Inserting SNAT UDP rule ...")
 	err = ipt.Insert(iptables.Nat, iptables.Swift, 1, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureDNS, "-p", iptables.UDP, "--dport", strconv.Itoa(iptables.DNSPort), "-j", iptables.Snat, "--to", ncPrimaryIP.String())
 	if err != nil {
-		return types.FailedToRunIPTableCmd, "failed to run iptable cmd: " + err.Error()
+		return types.FailedToRunIPTableCmd, "[Azure CNS] failed to inset SNAT UDP rule : " + err.Error()
 	}
-	logger.Printf("Inserting SNAT TCP rule ...")
+	logger.Printf("[Azure CNS] Inserting SNAT TCP rule ...")
 	err = ipt.Insert(iptables.Nat, iptables.Swift, 1, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureDNS, "-p", iptables.TCP, "--dport", strconv.Itoa(iptables.DNSPort), "-j", iptables.Snat, "--to", ncPrimaryIP.String())
 	if err != nil {
-		return types.FailedToRunIPTableCmd, "failed to run iptable cmd: " + err.Error()
+		return types.FailedToRunIPTableCmd, "[Azure CNS] failed to insert SNAT TCP rule : " + err.Error()
 	}
-	logger.Printf("Inserting SNAT IMDS rule ...")
+	logger.Printf("[Azure CNS] Inserting SNAT IMDS rule ...")
 	err = ipt.Insert(iptables.Nat, iptables.Swift, 1, "-m", "addrtype", "!", "--dst-type", "local", "-s", ncIPNet.String(), "-d", networkutils.AzureIMDS, "-p", iptables.TCP, "--dport", strconv.Itoa(iptables.HTTPPort), "-j", iptables.Snat, "--to", req.HostPrimaryIP)
 	if err != nil {
-		return types.FailedToRunIPTableCmd, "failed to run iptable cmd: " + err.Error()
+		return types.FailedToRunIPTableCmd, "[Azure CNS] failed to insert SNAT IMDS rule : " + err.Error()
 	}
 
 	service.programmedIPtables = true
