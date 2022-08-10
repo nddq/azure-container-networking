@@ -45,9 +45,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-
 require (
-	github.com/coreos/go-iptables v0.6.0 // indirect
 	code.cloudfoundry.org/clock v1.0.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/internal v0.5.0 // indirect
@@ -57,6 +55,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/cgroups v1.0.1 // indirect
+	github.com/coreos/go-iptables v0.6.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/docker v20.10.8+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
