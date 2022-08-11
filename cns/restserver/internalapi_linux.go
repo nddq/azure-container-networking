@@ -35,7 +35,7 @@ func (service *HTTPRestService) programSNATRules(req *cns.CreateNetworkContainer
 		return types.UnexpectedError, fmt.Sprintf("[Azure CNS] Error. Failed to check for existence of SWIFT chain: %v", err)
 	}
 
-	if !chainExist {
+	if !chainExist { // create and append chain if it doesn't exist
 		logger.Printf("[Azure CNS] Creating SWIFT Chain ...")
 		err = ipt.NewChain(iptables.Nat, "SWIFT-POSTROUTING")
 		if err != nil {
