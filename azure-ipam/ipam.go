@@ -6,7 +6,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/Azure/azure-container-networking/azure-ipam/internal/buildinfo"
+	"github.com/Azure/azure-container-networking/azure-ipam/internal/buildversion"
 	"github.com/Azure/azure-container-networking/azure-ipam/ipconfig"
 	"github.com/Azure/azure-container-networking/cns"
 	cniSkel "github.com/containernetworking/cni/pkg/skel"
@@ -36,7 +36,7 @@ type cnsClient interface {
 func NewPlugin(logger *zap.Logger, c cnsClient, out io.Writer) (*IPAMPlugin, error) {
 	plugin := &IPAMPlugin{
 		Name:      pluginName,
-		Version:   buildinfo.Version,
+		Version:   buildversion.BuildVersion,
 		logger:    logger,
 		out:       out,
 		cnsClient: c,
