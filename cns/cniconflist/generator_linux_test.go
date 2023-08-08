@@ -90,7 +90,6 @@ func TestGenerateSWIFTConflist(t *testing.T) {
 
 	// remove newlines and carriage returns in case these UTs are running on Windows
 	assert.Equal(t, removeNewLines(fixtureBytes), removeNewLines(buffer.Bytes()))
-
 }
 
 // removeNewLines will remove the newlines and carriage returns from the byte slice
