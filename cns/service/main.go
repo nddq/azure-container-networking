@@ -96,6 +96,7 @@ const (
 	scenarioDualStackOverlay cniConflistScenario = "dualStackOverlay"
 	scenarioOverlay          cniConflistScenario = "overlay"
 	scenarioCilium           cniConflistScenario = "cilium"
+	scenarioSWIFT            cniConflistScenario = "swift"
 )
 
 var (

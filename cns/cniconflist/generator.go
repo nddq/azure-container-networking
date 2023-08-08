@@ -63,6 +63,11 @@ type CiliumGenerator struct {
 	Writer io.WriteCloser
 }
 
+// SWIFTGenerator generates the Azure CNI conflist for the SWIFT scenario
+type SWIFTGenerator struct {
+	Writer io.WriteCloser
+}
+
 func (v *V4OverlayGenerator) Close() error {
 	if err := v.Writer.Close(); err != nil {
 		return errors.Wrap(err, "error closing generator")
@@ -88,6 +93,14 @@ func (v *OverlayGenerator) Close() error {
 }
 
 func (v *CiliumGenerator) Close() error {
+	if err := v.Writer.Close(); err != nil {
+		return errors.Wrap(err, "error closing generator")
+	}
+
+	return nil
+}
+
+func (v *SWIFTGenerator) Close() error {
 	if err := v.Writer.Close(); err != nil {
 		return errors.Wrap(err, "error closing generator")
 	}
