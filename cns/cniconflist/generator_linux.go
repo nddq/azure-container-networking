@@ -137,11 +137,11 @@ func (v *CiliumGenerator) Generate() error {
 // Generate writes the CNI conflist to the Generator's output stream
 func (v *SWIFTGenerator) Generate() error {
 	conflist := cniConflist{
-		CNIVersion: overlaycniVersion,
-		Name:       overlaycniName,
+		CNIVersion: azurecniVersion,
+		Name:       azureName,
 		Plugins: []any{
 			cni.NetworkConfig{
-				Type:              overlaycniType,
+				Type:              azureType,
 				Mode:              cninet.OpModeTransparent,
 				ExecutionMode:     string(util.V4Swift),
 				IPsToRouteViaHost: []string{nodeLocalDNSIP},
