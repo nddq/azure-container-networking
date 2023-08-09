@@ -51,6 +51,8 @@ type wireserverProxy interface {
 	UnpublishNC(ctx context.Context, ncParams cns.NetworkContainerParameters, payload []byte) (*http.Response, error)
 }
 
+type IPConfigValidator func(ipConfigsRequest *cns.IPConfigsRequest) (types.ResponseCode, string)
+
 // HTTPRestService represents http listener for CNS - Container Networking Service.
 type HTTPRestService struct {
 	*cns.Service
@@ -74,6 +76,7 @@ type HTTPRestService struct {
 	EndpointStateStore      store.KeyValueStore
 	cniConflistGenerator    CNIConflistGenerator
 	generateCNIConflistOnce sync.Once
+	ipConfigsValidators     []IPConfigValidator
 }
 
 type CNIConflistGenerator interface {
@@ -227,6 +230,11 @@ func (service *HTTPRestService) Init(config *common.ServiceConfig) error {
 		logger.Errorf("[Azure CNS]  Failed to restore network state, err:%v.", err)
 		return err
 	}
+
+	// Adding ipConfigsValidators
+	service.ipConfigsValidators = []IPConfigValidator{service.validateDefaultIPConfigsRequest}
+	// if cns is running in multitenant mode, add the multitenant validator
+	// service.ipConfigsValidators = append(service.ipConfigsValidators, NewMultitenantValidator().validateMultitenantIPConfigsRequest)
 
 	// Add handlers.
 	listener := service.Listener

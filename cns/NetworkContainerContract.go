@@ -171,6 +171,8 @@ type PodInfo interface {
 	Equals(PodInfo) bool
 	// String implements string for logging PodInfos
 	String() string
+	// IsMultitenant returns true if the pod is multitenant
+	IsMultitenant() bool
 }
 
 type KubernetesPodInfo struct {
@@ -186,6 +188,7 @@ type podInfo struct {
 	PodInfraContainerID string
 	PodInterfaceID      string
 	Version             podInfoScheme
+	Multitenant         bool
 }
 
 func (p podInfo) String() string {
@@ -239,6 +242,10 @@ func (p *podInfo) OrchestratorContext() (json.RawMessage, error) {
 	return jsonContext, nil
 }
 
+func (p *podInfo) IsMultitenant() bool {
+	return p.Multitenant
+}
+
 // NewPodInfo returns an implementation of PodInfo that returns the passed
 // configuration for their namesake functions.
 func NewPodInfo(infraContainerID, interfaceID, name, namespace string) PodInfo {
@@ -276,6 +283,7 @@ func NewPodInfoFromIPConfigsRequest(req IPConfigsRequest) (PodInfo, error) {
 	}
 	p.(*podInfo).PodInfraContainerID = req.InfraContainerID
 	p.(*podInfo).PodInterfaceID = req.PodInterfaceID
+	p.(*podInfo).Multitenant = req.Multitenant
 	return p, nil
 }
 
@@ -427,6 +435,7 @@ type IPConfigsRequest struct {
 	InfraContainerID    string          `json:"infraContainerID"`
 	OrchestratorContext json.RawMessage `json:"orchestratorContext"`
 	Ifname              string          `json:"ifname"` // Used by delegated IPAM
+	Multitenant         bool            `json:"multitenant"`
 }
 
 // IPConfigResponse is used in CNS IPAM mode as a response to CNI ADD

@@ -769,14 +769,12 @@ func (service *HTTPRestService) SendNCSnapShotPeriodically(ctx context.Context, 
 func (service *HTTPRestService) validateIPConfigsRequest(
 	ipConfigsRequest cns.IPConfigsRequest,
 ) (cns.PodInfo, types.ResponseCode, string) {
-	if service.state.OrchestratorType != cns.KubernetesCRD && service.state.OrchestratorType != cns.Kubernetes {
-		return nil, types.UnsupportedOrchestratorType, "ReleaseIPConfig API supported only for kubernetes orchestrator"
-	}
-
-	if ipConfigsRequest.OrchestratorContext == nil {
-		return nil,
-			types.EmptyOrchestratorContext,
-			fmt.Sprintf("OrchastratorContext is not set in the req: %+v", ipConfigsRequest)
+	// looping through all the ipconfigs request validators, if any validator fails, return the error
+	for _, validator := range service.ipConfigsValidators {
+		respCode, message := validator(&ipConfigsRequest)
+		if respCode != types.Success {
+			return nil, respCode, message
+		}
 	}
 
 	// retrieve podinfo from orchestrator context
@@ -785,6 +783,18 @@ func (service *HTTPRestService) validateIPConfigsRequest(
 		return podInfo, types.UnsupportedOrchestratorContext, err.Error()
 	}
 	return podInfo, types.Success, ""
+}
+
+// validateDefaultIPConfigsRequest validates the request for default IP configs request
+func (service *HTTPRestService) validateDefaultIPConfigsRequest(ipConfigsRequest *cns.IPConfigsRequest) (types.ResponseCode, string) {
+	if service.state.OrchestratorType != cns.KubernetesCRD && service.state.OrchestratorType != cns.Kubernetes {
+		return types.UnsupportedOrchestratorType, "ReleaseIPConfig API supported only for kubernetes orchestrator"
+	}
+
+	if ipConfigsRequest.OrchestratorContext == nil {
+		return types.EmptyOrchestratorContext, fmt.Sprintf("OrchastratorContext is not set in the req: %+v", ipConfigsRequest)
+	}
+	return types.Success, ""
 }
 
 // getPrimaryHostInterface returns the cached InterfaceInfo, if available, otherwise
