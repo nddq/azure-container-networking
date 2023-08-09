@@ -412,6 +412,8 @@ type PodIpInfo struct {
 	PodIPConfig                     IPSubnet
 	NetworkContainerPrimaryIPConfig IPConfiguration
 	HostPrimaryIPInfo               HostIPInfo
+	AddressType                     string // multitenant or default, maybe make this an enum later
+	MACAddress                      string
 }
 
 type HostIPInfo struct {

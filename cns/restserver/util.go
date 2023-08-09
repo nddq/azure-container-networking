@@ -786,7 +786,7 @@ func (service *HTTPRestService) validateIPConfigsRequest(
 }
 
 // validateDefaultIPConfigsRequest validates the request for default IP configs request
-func (service *HTTPRestService) validateDefaultIPConfigsRequest(ipConfigsRequest *cns.IPConfigsRequest) (types.ResponseCode, string) {
+func (service *HTTPRestService) validateDefaultIPConfigsRequest(ipConfigsRequest *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	if service.state.OrchestratorType != cns.KubernetesCRD && service.state.OrchestratorType != cns.Kubernetes {
 		return types.UnsupportedOrchestratorType, "ReleaseIPConfig API supported only for kubernetes orchestrator"
 	}

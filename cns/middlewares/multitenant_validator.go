@@ -15,7 +15,8 @@ func NewMultitenantValidator() *MultitenantValidator {
 }
 
 // validateMultitenantIPConfigsRequest validate whether the request is for a multitenant pod
-func (v *MultitenantValidator) validateMultitenantIPConfigsRequest(ipConfigsRequest *cns.IPConfigsRequest) (types.ResponseCode, string) {
+// nolint
+func (v *MultitenantValidator) validateMultitenantIPConfigsRequest(ipConfigsRequest *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	// TODO: if pod is multitenant, enrich the request with the multitenant flag
 	ipConfigsRequest.Multitenant = true
 	return types.Success, ""
