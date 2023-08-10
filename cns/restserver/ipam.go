@@ -43,7 +43,7 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cn
 		return &cns.IPConfigsResponse{
 			Response: cns.Response{
 				ReturnCode: types.FailedToAllocateIPConfig,
-				Message:    fmt.Sprintf("AllocateIPConfig failed: %v, IP config request is %s", err, ipconfigsRequest),
+				Message:    fmt.Sprintf("AllocateIPConfig failed: %v, IP config request is %v", err, ipconfigsRequest),
 			},
 			PodIPInfo: podIPInfo,
 		}, err
@@ -257,7 +257,7 @@ func (service *HTTPRestService) releaseIPConfigHandlerHelper(ipconfigsRequest cn
 				ReturnCode: types.UnexpectedError,
 				Message:    err.Error(),
 			}
-			return resp, fmt.Errorf("releaseIPConfigHandlerHelper remove endpoint state failed because %v, release IP config info %s", resp.Message, ipconfigsRequest) //nolint:goerr113 // return error
+			return resp, fmt.Errorf("releaseIPConfigHandlerHelper remove endpoint state failed because %v, release IP config info %+v", resp.Message, ipconfigsRequest) //nolint:goerr113 // return error
 		}
 	}
 
@@ -265,7 +265,7 @@ func (service *HTTPRestService) releaseIPConfigHandlerHelper(ipconfigsRequest cn
 		return &cns.Response{
 			ReturnCode: types.UnexpectedError,
 			Message:    err.Error(),
-		}, fmt.Errorf("releaseIPConfigHandlerHelper releaseIPConfigs failed because %v, release IP config info %s", returnMessage, ipconfigsRequest) //nolint:goerr113 // return error
+		}, fmt.Errorf("releaseIPConfigHandlerHelper releaseIPConfigs failed because %v, release IP config info %+v", returnMessage, ipconfigsRequest) //nolint:goerr113 // return error
 	}
 
 	return &cns.Response{
@@ -337,7 +337,7 @@ func (service *HTTPRestService) releaseIPConfigsHandler(w http.ResponseWriter, r
 			ReturnCode: types.UnexpectedError,
 			Message:    err.Error(),
 		}
-		logger.Errorf("releaseIPConfigsHandler decode failed because %v, release IP config info %s", resp.Message, ipconfigsRequest)
+		logger.Errorf("releaseIPConfigsHandler decode failed because %v, release IP config info %+v", resp.Message, ipconfigsRequest)
 		w.Header().Set(cnsReturnCode, resp.ReturnCode.String())
 		err = service.Listener.Encode(w, &resp)
 		logger.ResponseEx(service.Name, ipconfigsRequest, resp, resp.ReturnCode, err)
