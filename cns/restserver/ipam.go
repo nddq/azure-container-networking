@@ -165,8 +165,6 @@ func (service *HTTPRestService) requestIPConfigHandler(w http.ResponseWriter, r 
 	// Checks to make sure we return exactly 1 IP
 	// If IPAM assigned more than 1 IP then we need to raise an error since this API can only return one IP and IPAM may have assigned more than one
 	if len(ipConfigsResp.PodIPInfo) != 1 {
-		// TODO: if cns is running in a multitenant node, then this is fine, and we should return the whole list of PodIpInfo
-
 		// we send a response back saying that this API won't be able to return the amount of IPs needed to fulfill the request
 		reserveResp := &cns.IPConfigResponse{
 			Response: cns.Response{
