@@ -33,6 +33,7 @@ import (
 	cssctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/clustersubnetstate"
 	nncctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/nodenetworkconfig"
 	"github.com/Azure/azure-container-networking/cns/logger"
+	"github.com/Azure/azure-container-networking/cns/middlewares"
 	"github.com/Azure/azure-container-networking/cns/multitenantcontroller"
 	"github.com/Azure/azure-container-networking/cns/multitenantcontroller/multitenantoperator"
 	"github.com/Azure/azure-container-networking/cns/restserver"
@@ -788,6 +789,11 @@ func main() {
 	if httpRestService != nil {
 		if cnsconfig.EnablePprof {
 			httpRestService.RegisterPProfEndpoints()
+		}
+		// if SWIFT v2 is enabled on CNS, attach multitenant middleware to rest service
+		if cnsconfig.EnableSwiftV2 {
+			multitenantMiddleware := middlewares.NewMultitenantMiddleware()
+			httpRestService.AttachMultitenantMiddleware(multitenantMiddleware)
 		}
 
 		err = httpRestService.Start(&config)
