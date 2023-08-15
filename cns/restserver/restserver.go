@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/azure-container-networking/cns/dockerclient"
 	"github.com/Azure/azure-container-networking/cns/ipamclient"
 	"github.com/Azure/azure-container-networking/cns/logger"
+	"github.com/Azure/azure-container-networking/cns/middlewares"
 	"github.com/Azure/azure-container-networking/cns/networkcontainers"
 	"github.com/Azure/azure-container-networking/cns/routes"
 	"github.com/Azure/azure-container-networking/cns/types"
@@ -228,8 +229,13 @@ func (service *HTTPRestService) Init(config *common.ServiceConfig) error {
 		return err
 	}
 
+<<<<<<< HEAD
 	// Adding the default ipconfigs request validator
 	service.ipConfigsRequestValidators = []cns.IPConfigsRequestValidator{service.validateDefaultIPConfigsRequest}
+=======
+	// Adding ipConfigsValidators
+	service.ipConfigsValidators = []middlewares.IPConfigValidator{service.validateDefaultIPConfigsRequest}
+>>>>>>> ab16c636 (update IPAM branching)
 
 	// Add handlers.
 	listener := service.Listener
@@ -353,8 +359,15 @@ func (service *HTTPRestService) MustGenerateCNIConflistOnce() {
 	})
 }
 
+<<<<<<< HEAD
 func (service *HTTPRestService) AttachSWIFTv2Middleware(middleware cns.SWIFTv2Middleware) {
 	service.SWIFTv2Middleware = middleware
 	// adding the SWIFT v2 ipconfigs request validator
 	service.ipConfigsRequestValidators = append(service.ipConfigsRequestValidators, middleware.ValidateIPConfigsRequest)
+=======
+func (service *HTTPRestService) AttachMultitenantMiddleware(middleware middlewares.Middleware) {
+	service.MultitenantMiddleware = middleware
+	// add multitenant ipconfig validator function
+	service.ipConfigsValidators = append(service.ipConfigsValidators, middleware.Validator())
+>>>>>>> ab16c636 (update IPAM branching)
 }

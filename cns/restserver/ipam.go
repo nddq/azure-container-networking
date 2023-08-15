@@ -37,6 +37,34 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ctx context.Context
 		}, errors.New("failed to validate ip config request")
 	}
 
+	var MTNpodIPInfo *cns.PodIpInfo
+
+	// Request is for multitenant pod
+	if ipconfigsRequest.Multitenant {
+		// Multitenant middleware not set
+		if service.MultitenantMiddleware == nil {
+			return &cns.IPConfigsResponse{
+				Response: cns.Response{
+					ReturnCode: types.FailedToAllocateIPConfig,
+					Message:    fmt.Sprintf("AllocateIPConfig failed: %v, IP config request is %v", errors.New("request is for multitenant pod but multitenant middleware is nil"), ipconfigsRequest),
+				},
+				PodIPInfo: []cns.PodIpInfo{},
+			}, errors.New("request is for multitenant pod but multitenant middleware is nil")
+		}
+		// If pod is multitenant and we failed to grab its MTPNC IP config, return error immediately
+		podIPInfo, err := service.MultitenantMiddleware.GetMultitenantIPConfig(podInfo)
+		if err != nil {
+			return &cns.IPConfigsResponse{
+				Response: cns.Response{
+					ReturnCode: types.FailedToAllocateIPConfig,
+					Message:    fmt.Sprintf("AllocateIPConfig failed: %v, IP config request is %v", err, ipconfigsRequest),
+				},
+				PodIPInfo: []cns.PodIpInfo{},
+			}, errors.Wrapf(err, "failed to get multitenant IP config %v", ipconfigsRequest)
+		}
+		MTNpodIPInfo = podIPInfo
+	}
+
 	// record a pod requesting an IP
 	service.podsPendingIPAssignment.Push(podInfo.Key())
 

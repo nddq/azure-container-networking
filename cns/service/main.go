@@ -804,6 +804,11 @@ func main() {
 		if cnsconfig.EnablePprof {
 			httpRestService.RegisterPProfEndpoints()
 		}
+		// if SWIFT v2 is enabled on CNS, attach multitenant middleware to rest service
+		if cnsconfig.EnableSwiftV2 {
+			multitenantMiddleware := middlewares.NewMultitenantMiddleware()
+			httpRestService.AttachMultitenantMiddleware(multitenantMiddleware)
+		}
 
 		err = httpRestService.Start(&config)
 		if err != nil {
