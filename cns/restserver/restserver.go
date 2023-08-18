@@ -13,7 +13,6 @@ import (
 	"github.com/Azure/azure-container-networking/cns/dockerclient"
 	"github.com/Azure/azure-container-networking/cns/ipamclient"
 	"github.com/Azure/azure-container-networking/cns/logger"
-	"github.com/Azure/azure-container-networking/cns/middlewares"
 	"github.com/Azure/azure-container-networking/cns/networkcontainers"
 	"github.com/Azure/azure-container-networking/cns/routes"
 	"github.com/Azure/azure-container-networking/cns/types"
@@ -73,8 +72,8 @@ type HTTPRestService struct {
 	EndpointStateStore      store.KeyValueStore
 	cniConflistGenerator    CNIConflistGenerator
 	generateCNIConflistOnce sync.Once
-	ipConfigsValidators     []middlewares.IPConfigValidator
-	MultitenantMiddleware   middlewares.Middleware
+	ipConfigsValidators     []cns.IPConfigValidator
+	MultitenantMiddleware   cns.MultitenantMiddleware
 }
 
 type CNIConflistGenerator interface {
@@ -230,7 +229,7 @@ func (service *HTTPRestService) Init(config *common.ServiceConfig) error {
 	}
 
 	// Adding ipConfigsValidators
-	service.ipConfigsValidators = []middlewares.IPConfigValidator{service.validateDefaultIPConfigsRequest}
+	service.ipConfigsValidators = []cns.IPConfigValidator{service.validateDefaultIPConfigsRequest}
 
 	// Add handlers.
 	listener := service.Listener
@@ -354,7 +353,7 @@ func (service *HTTPRestService) MustGenerateCNIConflistOnce() {
 	})
 }
 
-func (service *HTTPRestService) AttachMultitenantMiddleware(middleware middlewares.Middleware) {
+func (service *HTTPRestService) AttachMultitenantMiddleware(middleware cns.MultitenantMiddleware) {
 	service.MultitenantMiddleware = middleware
 	// add multitenant ipconfig validator function
 	service.ipConfigsValidators = append(service.ipConfigsValidators, middleware.Validator())

@@ -55,6 +55,7 @@ import (
 	"github.com/avast/retry-go/v3"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	v1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -790,11 +791,6 @@ func main() {
 		if cnsconfig.EnablePprof {
 			httpRestService.RegisterPProfEndpoints()
 		}
-		// if SWIFT v2 is enabled on CNS, attach multitenant middleware to rest service
-		if cnsconfig.EnableSwiftV2 {
-			multitenantMiddleware := middlewares.NewMultitenantMiddleware()
-			httpRestService.AttachMultitenantMiddleware(multitenantMiddleware)
-		}
 
 		err = httpRestService.Start(&config)
 		if err != nil {
@@ -1205,6 +1201,10 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 	if err = v1alpha1.AddToScheme(crdSchemes); err != nil {
 		return errors.Wrap(err, "failed to add clustersubnetstate/v1alpha1 to scheme")
 	}
+	if err = v1.AddToScheme(crdSchemes); err != nil {
+		return errors.Wrap(err, "failed to add core/v1 to scheme")
+	}
+
 	manager, err := ctrl.NewManager(kubeConfig, ctrl.Options{
 		Scheme:             crdSchemes,
 		MetricsBindAddress: "0",
@@ -1245,6 +1245,10 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 	if _, ok := node.Labels[configuration.LabelSwiftV2]; ok {
 		cnsconfig.EnableSwiftV2 = true
 		// TODO(rbtr): create the NodeInfo for Swift V2
+		// if SWIFT v2 is enabled on CNS, attach multitenant middleware to rest service
+		multitenantMiddleware := middlewares.NewMultitenantMiddleware(manager.GetClient())
+		httpRestService.AttachMultitenantMiddleware(multitenantMiddleware)
+
 	}
 
 	// get CNS Node IP to compare NC Node IP with this Node IP to ensure NCs were created for this node
