@@ -3,28 +3,24 @@ package middlewares
 import (
 	"github.com/Azure/azure-container-networking/cns"
 	"github.com/Azure/azure-container-networking/cns/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-type IPConfigValidator func(ipConfigsRequest *cns.IPConfigsRequest) (types.ResponseCode, string)
-
-// Middleware interface for testing later on
-type Middleware interface {
-	Validator() IPConfigValidator
-	GetMultitenantIPConfig(podInfo cns.PodInfo) (*cns.PodIpInfo, error)
-}
 
 type MultitenantMiddleware struct {
 	// TODO: implement
 	// need cached scoped client for pods
 	// need client for MTPNC CRD for x-ref pods
+	cli client.Client
 }
 
-func NewMultitenantMiddleware() *MultitenantMiddleware {
-	return &MultitenantMiddleware{}
+func NewMultitenantMiddleware(cli client.Client) *MultitenantMiddleware {
+	return &MultitenantMiddleware{
+		cli: cli,
+	}
 }
 
 // Return the validator function for the middleware
-func (m *MultitenantMiddleware) Validator() IPConfigValidator {
+func (m *MultitenantMiddleware) Validator() cns.IPConfigValidator {
 	return m.validateMultitenantIPConfigsRequest
 }
 
