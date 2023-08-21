@@ -32,6 +32,7 @@ import (
 	"github.com/Azure/azure-container-networking/cns/ipampool"
 	cssctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/clustersubnetstate"
 	nncctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/nodenetworkconfig"
+	"github.com/Azure/azure-container-networking/cns/kubecontroller/podwatcher"
 	"github.com/Azure/azure-container-networking/cns/logger"
 	"github.com/Azure/azure-container-networking/cns/middlewares"
 	"github.com/Azure/azure-container-networking/cns/multitenantcontroller"
@@ -1191,7 +1192,7 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 			&v1alpha.NodeNetworkConfig{}: {
 				Field: fields.SelectorFromSet(fields.Set{"metadata.name": nodeName}),
 			},
-			&corev1.Pod{}: { // nolint: typecheck
+			&corev1.Pod{}: {
 				Field: fields.SelectorFromSet(fields.Set{"spec.nodeName": nodeName}),
 			},
 		},
@@ -1269,6 +1270,14 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 		cssReconciler := cssctrl.New(clusterSubnetStateChan)
 		if err := cssReconciler.SetupWithManager(manager); err != nil {
 			return errors.Wrapf(err, "failed to setup css reconciler with manager")
+		}
+	}
+
+	// TODO: add pod listeners based on Swift V1 vs MT/V2 configuration
+	if cnsconfig.WatchPods {
+		pw := podwatcher.New(nodeName)
+		if err := pw.SetupWithManager(manager); err != nil {
+			return errors.Wrapf(err, "failed to setup pod watcher with manager")
 		}
 	}
 
