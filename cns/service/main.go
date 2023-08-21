@@ -55,7 +55,8 @@ import (
 	"github.com/avast/retry-go/v3"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -1191,6 +1192,9 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 			&v1alpha.NodeNetworkConfig{}: {
 				Field: fields.SelectorFromSet(fields.Set{"metadata.name": nodeName}),
 			},
+			&v1.Pod{}: {
+				Field: fields.SelectorFromSet(fields.Set{"spec.nodeName": nodeName}),
+			},
 		},
 	})
 
@@ -1201,7 +1205,7 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 	if err = v1alpha1.AddToScheme(crdSchemes); err != nil {
 		return errors.Wrap(err, "failed to add clustersubnetstate/v1alpha1 to scheme")
 	}
-	if err = v1.AddToScheme(crdSchemes); err != nil {
+	if err = corev1.AddToScheme(crdSchemes); err != nil {
 		return errors.Wrap(err, "failed to add core/v1 to scheme")
 	}
 
