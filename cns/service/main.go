@@ -59,12 +59,7 @@ import (
 	"github.com/avast/retry-go/v3"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-<<<<<<< HEAD
 	corev1 "k8s.io/api/core/v1"
-=======
-	corev1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
->>>>>>> f2359ac8 (getting pod info in validator)
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -1257,17 +1252,17 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 					"kube-system": {FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": nodeName})},
 				},
 			},
-			&v1.Pod{}: {
+			&corev1.Pod{}: { // nolint: typecheck
 				Field: fields.SelectorFromSet(fields.Set{"spec.nodeName": nodeName}),
 			},
 		},
-	})
+	}
 
 	crdSchemes := kuberuntime.NewScheme()
 	if err = v1alpha.AddToScheme(crdSchemes); err != nil {
 		return errors.Wrap(err, "failed to add nodenetworkconfig/v1alpha to scheme")
 	}
-	if err = v1alpha1.AddToScheme(crdSchemes); err != nil {
+	if err = v1alpha.AddToScheme(crdSchemes); err != nil {
 		return errors.Wrap(err, "failed to add clustersubnetstate/v1alpha1 to scheme")
 	}
 	if err = corev1.AddToScheme(crdSchemes); err != nil {
