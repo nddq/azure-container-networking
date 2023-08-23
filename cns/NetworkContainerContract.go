@@ -414,6 +414,8 @@ type PodIpInfo struct {
 	HostPrimaryIPInfo               HostIPInfo
 	AddressType                     string // multitenant or default, maybe make this an enum later
 	MACAddress                      string
+	IsDefaultInterface              bool
+	Routes                          []Route
 }
 
 type HostIPInfo struct {
