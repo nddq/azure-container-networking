@@ -551,6 +551,8 @@ func main() {
 			conflistGenerator = &cniconflist.OverlayGenerator{Writer: writer}
 		case scenarioCilium:
 			conflistGenerator = &cniconflist.CiliumGenerator{Writer: writer}
+		case scenarioSWIFT:
+			conflistGenerator = &cniconflist.SWIFTGenerator{Writer: writer}
 		default:
 			logger.Errorf("unable to generate cni conflist for unknown scenario: %s", scenario)
 			os.Exit(1)
