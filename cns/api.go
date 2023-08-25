@@ -48,11 +48,11 @@ type HTTPService interface {
 	GetPendingReleaseIPConfigs() []IPConfigurationStatus
 	GetPodIPConfigState() map[string]IPConfigurationStatus
 	MarkIPAsPendingRelease(numberToMark int) (map[string]IPConfigurationStatus, error)
-	AttachMultitenantMiddleware(middleware MultitenantMiddleware)
+	AttachSWIFTv2Middleware(middleware SWIFTv2Middleware)
 }
 
 // Middleware interface for testing later on
-type MultitenantMiddleware interface {
+type SWIFTv2Middleware interface {
 	Validator() IPConfigValidator
 	GetMultitenantIPConfig(podInfo PodInfo) (*PodIpInfo, error)
 }

@@ -73,7 +73,7 @@ type HTTPRestService struct {
 	cniConflistGenerator    CNIConflistGenerator
 	generateCNIConflistOnce sync.Once
 	ipConfigsValidators     []cns.IPConfigValidator
-	MultitenantMiddleware   cns.MultitenantMiddleware
+	MultitenantMiddleware   cns.SWIFTv2Middleware
 }
 
 type CNIConflistGenerator interface {
@@ -353,7 +353,7 @@ func (service *HTTPRestService) MustGenerateCNIConflistOnce() {
 	})
 }
 
-func (service *HTTPRestService) AttachMultitenantMiddleware(middleware cns.MultitenantMiddleware) {
+func (service *HTTPRestService) AttachSWIFTv2Middleware(middleware cns.SWIFTv2Middleware) {
 	service.MultitenantMiddleware = middleware
 	// add multitenant ipconfig validator function
 	service.ipConfigsValidators = append(service.ipConfigsValidators, middleware.Validator())

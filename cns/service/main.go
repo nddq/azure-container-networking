@@ -1261,8 +1261,8 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 		cnsconfig.EnableSwiftV2 = true
 		// TODO(rbtr): create the NodeInfo for Swift V2
 		// if SWIFT v2 is enabled on CNS, attach multitenant middleware to rest service
-		multitenantMiddleware := middlewares.NewMultitenantMiddleware(manager.GetClient())
-		httpRestService.AttachMultitenantMiddleware(multitenantMiddleware)
+		swiftV2Middleware := middlewares.NewSWIFTv2Middleware(manager.GetClient())
+		httpRestService.AttachSWIFTv2Middleware(swiftV2Middleware)
 
 	}
 
