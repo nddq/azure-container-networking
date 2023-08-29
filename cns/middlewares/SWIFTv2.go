@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Azure/azure-container-networking/cns"
@@ -58,15 +59,18 @@ func (m *SWIFTv2Middleware) validateMultitenantIPConfigsRequest(req *cns.IPConfi
 // nolint
 // GetMultitenantIPConfig returns the IP config for a multitenant pod from the MTPNC CRD
 func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (*cns.PodIpInfo, error) {
-	/**
-	TODO:
-	- Check if the MTPNC CRD exists for the pod, if not, return error
-	**/
+
+	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpnc := v1alpha1.MultitenantPodNetworkConfig{}
 	mtpncNamespacedName := k8types.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
 	err := m.cli.Get(context.Background(), mtpncNamespacedName, &mtpnc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get mtpnc %v with error %v", mtpncNamespacedName, err)
+	}
+
+	// Check if the MTPNC CRD is ready. If one of the fields is empty, return error
+	if mtpnc.Status.PrimaryIP == "" || mtpnc.Status.MacAddress == "" || mtpnc.Status.NCID == "" || mtpnc.Status.GatewayIP == "" {
+		return nil, errors.New("one or more of mtpnc's status fields is empty. mtpnc is not ready")
 	}
 	podIpInfo := cns.PodIpInfo{}
 	podIpInfo.PodIPConfig = cns.IPSubnet{
@@ -74,7 +78,17 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (*cns.PodIpI
 	}
 	podIpInfo.MACAddress = mtpnc.Status.MacAddress
 	podIpInfo.AddressType = cns.Multitenant
-	podIpInfo.IsDefaultInterface = true // should not assume this but for SWIFT v2, this is true
+	podIpInfo.IsDefaultInterface = true
+
+	/**
+	TODO: add routes, find out where underlay pod/service cidr,
+	underlay pod gateway, pod cidr and pod ip are stored.
+	**/
+	defaultRoute := cns.Route{
+		IPAddress:        mtpnc.Status.PrimaryIP,
+		GatewayIPAddress: mtpnc.Status.GatewayIP,
+		InterfaceToUse:   "eth1"}
+	podIpInfo.Routes = []cns.Route{defaultRoute}
 
 	return nil, nil
 }
