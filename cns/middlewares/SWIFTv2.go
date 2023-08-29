@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-container-networking/cns"
 	"github.com/Azure/azure-container-networking/cns/configuration"
 	"github.com/Azure/azure-container-networking/cns/types"
+	"github.com/Azure/azure-container-networking/crd/multitenancy/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	k8types "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,10 +57,24 @@ func (m *SWIFTv2Middleware) validateMultitenantIPConfigsRequest(req *cns.IPConfi
 
 // nolint
 // GetMultitenantIPConfig returns the IP config for a multitenant pod from the MTPNC CRD
-func (m *SWIFTv2Middleware) GetMultitenantIPConfig(podInfo cns.PodInfo) (*cns.PodIpInfo, error) {
+func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (*cns.PodIpInfo, error) {
 	/**
 	TODO:
 	- Check if the MTPNC CRD exists for the pod, if not, return error
 	**/
+	mtpnc := v1alpha1.MultitenantPodNetworkConfig{}
+	mtpncNamespacedName := k8types.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
+	err := m.cli.Get(context.Background(), mtpncNamespacedName, &mtpnc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get mtpnc %v with error %v", mtpncNamespacedName, err)
+	}
+	podIpInfo := cns.PodIpInfo{}
+	podIpInfo.PodIPConfig = cns.IPSubnet{
+		IPAddress: mtpnc.Status.PrimaryIP,
+	}
+	podIpInfo.MACAddress = mtpnc.Status.MacAddress
+	podIpInfo.AddressType = cns.Multitenant
+	podIpInfo.IsDefaultInterface = true // should not assume this but for SWIFT v2, this is true
+
 	return nil, nil
 }

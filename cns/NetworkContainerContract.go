@@ -77,6 +77,12 @@ const (
 	MultiTenantCRD = "MultiTenantCRD"
 )
 
+// Address Types
+const (
+	Default     = "Default"
+	Multitenant = "Multitenant"
+)
+
 // CreateNetworkContainerRequest specifies request to create a network container or network isolation boundary.
 type CreateNetworkContainerRequest struct {
 	HostPrimaryIP              string
