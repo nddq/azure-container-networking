@@ -12,7 +12,9 @@ const (
 	// EnvNodeIP is the IP of the node running this CNS binary
 	EnvNodeIP = "NODE_IP"
 	// LabelSwiftV2 is the Node label for Swift V2
-	LabelSwiftV2 = "kubernetes.azure.com/podnetwork-multi-tenancy"
+	LabelSwiftV2   = "kubernetes.azure.com/podnetwork-multi-tenancy"
+	EnvPodCIDR     = "PodCIDR"
+	EnvServiceCIDR = "ServiceCIDR"
 )
 
 // ErrNodeNameUnset indicates the the $EnvNodeName variable is unset in the environment.
@@ -30,4 +32,12 @@ func NodeName() (string, error) {
 // NodeIP returns the value of the NODE_IP environment variable, or empty string if unset.
 func NodeIP() string {
 	return os.Getenv(EnvNodeIP)
+}
+
+func PodCIDR() string {
+	return os.Getenv(EnvPodCIDR)
+}
+
+func ServiceCIDR() string {
+	return os.Getenv(EnvServiceCIDR)
 }

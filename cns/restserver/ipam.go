@@ -39,16 +39,6 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cn
 
 	// Request is for multitenant pod
 	if ipconfigsRequest.Multitenant {
-		// Multitenant middleware not set
-		if service.MultitenantMiddleware == nil {
-			return &cns.IPConfigsResponse{
-				Response: cns.Response{
-					ReturnCode: types.FailedToAllocateIPConfig,
-					Message:    fmt.Sprintf("AllocateIPConfig failed: %v, IP config request is %v", errors.New("request is for multitenant pod but multitenant middleware is nil"), ipconfigsRequest),
-				},
-				PodIPInfo: []cns.PodIpInfo{},
-			}, errors.New("request is for multitenant pod but multitenant middleware is nil")
-		}
 		// If pod is multitenant and we failed to grab its MTPNC IP config, return error immediately
 		podIPInfo, err := service.MultitenantMiddleware.GetSWIFTv2IPConfig(podInfo)
 		if err != nil {
