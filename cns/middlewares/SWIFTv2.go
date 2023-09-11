@@ -9,8 +9,9 @@ import (
 	"github.com/Azure/azure-container-networking/cns/configuration"
 	"github.com/Azure/azure-container-networking/cns/types"
 	"github.com/Azure/azure-container-networking/crd/multitenancy/api/v1alpha1"
+	"github.com/Azure/azure-container-networking/crd/nodenetworkconfig/api/v1alpha"
 	v1 "k8s.io/api/core/v1"
-	k8types "k8s.io/apimachinery/pkg/types"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,7 +44,7 @@ func (m *SWIFTv2Middleware) validateMultitenantIPConfigsRequest(req *cns.IPConfi
 		errBuf := fmt.Sprintf("unmarshalling pod info from ipconfigs request %v failed with error %v", req, err)
 		return types.UnexpectedError, errBuf
 	}
-	podNamespacedName := k8types.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
+	podNamespacedName := k8stypes.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
 	pod := v1.Pod{}
 	err = m.cli.Get(context.TODO(), podNamespacedName, &pod)
 	if err != nil {
@@ -62,7 +63,7 @@ func (m *SWIFTv2Middleware) validateMultitenantIPConfigsRequest(req *cns.IPConfi
 func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.PodIpInfo, error) {
 	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpnc := v1alpha1.MultitenantPodNetworkConfig{}
-	mtpncNamespacedName := k8types.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
+	mtpncNamespacedName := k8stypes.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
 	err := m.cli.Get(context.Background(), mtpncNamespacedName, &mtpnc)
 	if err != nil {
 		return cns.PodIpInfo{}, fmt.Errorf("failed to get pod's mtpnc from cache : %w", err)
@@ -86,15 +87,36 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.PodIpIn
 		InterfaceToUse:   "eth1",
 	}
 
+	nnc := v1alpha.NodeNetworkConfig{}
+	nodeName, err := configuration.NodeName()
+	if err != nil {
+		return cns.PodIpInfo{}, fmt.Errorf("failed to get node name : %w", err)
+	}
+	nncNamespacedName := k8stypes.NamespacedName{Namespace: "kube-system", Name: nodeName}
+	err = m.cli.Get(context.Background(), nncNamespacedName, &nnc)
+	if err != nil {
+		return cns.PodIpInfo{}, fmt.Errorf("failed to get node network config : %w", err)
+	}
+
+	podCIDR, err := configuration.PodCIDR()
+	if err != nil {
+		return cns.PodIpInfo{}, fmt.Errorf("failed to get pod CIDR from environment : %w", err)
+	}
+
 	podCIDRRoute := cns.Route{
-		IPAddress:        configuration.PodCIDR(),
-		GatewayIPAddress: mtpnc.Status.GatewayIP,
+		IPAddress:        podCIDR,
+		GatewayIPAddress: nnc.Status.NetworkContainers[0].DefaultGateway,
 		InterfaceToUse:   "eth0",
 	}
 
+	serviceCIDR, err := configuration.ServiceCIDR()
+	if err != nil {
+		return cns.PodIpInfo{}, fmt.Errorf("failed to get service CIDR from environment : %w", err)
+	}
+
 	serviceCIDRRoute := cns.Route{
-		IPAddress:        configuration.ServiceCIDR(),
-		GatewayIPAddress: mtpnc.Status.GatewayIP,
+		IPAddress:        serviceCIDR,
+		GatewayIPAddress: nnc.Status.NetworkContainers[0].DefaultGateway,
 		InterfaceToUse:   "eth0",
 	}
 	podIPInfo.Routes = []cns.Route{defaultRoute, podCIDRRoute, serviceCIDRRoute}

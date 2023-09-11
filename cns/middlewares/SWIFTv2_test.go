@@ -1,9 +1,11 @@
 package middlewares
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Azure/azure-container-networking/cns"
+	"github.com/Azure/azure-container-networking/cns/configuration"
 	mock "github.com/Azure/azure-container-networking/cns/middlewares/mock"
 	"github.com/Azure/azure-container-networking/cns/types"
 	"gotest.tools/v3/assert"
@@ -65,6 +67,10 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 }
 
 func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
+	os.Setenv(configuration.EnvNodeName, "testnode")
+	os.Setenv(configuration.EnvPodCIDR, "10.0.1.10/24")
+	os.Setenv(configuration.EnvServiceCIDR, "10.0.2.10/24")
+
 	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
 
 	ipInfo, err := middleware.GetSWIFTv2IPConfig(testPod1Info)
