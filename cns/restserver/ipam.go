@@ -35,7 +35,7 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cn
 		}, errors.New("failed to validate ip config request")
 	}
 
-	var MTNpodIPInfo cns.PodIpInfo
+	var MTpodIPInfo cns.PodIpInfo
 
 	// Request is for multitenant pod
 	if podInfo.IsMultitenant() {
@@ -50,7 +50,7 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cn
 				PodIPInfo: []cns.PodIpInfo{},
 			}, errors.Wrapf(err, "failed to get multitenant IP config %v", ipconfigsRequest)
 		}
-		MTNpodIPInfo = podIPInfo
+		MTpodIPInfo = podIPInfo
 	}
 
 	// record a pod requesting an IP
@@ -90,8 +90,15 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cn
 	}
 
 	// Adding MTNpodIPInfo to the response, if it is not empty
-	if MTNpodIPInfo.PodIPConfig.IPAddress != "" {
-		podIPInfo = append(podIPInfo, MTNpodIPInfo)
+	if MTpodIPInfo.PodIPConfig.IPAddress != "" {
+		defaultGateway := podIPInfo[0].NetworkContainerPrimaryIPConfig.GatewayIPAddress
+		// Populate the non-multitenant routes with the default gateway
+		for i := range MTpodIPInfo.Routes {
+			if MTpodIPInfo.Routes[i].GatewayIPAddress == "" {
+				MTpodIPInfo.Routes[i].GatewayIPAddress = defaultGateway
+			}
+		}
+		podIPInfo = append(podIPInfo, MTpodIPInfo)
 	}
 
 	return &cns.IPConfigsResponse{

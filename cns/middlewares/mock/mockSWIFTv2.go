@@ -93,7 +93,16 @@ func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.Pod
 		GatewayIPAddress: mtpnc.Status.GatewayIP,
 		InterfaceToUse:   "eth1",
 	}
-	podIPInfo.Routes = []cns.Route{defaultRoute}
+	podCIDRRoute := cns.Route{
+		IPAddress:      "10.0.1.10/24",
+		InterfaceToUse: "eth0",
+	}
+
+	serviceCIDRRoute := cns.Route{
+		IPAddress:      "10.0.2.10/24",
+		InterfaceToUse: "eth0",
+	}
+	podIPInfo.Routes = []cns.Route{defaultRoute, podCIDRRoute, serviceCIDRRoute}
 
 	return podIPInfo, nil
 }

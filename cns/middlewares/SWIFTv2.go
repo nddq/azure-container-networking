@@ -9,7 +9,6 @@ import (
 	"github.com/Azure/azure-container-networking/cns/configuration"
 	"github.com/Azure/azure-container-networking/cns/types"
 	"github.com/Azure/azure-container-networking/crd/multitenancy/api/v1alpha1"
-	"github.com/Azure/azure-container-networking/crd/nodenetworkconfig/api/v1alpha"
 	v1 "k8s.io/api/core/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,26 +86,14 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.PodIpIn
 		InterfaceToUse:   "eth1",
 	}
 
-	nnc := v1alpha.NodeNetworkConfig{}
-	nodeName, err := configuration.NodeName()
-	if err != nil {
-		return cns.PodIpInfo{}, fmt.Errorf("failed to get node name : %w", err)
-	}
-	nncNamespacedName := k8stypes.NamespacedName{Namespace: "kube-system", Name: nodeName}
-	err = m.cli.Get(context.Background(), nncNamespacedName, &nnc)
-	if err != nil {
-		return cns.PodIpInfo{}, fmt.Errorf("failed to get node network config : %w", err)
-	}
-
 	podCIDR, err := configuration.PodCIDR()
 	if err != nil {
 		return cns.PodIpInfo{}, fmt.Errorf("failed to get pod CIDR from environment : %w", err)
 	}
 
 	podCIDRRoute := cns.Route{
-		IPAddress:        podCIDR,
-		GatewayIPAddress: nnc.Status.NetworkContainers[0].DefaultGateway,
-		InterfaceToUse:   "eth0",
+		IPAddress:      podCIDR,
+		InterfaceToUse: "eth0",
 	}
 
 	serviceCIDR, err := configuration.ServiceCIDR()
@@ -115,9 +102,8 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.PodIpIn
 	}
 
 	serviceCIDRRoute := cns.Route{
-		IPAddress:        serviceCIDR,
-		GatewayIPAddress: nnc.Status.NetworkContainers[0].DefaultGateway,
-		InterfaceToUse:   "eth0",
+		IPAddress:      serviceCIDR,
+		InterfaceToUse: "eth0",
 	}
 	podIPInfo.Routes = []cns.Route{defaultRoute, podCIDRRoute, serviceCIDRRoute}
 

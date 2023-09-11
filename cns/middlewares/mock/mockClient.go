@@ -6,7 +6,6 @@ import (
 
 	"github.com/Azure/azure-container-networking/cns/configuration"
 	"github.com/Azure/azure-container-networking/crd/multitenancy/api/v1alpha1"
-	"github.com/Azure/azure-container-networking/crd/nodenetworkconfig/api/v1alpha"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,14 +16,12 @@ import (
 var (
 	errPodNotFound   = errors.New("pod not found")
 	errMTPNCNotFound = errors.New("mtpnc not found")
-	errNNCNotFound   = errors.New("nnc not found")
 )
 
-// MockClient implements the client.Client interface for testing. We only care about Get.
+// MockClient implements the client.Client interface for testing. We only care about Get, the rest is nil ops.
 type MockClient struct {
 	mtPodCache map[string]*v1.Pod
 	mtpncCache map[string]*v1alpha1.MultitenantPodNetworkConfig
-	nncCache   map[string]*v1alpha.NodeNetworkConfig
 }
 
 // NewMockClient returns a new MockClient.
@@ -41,22 +38,12 @@ func NewMockClient() *MockClient {
 
 	testMTPNC3 := v1alpha1.MultitenantPodNetworkConfig{}
 
-	testNNC := v1alpha.NodeNetworkConfig{
-		Status: v1alpha.NodeNetworkConfigStatus{
-			NetworkContainers: []v1alpha.NetworkContainer{
-				{
-					DefaultGateway: "1.1.1.1",
-				},
-			},
-		},
-	}
 	return &MockClient{
 		mtPodCache: map[string]*v1.Pod{"testpod1namespace/testpod1": &testPod1},
 		mtpncCache: map[string]*v1alpha1.MultitenantPodNetworkConfig{
 			"testpod1namespace/testpod1": &testMTPNC1,
 			"testpod3namespace/testpod3": &testMTPNC3,
 		},
-		nncCache: map[string]*v1alpha.NodeNetworkConfig{"kube-system/testnode": &testNNC},
 	}
 }
 
@@ -74,12 +61,6 @@ func (c *MockClient) Get(_ context.Context, key client.ObjectKey, obj client.Obj
 			*o = *mtpnc
 		} else {
 			return errMTPNCNotFound
-		}
-	case *v1alpha.NodeNetworkConfig:
-		if nnc, ok := c.nncCache[key.String()]; ok {
-			*o = *nnc
-		} else {
-			return errNNCNotFound
 		}
 	}
 	return nil

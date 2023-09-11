@@ -67,7 +67,6 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 }
 
 func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
-	os.Setenv(configuration.EnvNodeName, "testnode")
 	os.Setenv(configuration.EnvPodCIDR, "10.0.1.10/24")
 	os.Setenv(configuration.EnvServiceCIDR, "10.0.2.10/24")
 
