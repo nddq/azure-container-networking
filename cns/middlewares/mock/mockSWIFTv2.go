@@ -30,6 +30,8 @@ func NewMockSWIFTv2Middleware() *MockSWIFTv2Middleware {
 	testMTPNC1 := v1alpha1.MultitenantPodNetworkConfig{}
 	testMTPNC1.Status.PrimaryIP = "192.168.0.1"
 	testMTPNC1.Status.MacAddress = "00:00:00:00:00:00"
+	testMTPNC1.Status.GatewayIP = "10.0.0.1"
+	testMTPNC1.Status.NCID = "testncid"
 
 	return &MockSWIFTv2Middleware{
 		mtPodState: map[string]*v1.Pod{"testpod1namespace/testpod1": &testPod1},
@@ -66,17 +68,17 @@ func (m *MockSWIFTv2Middleware) validateMultitenantIPConfigsRequest(req *cns.IPC
 
 // GetSWIFTv2IPConfig(podInfo PodInfo) (*PodIpInfo, error)
 // GetMultitenantIPConfig returns the IP config for a multitenant pod from the MTPNC CRD
-func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (*cns.PodIpInfo, error) {
+func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.PodIpInfo, error) {
 	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpncNamespacedName := k8types.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
 	mtpnc, ok := m.mtpncState[mtpncNamespacedName.String()]
 	if !ok {
-		return nil, errFailedToGetPod
+		return cns.PodIpInfo{}, errFailedToGetPod
 	}
 
 	// Check if the MTPNC CRD is ready. If one of the fields is empty, return error
 	if mtpnc.Status.PrimaryIP == "" || mtpnc.Status.MacAddress == "" || mtpnc.Status.NCID == "" || mtpnc.Status.GatewayIP == "" {
-		return nil, errMTPNCNotReady
+		return cns.PodIpInfo{}, errMTPNCNotReady
 	}
 	podIPInfo := cns.PodIpInfo{}
 	podIPInfo.PodIPConfig = cns.IPSubnet{
@@ -93,5 +95,5 @@ func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (*cns.Po
 	}
 	podIPInfo.Routes = []cns.Route{defaultRoute}
 
-	return nil, nil
+	return podIPInfo, nil
 }

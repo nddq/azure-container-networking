@@ -35,10 +35,10 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cn
 		}, errors.New("failed to validate ip config request")
 	}
 
-	var MTNpodIPInfo *cns.PodIpInfo
+	var MTNpodIPInfo cns.PodIpInfo
 
 	// Request is for multitenant pod
-	if ipconfigsRequest.Multitenant {
+	if podInfo.IsMultitenant() {
 		// If pod is multitenant and we failed to grab its MTPNC IP config, return error immediately
 		podIPInfo, err := service.MultitenantMiddleware.GetSWIFTv2IPConfig(podInfo)
 		if err != nil {
@@ -89,9 +89,9 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cn
 		}
 	}
 
-	// Adding MTNpodIPInfo to the response, skipping over updateEndpointState since not sure if we have to update endpoint state for MTNpodIPInfo
-	if MTNpodIPInfo != nil {
-		podIPInfo = append(podIPInfo, *MTNpodIPInfo)
+	// Adding MTNpodIPInfo to the response, if it is not empty
+	if MTNpodIPInfo.PodIPConfig.IPAddress != "" {
+		podIPInfo = append(podIPInfo, MTNpodIPInfo)
 	}
 
 	return &cns.IPConfigsResponse{

@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/azure-container-networking/cns"
 	"github.com/Azure/azure-container-networking/cns/common"
 	"github.com/Azure/azure-container-networking/cns/fakes"
+	middlewares "github.com/Azure/azure-container-networking/cns/middlewares/mock"
 	"github.com/Azure/azure-container-networking/cns/types"
 	"github.com/Azure/azure-container-networking/crd/nodenetworkconfig/api/v1alpha"
 	"github.com/Azure/azure-container-networking/store"
@@ -65,6 +66,7 @@ func getTestService() *HTTPRestService {
 	var config common.ServiceConfig
 	httpsvc, _ := NewHTTPRestService(&config, &fakes.WireserverClientFake{}, &fakes.WireserverProxyFake{}, &fakes.NMAgentClientFake{}, store.NewMockStore(""), nil, nil)
 	svc = httpsvc
+	svc.ipConfigsValidators = append(svc.ipConfigsValidators, svc.validateDefaultIPConfigsRequest)
 	httpsvc.IPAMPoolMonitor = &fakes.MonitorFake{}
 	setOrchestratorTypeInternal(cns.KubernetesCRD)
 
@@ -1528,4 +1530,61 @@ func TestIPAMFailToRequestPartialIPsInPool(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected fail requesting IPs due to only having one in the ipconfig map, IPs in the pool will not be assigned")
 	}
+}
+
+func TestIPAMGetSWIFTv2IP(t *testing.T) {
+	svc := getTestService()
+	svc.AttachSWIFTv2Middleware(middlewares.NewMockSWIFTv2Middleware())
+
+	ncStates := []ncState{
+		{
+			ncID: testNCID,
+			ips: []string{
+				testIP1,
+			},
+		},
+		{
+			ncID: testNCIDv6,
+			ips: []string{
+				testIP1v6,
+			},
+		},
+	}
+
+	// Add Available Pod IP to state
+	for i := range ncStates {
+		ipconfigs := make(map[string]cns.IPConfigurationStatus, 0)
+		state := NewPodState(ncStates[i].ips[0], ipIDs[i][0], ncStates[i].ncID, types.Available, 0)
+		ipconfigs[state.ID] = state
+		err := UpdatePodIPConfigState(t, svc, ipconfigs, ncStates[i].ncID)
+		if err != nil {
+			t.Fatalf("Expected to not fail adding IPs to state: %+v", err)
+		}
+	}
+
+	req := cns.IPConfigsRequest{
+		PodInterfaceID:   testPod1Info.InterfaceID(),
+		InfraContainerID: testPod1Info.InfraContainerID(),
+	}
+	b, _ := testPod1Info.OrchestratorContext()
+	req.OrchestratorContext = b
+	req.DesiredIPAddresses = make([]string, 2)
+	req.DesiredIPAddresses[0] = testIP1
+	req.DesiredIPAddresses[1] = testIP1v6
+
+	resp, err := svc.requestIPConfigHandlerHelper(req)
+	if err != nil {
+		t.Fatalf("Expected to not fail requesting IPs: %+v", err)
+	}
+	podIPInfo := resp.PodIPInfo
+
+	if len(podIPInfo) != 3 {
+		t.Fatalf("Expected to get 3 pod IP info (IPv4, IPv6, Multitenant IP), actual %d", len(podIPInfo))
+	}
+
+	// Asserting that multitenant IP is returned
+	assert.Equal(t, SWIFTv2IP, podIPInfo[2].PodIPConfig.IPAddress)
+	assert.Equal(t, SWIFTv2MAC, podIPInfo[2].MACAddress)
+	assert.Equal(t, cns.Multitenant, podIPInfo[2].AddressType)
+	assert.True(t, podIPInfo[2].IsDefaultInterface)
 }

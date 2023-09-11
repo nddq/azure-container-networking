@@ -30,6 +30,10 @@ import (
 
 const (
 	primaryIp           = "10.0.0.5"
+	SWIFTv2IP           = "192.168.0.1"
+	SWIFTv2MAC          = "00:00:00:00:00:00"
+	SWIFTv2GatewayIP    = "10.0.0.1"
+	SWIFTv2NCID         = "testncid"
 	gatewayIp           = "10.0.0.1"
 	subnetPrfixLength   = 24
 	dockerContainerType = cns.Docker
