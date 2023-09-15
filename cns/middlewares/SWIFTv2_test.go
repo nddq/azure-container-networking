@@ -25,8 +25,6 @@ var (
 func TestValidateMultitenantIPConfigsRequestSuccess(t *testing.T) {
 	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
 
-	validator := middleware.Validator()
-
 	happyReq := &cns.IPConfigsRequest{
 		PodInterfaceID:   testPod1Info.InterfaceID(),
 		InfraContainerID: testPod1Info.InfraContainerID(),
@@ -35,7 +33,7 @@ func TestValidateMultitenantIPConfigsRequestSuccess(t *testing.T) {
 	happyReq.OrchestratorContext = b
 	happyReq.Multitenant = false
 
-	respCode, err := validator(happyReq)
+	respCode, err := middleware.ValidateMultitenantIPConfigsRequest(happyReq)
 	assert.Equal(t, err, "")
 	assert.Equal(t, respCode, types.Success)
 	assert.Equal(t, happyReq.Multitenant, true)
@@ -44,15 +42,13 @@ func TestValidateMultitenantIPConfigsRequestSuccess(t *testing.T) {
 func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
 
-	validator := middleware.Validator()
-
 	// Fail to unmarshal pod info test
 	failReq := &cns.IPConfigsRequest{
 		PodInterfaceID:   testPod1Info.InterfaceID(),
 		InfraContainerID: testPod1Info.InfraContainerID(),
 	}
 	failReq.OrchestratorContext = []byte("invalid")
-	respCode, _ := validator(failReq)
+	respCode, _ := middleware.ValidateMultitenantIPConfigsRequest(failReq)
 	assert.Equal(t, respCode, types.UnexpectedError)
 
 	// Pod doesn't exist in cache test
@@ -62,7 +58,7 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 	}
 	b, _ := testPod2Info.OrchestratorContext()
 	failReq.OrchestratorContext = b
-	respCode, _ = validator(failReq)
+	respCode, _ = middleware.ValidateMultitenantIPConfigsRequest(failReq)
 	assert.Equal(t, respCode, types.UnexpectedError)
 }
 

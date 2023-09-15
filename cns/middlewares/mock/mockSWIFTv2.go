@@ -39,14 +39,9 @@ func NewMockSWIFTv2Middleware() *MockSWIFTv2Middleware {
 	}
 }
 
-// Return the validator function for the middleware
-func (m *MockSWIFTv2Middleware) Validator() cns.IPConfigValidator {
-	return m.validateMultitenantIPConfigsRequest
-}
-
 // validateMultitenantIPConfigsRequest validates if pod is multitenant
 // nolint
-func (m *MockSWIFTv2Middleware) validateMultitenantIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
+func (m *MockSWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	// Retrieve the pod from the cluster
 	podInfo, err := cns.UnmarshalPodInfo(req.OrchestratorContext)
 	if err != nil {

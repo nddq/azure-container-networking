@@ -17,9 +17,6 @@ import (
 var ErrMTPNCNotReady = errors.New("mtpnc is not ready")
 
 type SWIFTv2Middleware struct {
-	// TODO: implement
-	// need cached scoped client for pods
-	// need client for MTPNC CRD for x-ref pods
 	cli client.Client
 }
 
@@ -29,14 +26,9 @@ func NewSWIFTv2Middleware(cli client.Client) *SWIFTv2Middleware {
 	}
 }
 
-// Return the validator function for the middleware
-func (m *SWIFTv2Middleware) Validator() cns.IPConfigValidator {
-	return m.validateMultitenantIPConfigsRequest
-}
-
 // validateMultitenantIPConfigsRequest validates if pod is multitenant
 // nolint
-func (m *SWIFTv2Middleware) validateMultitenantIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
+func (m *SWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	// Retrieve the pod from the cluster
 	podInfo, err := cns.UnmarshalPodInfo(req.OrchestratorContext)
 	if err != nil {

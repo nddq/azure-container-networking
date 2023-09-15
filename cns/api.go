@@ -53,7 +53,7 @@ type HTTPService interface {
 
 // Middleware interface for testing later on
 type SWIFTv2Middleware interface {
-	Validator() IPConfigValidator
+	ValidateMultitenantIPConfigsRequest(req *IPConfigsRequest) (respCode types.ResponseCode, message string)
 	GetSWIFTv2IPConfig(podInfo PodInfo) (PodIpInfo, error)
 }
 

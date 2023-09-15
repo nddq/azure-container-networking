@@ -356,5 +356,5 @@ func (service *HTTPRestService) MustGenerateCNIConflistOnce() {
 func (service *HTTPRestService) AttachSWIFTv2Middleware(middleware cns.SWIFTv2Middleware) {
 	service.MultitenantMiddleware = middleware
 	// add multitenant ipconfig validator function
-	service.ipConfigsValidators = append(service.ipConfigsValidators, middleware.Validator())
+	service.ipConfigsValidators = append(service.ipConfigsValidators, middleware.ValidateMultitenantIPConfigsRequest)
 }
