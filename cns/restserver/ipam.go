@@ -4,6 +4,7 @@
 package restserver
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -24,7 +25,7 @@ var (
 )
 
 // requestIPConfigHandlerHelper validates the request, assigns IPs, and returns a response
-func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cns.IPConfigsRequest) (*cns.IPConfigsResponse, error) {
+func (service *HTTPRestService) requestIPConfigHandlerHelper(ctx context.Context, ipconfigsRequest cns.IPConfigsRequest) (*cns.IPConfigsResponse, error) {
 	podInfo, returnCode, returnMessage := service.validateIPConfigsRequest(ipconfigsRequest)
 	if returnCode != types.Success {
 		return &cns.IPConfigsResponse{
@@ -40,7 +41,7 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ipconfigsRequest cn
 	// Request is for multitenant pod
 	if podInfo.IsMultitenant() {
 		// If pod is multitenant and we failed to grab its MTPNC IP config, return error immediately
-		podIPInfo, err := service.MultitenantMiddleware.GetSWIFTv2IPConfig(podInfo)
+		podIPInfo, err := service.MultitenantMiddleware.GetSWIFTv2IPConfig(ctx, podInfo)
 		if err != nil {
 			return &cns.IPConfigsResponse{
 				Response: cns.Response{
@@ -147,7 +148,7 @@ func (service *HTTPRestService) requestIPConfigHandler(w http.ResponseWriter, r 
 		}
 	}
 
-	ipConfigsResp, errResp := service.requestIPConfigHandlerHelper(ipconfigsRequest) //nolint:contextcheck // appease linter
+	ipConfigsResp, errResp := service.requestIPConfigHandlerHelper(context.Background(), ipconfigsRequest) //nolint:contextcheck // appease linter
 	if errResp != nil {
 		// As this API is expected to return IPConfigResponse, generate it from the IPConfigsResponse returned above
 		reserveResp := &cns.IPConfigResponse{
@@ -194,7 +195,7 @@ func (service *HTTPRestService) requestIPConfigsHandler(w http.ResponseWriter, r
 		return
 	}
 
-	ipConfigsResp, err := service.requestIPConfigHandlerHelper(ipconfigsRequest) // nolint:contextcheck // appease linter
+	ipConfigsResp, err := service.requestIPConfigHandlerHelper(context.Background(), ipconfigsRequest) // nolint:contextcheck // appease linter
 	if err != nil {
 		w.Header().Set(cnsReturnCode, ipConfigsResp.Response.ReturnCode.String())
 		err = service.Listener.Encode(w, &ipConfigsResp)

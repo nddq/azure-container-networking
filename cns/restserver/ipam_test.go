@@ -4,6 +4,7 @@
 package restserver
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/netip"
@@ -1572,7 +1573,7 @@ func TestIPAMGetSWIFTv2IP(t *testing.T) {
 	req.DesiredIPAddresses[0] = testIP1
 	req.DesiredIPAddresses[1] = testIP1v6
 
-	resp, err := svc.requestIPConfigHandlerHelper(req)
+	resp, err := svc.requestIPConfigHandlerHelper(context.TODO(), req)
 	if err != nil {
 		t.Fatalf("Expected to not fail requesting IPs: %+v", err)
 	}
@@ -1585,6 +1586,6 @@ func TestIPAMGetSWIFTv2IP(t *testing.T) {
 	// Asserting that multitenant IP is returned
 	assert.Equal(t, SWIFTv2IP, podIPInfo[2].PodIPConfig.IPAddress)
 	assert.Equal(t, SWIFTv2MAC, podIPInfo[2].MACAddress)
-	assert.Equal(t, cns.Multitenant, podIPInfo[2].AddressType)
+	assert.Equal(t, cns.Secondary, podIPInfo[2].AddressType)
 	assert.True(t, podIPInfo[2].IsDefaultInterface)
 }

@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -63,7 +64,7 @@ func (m *MockSWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPC
 
 // GetSWIFTv2IPConfig(podInfo PodInfo) (*PodIpInfo, error)
 // GetMultitenantIPConfig returns the IP config for a multitenant pod from the MTPNC CRD
-func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.PodIpInfo, error) {
+func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(_ context.Context, podInfo cns.PodInfo) (cns.PodIpInfo, error) {
 	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpncNamespacedName := k8types.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
 	mtpnc, ok := m.mtpncState[mtpncNamespacedName.String()]
@@ -80,7 +81,7 @@ func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.Pod
 		IPAddress: mtpnc.Status.PrimaryIP,
 	}
 	podIPInfo.MACAddress = mtpnc.Status.MacAddress
-	podIPInfo.AddressType = cns.Multitenant
+	podIPInfo.AddressType = cns.Secondary
 	podIPInfo.IsDefaultInterface = true
 
 	defaultRoute := cns.Route{

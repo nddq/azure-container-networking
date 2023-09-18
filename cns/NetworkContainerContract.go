@@ -79,8 +79,8 @@ const (
 
 // Address Types
 const (
-	Default     = "Default"
-	Multitenant = "Multitenant"
+	Default   = "Default"
+	Secondary = "Secondary"
 )
 
 // CreateNetworkContainerRequest specifies request to create a network container or network isolation boundary.

@@ -51,11 +51,11 @@ func (m *SWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfi
 }
 
 // GetMultitenantIPConfig returns the IP config for a multitenant pod from the MTPNC CRD
-func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.PodIpInfo, error) {
+func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(ctx context.Context, podInfo cns.PodInfo) (cns.PodIpInfo, error) {
 	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpnc := v1alpha1.MultitenantPodNetworkConfig{}
 	mtpncNamespacedName := k8stypes.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
-	err := m.cli.Get(context.Background(), mtpncNamespacedName, &mtpnc)
+	err := m.cli.Get(ctx, mtpncNamespacedName, &mtpnc)
 	if err != nil {
 		return cns.PodIpInfo{}, fmt.Errorf("failed to get pod's mtpnc from cache : %w", err)
 	}
@@ -69,7 +69,7 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(podInfo cns.PodInfo) (cns.PodIpIn
 		IPAddress: mtpnc.Status.PrimaryIP,
 	}
 	podIPInfo.MACAddress = mtpnc.Status.MacAddress
-	podIPInfo.AddressType = cns.Multitenant
+	podIPInfo.AddressType = cns.Secondary
 	podIPInfo.IsDefaultInterface = true
 
 	defaultRoute := cns.Route{

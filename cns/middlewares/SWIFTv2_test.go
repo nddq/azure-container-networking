@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -68,9 +69,9 @@ func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
 
 	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
 
-	ipInfo, err := middleware.GetSWIFTv2IPConfig(testPod1Info)
+	ipInfo, err := middleware.GetSWIFTv2IPConfig(context.TODO(), testPod1Info)
 	assert.Equal(t, err, nil)
-	assert.Equal(t, ipInfo.AddressType, cns.Multitenant)
+	assert.Equal(t, ipInfo.AddressType, cns.Secondary)
 	assert.Equal(t, ipInfo.IsDefaultInterface, true)
 }
 
@@ -78,10 +79,10 @@ func TestGetSWIFTv2IPConfigFailure(t *testing.T) {
 	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
 
 	// Pod's MTPNC doesn't exist in cache test
-	_, err := middleware.GetSWIFTv2IPConfig(testPod2Info)
+	_, err := middleware.GetSWIFTv2IPConfig(context.TODO(), testPod2Info)
 	assert.Error(t, err, "failed to get pod's mtpnc from cache : mtpnc not found")
 
 	// Pod's MTPNC is not ready test
-	_, err = middleware.GetSWIFTv2IPConfig(testPod3Info)
+	_, err = middleware.GetSWIFTv2IPConfig(context.TODO(), testPod3Info)
 	assert.Error(t, err, ErrMTPNCNotReady.Error())
 }
