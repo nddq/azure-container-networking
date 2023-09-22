@@ -12,7 +12,7 @@ const (
 	// EnvNodeIP is the IP of the node running this CNS binary
 	EnvNodeIP = "NODE_IP"
 	// LabelSwiftV2 is the Node label for Swift V2
-	LabelSwiftV2   = "kubernetes.azure.com/podnetwork-multi-tenancy"
+	LabelSwiftV2   = "kubernetes.azure.com/podnetwork-multi-tenancy-enabled"
 	EnvPodCIDR     = "POD_CIDR"
 	EnvServiceCIDR = "SERVICE_CIDR"
 )
@@ -20,11 +20,11 @@ const (
 // ErrNodeNameUnset indicates the the $EnvNodeName variable is unset in the environment.
 var ErrNodeNameUnset = errors.Errorf("must declare %s environment variable", EnvNodeName)
 
-// ErrNodeIPUnset indicates the the $EnvNodeIP variable is unset in the environment.
+// ErrPodCIDRUnset indicates the the $EnvPodCIDR variable is unset in the environment.
 var ErrPodCIDRUnset = errors.Errorf("must declare %s environment variable", EnvPodCIDR)
 
-// ErrNodeIPUnset indicates the the $EnvNodeIP variable is unset in the environment.
-var ErrServiceCIDRUnset = errors.Errorf("must declare %s environment variable", EnvPodCIDR)
+// ErrServiceCIDRUnset indicates the the $EnvServiceCIDR variable is unset in the environment.
+var ErrServiceCIDRUnset = errors.Errorf("must declare %s environment variable", EnvServiceCIDR)
 
 // NodeName checks the environment variables for the NODENAME and returns it or an error if unset.
 func NodeName() (string, error) {

@@ -17,13 +17,7 @@ import (
 var ErrMTPNCNotReady = errors.New("mtpnc is not ready")
 
 type SWIFTv2Middleware struct {
-	cli client.Client
-}
-
-func NewSWIFTv2Middleware(cli client.Client) *SWIFTv2Middleware {
-	return &SWIFTv2Middleware{
-		cli: cli,
-	}
+	Cli client.Client
 }
 
 // validateMultitenantIPConfigsRequest validates if pod is multitenant
@@ -37,8 +31,7 @@ func (m *SWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfi
 	}
 	podNamespacedName := k8stypes.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
 	pod := v1.Pod{}
-	err = m.cli.Get(context.TODO(), podNamespacedName, &pod)
-	if err != nil {
+	if err := m.Cli.Get(context.TODO(), podNamespacedName, &pod); err != nil {
 		errBuf := fmt.Sprintf("failed to get pod %v with error %v", podNamespacedName, err)
 		return types.UnexpectedError, errBuf
 	}
@@ -55,8 +48,7 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(ctx context.Context, podInfo cns.
 	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpnc := v1alpha1.MultitenantPodNetworkConfig{}
 	mtpncNamespacedName := k8stypes.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
-	err := m.cli.Get(ctx, mtpncNamespacedName, &mtpnc)
-	if err != nil {
+	if err := m.Cli.Get(ctx, mtpncNamespacedName, &mtpnc); err != nil {
 		return cns.PodIpInfo{}, fmt.Errorf("failed to get pod's mtpnc from cache : %w", err)
 	}
 

@@ -24,7 +24,7 @@ var (
 )
 
 func TestValidateMultitenantIPConfigsRequestSuccess(t *testing.T) {
-	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
+	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
 
 	happyReq := &cns.IPConfigsRequest{
 		PodInterfaceID:   testPod1Info.InterfaceID(),
@@ -41,7 +41,7 @@ func TestValidateMultitenantIPConfigsRequestSuccess(t *testing.T) {
 }
 
 func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
-	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
+	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
 
 	// Fail to unmarshal pod info test
 	failReq := &cns.IPConfigsRequest{
@@ -67,7 +67,7 @@ func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
 	os.Setenv(configuration.EnvPodCIDR, "10.0.1.10/24")
 	os.Setenv(configuration.EnvServiceCIDR, "10.0.2.10/24")
 
-	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
+	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
 
 	ipInfo, err := middleware.GetSWIFTv2IPConfig(context.TODO(), testPod1Info)
 	assert.Equal(t, err, nil)
@@ -76,7 +76,7 @@ func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
 }
 
 func TestGetSWIFTv2IPConfigFailure(t *testing.T) {
-	middleware := NewSWIFTv2Middleware(mock.NewMockClient())
+	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
 
 	// Pod's MTPNC doesn't exist in cache test
 	_, err := middleware.GetSWIFTv2IPConfig(context.TODO(), testPod2Info)
