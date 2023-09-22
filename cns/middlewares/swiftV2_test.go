@@ -71,7 +71,7 @@ func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
 
 	ipInfo, err := middleware.GetSWIFTv2IPConfig(context.TODO(), testPod1Info)
 	assert.Equal(t, err, nil)
-	assert.Equal(t, ipInfo.AddressType, cns.Secondary)
+	assert.Equal(t, ipInfo.AddressType, cns.AddressTypeSecondary)
 	assert.Equal(t, ipInfo.IsDefaultInterface, true)
 }
 

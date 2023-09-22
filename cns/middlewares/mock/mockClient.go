@@ -7,9 +7,6 @@ import (
 	"github.com/Azure/azure-container-networking/cns/configuration"
 	"github.com/Azure/azure-container-networking/crd/multitenancy/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -20,6 +17,7 @@ var (
 
 // MockClient implements the client.Client interface for testing. We only care about Get, the rest is nil ops.
 type MockClient struct {
+	client.Client
 	mtPodCache map[string]*v1.Pod
 	mtpncCache map[string]*v1alpha1.MultitenantPodNetworkConfig
 }
@@ -63,65 +61,5 @@ func (c *MockClient) Get(_ context.Context, key client.ObjectKey, obj client.Obj
 			return errMTPNCNotFound
 		}
 	}
-	return nil
-}
-
-// List implements client.Client.List.
-func (c *MockClient) List(_ context.Context, _ client.ObjectList, _ ...client.ListOption) error {
-	return nil
-}
-
-// Create implements client.Client.Create.
-func (c *MockClient) Create(_ context.Context, _ client.Object, _ ...client.CreateOption) error {
-	return nil
-}
-
-// Delete implements client.Client.Delete.
-func (c *MockClient) Delete(_ context.Context, _ client.Object, _ ...client.DeleteOption) error {
-	return nil
-}
-
-// Update implements client.Client.Update.
-func (c *MockClient) Update(_ context.Context, _ client.Object, _ ...client.UpdateOption) error {
-	return nil
-}
-
-// Patch implements client.Client.Patch.
-func (c *MockClient) Patch(_ context.Context, _ client.Object, _ client.Patch, _ ...client.PatchOption) error {
-	return nil
-}
-
-// DeleteAllOf implements client.Client.DeleteAllOf.
-func (c *MockClient) DeleteAllOf(_ context.Context, _ client.Object, _ ...client.DeleteAllOfOption) error {
-	return nil
-}
-
-// Status implements client.StatusClient.
-func (c *MockClient) Status() client.StatusWriter {
-	return nil
-}
-
-// RESTMapper implements client.Client.
-func (c *MockClient) RESTMapper() meta.RESTMapper {
-	return nil
-}
-
-// Scheme implements client.Client.
-func (c *MockClient) Scheme() *runtime.Scheme {
-	return nil
-}
-
-// GroupVersionKindFor implements client.Client.
-func (c *MockClient) GroupVersionKindFor(_ runtime.Object) (schema.GroupVersionKind, error) {
-	return schema.GroupVersionKind{}, nil
-}
-
-// IsObjectNamespaced implements client.Client.
-func (c *MockClient) IsObjectNamespaced(_ runtime.Object) (bool, error) {
-	return false, nil
-}
-
-// SubResource implements client.Client.
-func (c *MockClient) SubResource(_ string) client.SubResourceClient {
 	return nil
 }
