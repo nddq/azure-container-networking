@@ -424,7 +424,7 @@ type PodIpInfo struct {
 	HostPrimaryIPInfo               HostIPInfo
 	NICType                         NICType // default, secondary
 	MACAddress                      string
-	IsDefaultInterface              bool
+	SkipDefaultRoutes               bool // if set then cni should honor routes in PodIPInfo.Routes[]
 	Routes                          []Route
 }
 
