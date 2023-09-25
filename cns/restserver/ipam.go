@@ -26,6 +26,7 @@ var (
 
 // requestIPConfigHandlerHelper validates the request, assigns IPs, and returns a response
 func (service *HTTPRestService) requestIPConfigHandlerHelper(ctx context.Context, ipconfigsRequest cns.IPConfigsRequest) (*cns.IPConfigsResponse, error) {
+	// For SWIFT v2 scenario, the validator function will also modify the ipconfigsRequest.
 	podInfo, returnCode, returnMessage := service.validateIPConfigsRequest(ipconfigsRequest)
 	if returnCode != types.Success {
 		return &cns.IPConfigsResponse{
@@ -38,9 +39,9 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ctx context.Context
 
 	var MTpodIPInfo cns.PodIpInfo
 
-	// Request is for multitenant pod
-	if podInfo.IsMultitenant() {
-		// If pod is multitenant and we failed to grab its MTPNC IP config, return error immediately
+	// Request is for pod with secondary interface(s)
+	if podInfo.IsSecondaryInterfacesSet() {
+		// If a secondary interface(s) exists for this pod and we failed to grab its MTPNC IP config, return error immediately
 		podIPInfo, err := service.MultitenantMiddleware.GetSWIFTv2IPConfig(ctx, podInfo)
 		if err != nil {
 			return &cns.IPConfigsResponse{

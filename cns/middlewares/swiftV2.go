@@ -20,7 +20,7 @@ type SWIFTv2Middleware struct {
 	Cli client.Client
 }
 
-// validateMultitenantIPConfigsRequest validates if pod is multitenant
+// validateMultitenantIPConfigsRequest validates if pod is multitenant by checking the pod labels, used in SWIFT V2 scenario.
 // nolint
 func (m *SWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	// Retrieve the pod from the cluster
@@ -36,9 +36,9 @@ func (m *SWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfi
 		return types.UnexpectedError, errBuf
 	}
 
-	// check the pod labels for Swift V2, enrich the request with the multitenant flag. TBD on the label
+	// check the pod labels for Swift V2, set the request's SecondaryInterfaceSet flag to true.
 	if _, ok := pod.Labels[configuration.LabelSwiftV2]; ok {
-		req.Multitenant = true
+		req.SecondaryInterfaceSet = true
 	}
 	return types.Success, ""
 }

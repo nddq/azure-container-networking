@@ -181,8 +181,8 @@ type PodInfo interface {
 	Equals(PodInfo) bool
 	// String implements string for logging PodInfos
 	String() string
-	// IsMultitenant returns true if the pod is multitenant
-	IsMultitenant() bool
+	// IsSecondaryInterfacesSet returns true if there exist a secondary interface for this pod
+	IsSecondaryInterfacesSet() bool
 }
 
 type KubernetesPodInfo struct {
@@ -195,10 +195,10 @@ var _ PodInfo = (*podInfo)(nil)
 // podInfo implements PodInfo for multiple schemas of Key
 type podInfo struct {
 	KubernetesPodInfo
-	PodInfraContainerID string
-	PodInterfaceID      string
-	Version             podInfoScheme
-	Multitenant         bool
+	PodInfraContainerID   string
+	PodInterfaceID        string
+	Version               podInfoScheme
+	SecondaryInterfaceSet bool
 }
 
 func (p podInfo) String() string {
@@ -252,8 +252,8 @@ func (p *podInfo) OrchestratorContext() (json.RawMessage, error) {
 	return jsonContext, nil
 }
 
-func (p *podInfo) IsMultitenant() bool {
-	return p.Multitenant
+func (p *podInfo) IsSecondaryInterfacesSet() bool {
+	return p.SecondaryInterfaceSet
 }
 
 // NewPodInfo returns an implementation of PodInfo that returns the passed
@@ -293,7 +293,7 @@ func NewPodInfoFromIPConfigsRequest(req IPConfigsRequest) (PodInfo, error) {
 	}
 	p.(*podInfo).PodInfraContainerID = req.InfraContainerID
 	p.(*podInfo).PodInterfaceID = req.PodInterfaceID
-	p.(*podInfo).Multitenant = req.Multitenant
+	p.(*podInfo).SecondaryInterfaceSet = req.SecondaryInterfaceSet
 	return p, nil
 }
 
@@ -444,12 +444,12 @@ type IPConfigRequest struct {
 
 // Same as IPConfigRequest except that DesiredIPAddresses is passed in as a slice
 type IPConfigsRequest struct {
-	DesiredIPAddresses  []string        `json:"desiredIPAddresses"`
-	PodInterfaceID      string          `json:"podInterfaceID"`
-	InfraContainerID    string          `json:"infraContainerID"`
-	OrchestratorContext json.RawMessage `json:"orchestratorContext"`
-	Ifname              string          `json:"ifname"` // Used by delegated IPAM
-	Multitenant         bool            `json:"multitenant"`
+	DesiredIPAddresses    []string        `json:"desiredIPAddresses"`
+	PodInterfaceID        string          `json:"podInterfaceID"`
+	InfraContainerID      string          `json:"infraContainerID"`
+	OrchestratorContext   json.RawMessage `json:"orchestratorContext"`
+	Ifname                string          `json:"ifname"`                // Used by delegated IPAM
+	SecondaryInterfaceSet bool            `json:"secondaryInterfaceSet"` // will be set by SWIFT v2 validator func
 }
 
 // IPConfigResponse is used in CNS IPAM mode as a response to CNI ADD

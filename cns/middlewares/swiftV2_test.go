@@ -32,12 +32,12 @@ func TestValidateMultitenantIPConfigsRequestSuccess(t *testing.T) {
 	}
 	b, _ := testPod1Info.OrchestratorContext()
 	happyReq.OrchestratorContext = b
-	happyReq.Multitenant = false
+	happyReq.SecondaryInterfaceSet = false
 
 	respCode, err := middleware.ValidateMultitenantIPConfigsRequest(happyReq)
 	assert.Equal(t, err, "")
 	assert.Equal(t, respCode, types.Success)
-	assert.Equal(t, happyReq.Multitenant, true)
+	assert.Equal(t, happyReq.SecondaryInterfaceSet, true)
 }
 
 func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
