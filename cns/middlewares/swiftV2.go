@@ -61,7 +61,7 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(ctx context.Context, podInfo cns.
 		IPAddress: mtpnc.Status.PrimaryIP,
 	}
 	podIPInfo.MACAddress = mtpnc.Status.MacAddress
-	podIPInfo.AddressType = cns.AddressTypeSecondary
+	podIPInfo.NICType = cns.NICTypeSecondary
 	podIPInfo.IsDefaultInterface = true
 
 	defaultRoute := cns.Route{

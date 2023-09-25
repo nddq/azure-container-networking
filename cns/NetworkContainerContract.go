@@ -78,12 +78,12 @@ const (
 	MultiTenantCRD = "MultiTenantCRD"
 )
 
-type AddressType string
+type NICType string
 
-// Address Types
+// NIC Types
 const (
-	AddressTypeDefault   AddressType = "Default"
-	AddressTypeSecondary AddressType = "Secondary"
+	NICTypeDefault   NICType = "Default"
+	NICTypeSecondary NICType = "Secondary"
 )
 
 // CreateNetworkContainerRequest specifies request to create a network container or network isolation boundary.
@@ -422,7 +422,7 @@ type PodIpInfo struct {
 	PodIPConfig                     IPSubnet
 	NetworkContainerPrimaryIPConfig IPConfiguration
 	HostPrimaryIPInfo               HostIPInfo
-	AddressType                     AddressType // multitenant or default, maybe make this an enum later
+	NICType                         NICType // default, secondary
 	MACAddress                      string
 	IsDefaultInterface              bool
 	Routes                          []Route
