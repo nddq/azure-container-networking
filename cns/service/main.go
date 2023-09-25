@@ -642,7 +642,7 @@ func main() {
 
 	// Create the key value store.
 	storeFileName := storeFileLocation + name + ".json"
-	config.Store, err = store.NewJsonFileStore(storeFileName, lockclient)
+	config.Store, err = store.NewJsonFileStore(storeFileName, lockclient, nil)
 	if err != nil {
 		logger.Errorf("Failed to create store file: %s, due to error %v\n", storeFileName, err)
 		return
@@ -665,7 +665,7 @@ func main() {
 		}
 		// Create the key value store.
 		storeFileName := endpointStoreLocation + endpointStoreName + ".json"
-		endpointStateStore, err = store.NewJsonFileStore(storeFileName, endpointStoreLock)
+		endpointStateStore, err = store.NewJsonFileStore(storeFileName, endpointStoreLock, nil)
 		if err != nil {
 			logger.Errorf("Failed to create endpoint state store file: %s, due to error %v\n", storeFileName, err)
 			return
@@ -734,7 +734,7 @@ func main() {
 
 	// We are only setting the PriorityVLANTag in 'cns.Direct' mode, because it neatly maps today, to 'isUsingMultitenancy'
 	// In the future, we would want to have a better CNS flag, to explicitly say, this CNS is using multitenancy
-	if config.ChannelMode == cns.Direct {
+	if cnsconfig.ChannelMode == cns.Direct {
 		// Set Mellanox adapter's PriorityVLANTag value to 3 if adapter exists
 		// reg key value for PriorityVLANTag = 3  --> Packet priority and VLAN enabled
 		// for more details goto https://docs.nvidia.com/networking/display/winof2v230/Configuring+the+Driver+Registry+Keys#ConfiguringtheDriverRegistryKeys-GeneralRegistryKeysGeneralRegistryKeys
@@ -904,7 +904,7 @@ func main() {
 
 		// Create the key value store.
 		pluginStoreFile := storeFileLocation + pluginName + ".json"
-		pluginConfig.Store, err = store.NewJsonFileStore(pluginStoreFile, lockclientCnm)
+		pluginConfig.Store, err = store.NewJsonFileStore(pluginStoreFile, lockclientCnm, nil)
 		if err != nil {
 			logger.Errorf("Failed to create plugin store file %s, due to error : %v\n", pluginStoreFile, err)
 			return
