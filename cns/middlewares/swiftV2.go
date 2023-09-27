@@ -60,9 +60,10 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(ctx context.Context, podInfo cns.
 	podIPInfo.PodIPConfig = cns.IPSubnet{
 		IPAddress: mtpnc.Status.PrimaryIP,
 	}
-	podIPInfo.MACAddress = mtpnc.Status.MacAddress
-	podIPInfo.NICType = cns.NICTypeSecondary
+	podIPInfo.MacAddress = mtpnc.Status.MacAddress
+	podIPInfo.NICType = cns.DelegatedVMNIC
 	podIPInfo.SkipDefaultRoutes = true
+	// podIPInfo.InterfaceName is empty for DelegatedVMNIC
 
 	defaultRoute := cns.Route{
 		IPAddress:        mtpnc.Status.PrimaryIP,

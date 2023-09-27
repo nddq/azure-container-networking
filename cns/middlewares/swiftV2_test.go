@@ -71,7 +71,7 @@ func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
 
 	ipInfo, err := middleware.GetSWIFTv2IPConfig(context.TODO(), testPod1Info)
 	assert.Equal(t, err, nil)
-	assert.Equal(t, ipInfo.NICType, cns.NICTypeSecondary)
+	assert.Equal(t, ipInfo.NICType, cns.DelegatedVMNIC)
 	assert.Equal(t, ipInfo.SkipDefaultRoutes, true)
 }
 

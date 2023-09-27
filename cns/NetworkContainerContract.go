@@ -87,14 +87,6 @@ const (
 	MultiTenantCRD = "MultiTenantCRD"
 )
 
-type NICType string
-
-// NIC Types
-const (
-	NICTypeDefault   NICType = "Default"
-	NICTypeSecondary NICType = "Secondary"
-)
-
 // CreateNetworkContainerRequest specifies request to create a network container or network isolation boundary.
 type CreateNetworkContainerRequest struct {
 	HostPrimaryIP              string

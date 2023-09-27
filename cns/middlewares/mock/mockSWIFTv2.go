@@ -80,8 +80,8 @@ func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(_ context.Context, podInfo cn
 	podIPInfo.PodIPConfig = cns.IPSubnet{
 		IPAddress: mtpnc.Status.PrimaryIP,
 	}
-	podIPInfo.MACAddress = mtpnc.Status.MacAddress
-	podIPInfo.NICType = cns.NICTypeSecondary
+	podIPInfo.MacAddress = mtpnc.Status.MacAddress
+	podIPInfo.NICType = cns.DelegatedVMNIC
 	podIPInfo.SkipDefaultRoutes = true
 
 	defaultRoute := cns.Route{
