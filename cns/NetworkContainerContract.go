@@ -70,6 +70,15 @@ const (
 	Vxlan = "Vxlan"
 )
 
+type NICType string
+
+// NIC Types
+const (
+	InfraNIC NICType = "InfraNIC"
+	// Delegated VM NICs are projected from VM to container network namespace
+	DelegatedVMNIC NICType = "DelegatedVMNIC"
+)
+
 // ChannelMode :- CNS channel modes
 const (
 	Direct         = "Direct"
@@ -422,10 +431,15 @@ type PodIpInfo struct {
 	PodIPConfig                     IPSubnet
 	NetworkContainerPrimaryIPConfig IPConfiguration
 	HostPrimaryIPInfo               HostIPInfo
-	NICType                         NICType // default, secondary
-	MACAddress                      string
-	SkipDefaultRoutes               bool // if set then cni should honor routes in PodIPInfo.Routes[]
-	Routes                          []Route
+	// NICType defines whether NIC is InfraNIC or DelegatedVMNIC
+	NICType       NICType
+	InterfaceName string
+	// MacAddress of interface
+	MacAddress string
+	// SkipDefaultRoutes is true if default routes should not be added on interface
+	SkipDefaultRoutes bool
+	// Routes to configure on interface
+	Routes []Route
 }
 
 type HostIPInfo struct {
