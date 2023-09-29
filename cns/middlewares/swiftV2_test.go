@@ -64,7 +64,7 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 }
 
 func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
-	os.Setenv(configuration.EnvPodCIDRv4, "10.0.1.10/24")
+	os.Setenv(configuration.EnvPodV4CIDR, "10.0.1.10/24")
 	os.Setenv(configuration.EnvServiceCIDR, "10.0.2.10/24")
 
 	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
@@ -89,8 +89,8 @@ func TestGetSWIFTv2IPConfigFailure(t *testing.T) {
 
 func TestSetRoutesSuccess(t *testing.T) {
 	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
-	os.Setenv(configuration.EnvPodCIDRv4, "10.0.1.10/24")
-	os.Setenv(configuration.EnvPodCIDRv6, "16A0:0010:AB00:001E::2/32")
+	os.Setenv(configuration.EnvPodV4CIDR, "10.0.1.10/24")
+	os.Setenv(configuration.EnvPodV6CIDR, "16A0:0010:AB00:001E::2/32")
 	podIPInfo := []cns.PodIpInfo{
 		{
 			PodIPConfig: cns.IPSubnet{
