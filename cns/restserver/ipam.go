@@ -37,24 +37,6 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ctx context.Context
 		}, errors.New("failed to validate ip config request")
 	}
 
-	var MTpodIPInfo cns.PodIpInfo
-
-	// Request is for pod with secondary interface(s)
-	if podInfo.IsSecondaryInterfacesSet() {
-		// If a secondary interface(s) exists for this pod and we failed to grab its MTPNC IP config, return error immediately
-		podIPInfo, err := service.MultitenantMiddleware.GetSWIFTv2IPConfig(ctx, podInfo)
-		if err != nil {
-			return &cns.IPConfigsResponse{
-				Response: cns.Response{
-					ReturnCode: types.FailedToAllocateIPConfig,
-					Message:    fmt.Sprintf("AllocateIPConfig failed: %v, IP config request is %v", err, ipconfigsRequest),
-				},
-				PodIPInfo: []cns.PodIpInfo{},
-			}, errors.Wrapf(err, "failed to get multitenant IP config %v", ipconfigsRequest)
-		}
-		MTpodIPInfo = podIPInfo
-	}
-
 	// record a pod requesting an IP
 	service.podsPendingIPAssignment.Push(podInfo.Key())
 
@@ -91,16 +73,34 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ctx context.Context
 		}
 	}
 
-	// Adding MTNpodIPInfo to the response, if it is not empty
-	if MTpodIPInfo.PodIPConfig.IPAddress != "" {
-		defaultGateway := podIPInfo[0].NetworkContainerPrimaryIPConfig.GatewayIPAddress
-		// Populate the non-multitenant routes with the default gateway
-		for i := range MTpodIPInfo.Routes {
-			if MTpodIPInfo.Routes[i].GatewayIPAddress == "" {
-				MTpodIPInfo.Routes[i].GatewayIPAddress = defaultGateway
+	// Check if request is for pod with secondary interface(s)
+	if podInfo.IsSecondaryInterfacesSet() {
+		// In the future, if we have multiple scenario with secondary interfaces, we can add a switch case here
+		SWIFTv2PodIPInfo, err := service.SWIFTv2Middleware.GetIPConfig(ctx, podInfo)
+		if err != nil {
+			return &cns.IPConfigsResponse{
+				Response: cns.Response{
+					ReturnCode: types.FailedToAllocateIPConfig,
+					Message:    fmt.Sprintf("AllocateIPConfig failed: %v, IP config request is %v", err, ipconfigsRequest),
+				},
+				PodIPInfo: []cns.PodIpInfo{},
+			}, errors.Wrapf(err, "failed to get SWIFTv2 IP config %v", ipconfigsRequest)
+		}
+		podIPInfo = append(podIPInfo, SWIFTv2PodIPInfo)
+		// Setting up routes for SWIFTv2 scenario
+		for i := range podIPInfo {
+			ipInfo := &podIPInfo[i]
+			err := service.SWIFTv2Middleware.SetRoutes(ipInfo)
+			if err != nil {
+				return &cns.IPConfigsResponse{
+					Response: cns.Response{
+						ReturnCode: types.FailedToAllocateIPConfig,
+						Message:    fmt.Sprintf("AllocateIPConfig failed: %v, IP config request is %v", err, ipconfigsRequest),
+					},
+					PodIPInfo: []cns.PodIpInfo{},
+				}, errors.Wrapf(err, "failed to set SWIFTv2 routes %v", ipconfigsRequest)
 			}
 		}
-		podIPInfo = append(podIPInfo, MTpodIPInfo)
 	}
 
 	return &cns.IPConfigsResponse{

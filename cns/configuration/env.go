@@ -13,15 +13,16 @@ const (
 	EnvNodeIP = "NODE_IP"
 	// LabelSwiftV2 is the Node label for Swift V2
 	LabelSwiftV2   = "kubernetes.azure.com/podnetwork-multi-tenancy-enabled"
-	EnvPodCIDR     = "POD_CIDR"
+	EnvPodCIDRv4   = "POD_CIDRv4"
+	EnvPodCIDRv6   = "POD_CIDRv6"
 	EnvServiceCIDR = "SERVICE_CIDR"
 )
 
 // ErrNodeNameUnset indicates the the $EnvNodeName variable is unset in the environment.
 var ErrNodeNameUnset = errors.Errorf("must declare %s environment variable", EnvNodeName)
 
-// ErrPodCIDRUnset indicates the the $EnvPodCIDR variable is unset in the environment.
-var ErrPodCIDRUnset = errors.Errorf("must declare %s environment variable", EnvPodCIDR)
+// ErrPodCIDRv4Unset indicates the the $EnvPodCIDRv4 variable is unset in the environment.
+var ErrPodCIDRv4Unset = errors.Errorf("must declare %s environment variable", EnvPodCIDRv4)
 
 // ErrServiceCIDRUnset indicates the the $EnvServiceCIDR variable is unset in the environment.
 var ErrServiceCIDRUnset = errors.Errorf("must declare %s environment variable", EnvServiceCIDR)
@@ -40,12 +41,20 @@ func NodeIP() string {
 	return os.Getenv(EnvNodeIP)
 }
 
-func PodCIDR() (string, error) {
-	podCIDR := os.Getenv(EnvPodCIDR)
-	if podCIDR == "" {
-		return "", ErrPodCIDRUnset
+func PodCIDRv4() (string, error) {
+	podCIDRv4 := os.Getenv(EnvPodCIDRv4)
+	if podCIDRv4 == "" {
+		return "", ErrPodCIDRv4Unset
 	}
-	return podCIDR, nil
+	return podCIDRv4, nil
+}
+
+func PodCIDRv6() (string, error) {
+	podCIDRv6 := os.Getenv(EnvPodCIDRv6)
+	if podCIDRv6 == "" {
+		return "", ErrPodCIDRv4Unset
+	}
+	return podCIDRv6, nil
 }
 
 func ServiceCIDR() (string, error) {

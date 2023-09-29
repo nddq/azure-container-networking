@@ -34,7 +34,7 @@ func TestValidateMultitenantIPConfigsRequestSuccess(t *testing.T) {
 	happyReq.OrchestratorContext = b
 	happyReq.SecondaryInterfaceSet = false
 
-	respCode, err := middleware.ValidateMultitenantIPConfigsRequest(happyReq)
+	respCode, err := middleware.ValidateIPConfigsRequest(happyReq)
 	assert.Equal(t, err, "")
 	assert.Equal(t, respCode, types.Success)
 	assert.Equal(t, happyReq.SecondaryInterfaceSet, true)
@@ -49,7 +49,7 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 		InfraContainerID: testPod1Info.InfraContainerID(),
 	}
 	failReq.OrchestratorContext = []byte("invalid")
-	respCode, _ := middleware.ValidateMultitenantIPConfigsRequest(failReq)
+	respCode, _ := middleware.ValidateIPConfigsRequest(failReq)
 	assert.Equal(t, respCode, types.UnexpectedError)
 
 	// Pod doesn't exist in cache test
@@ -59,30 +59,65 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 	}
 	b, _ := testPod2Info.OrchestratorContext()
 	failReq.OrchestratorContext = b
-	respCode, _ = middleware.ValidateMultitenantIPConfigsRequest(failReq)
+	respCode, _ = middleware.ValidateIPConfigsRequest(failReq)
 	assert.Equal(t, respCode, types.UnexpectedError)
 }
 
 func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
-	os.Setenv(configuration.EnvPodCIDR, "10.0.1.10/24")
+	os.Setenv(configuration.EnvPodCIDRv4, "10.0.1.10/24")
 	os.Setenv(configuration.EnvServiceCIDR, "10.0.2.10/24")
 
 	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
 
-	ipInfo, err := middleware.GetSWIFTv2IPConfig(context.TODO(), testPod1Info)
+	ipInfo, err := middleware.GetIPConfig(context.TODO(), testPod1Info)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, ipInfo.NICType, cns.DelegatedVMNIC)
-	assert.Equal(t, ipInfo.SkipDefaultRoutes, true)
+	assert.Equal(t, ipInfo.SkipDefaultRoutes, false)
 }
 
 func TestGetSWIFTv2IPConfigFailure(t *testing.T) {
 	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
 
 	// Pod's MTPNC doesn't exist in cache test
-	_, err := middleware.GetSWIFTv2IPConfig(context.TODO(), testPod2Info)
+	_, err := middleware.GetIPConfig(context.TODO(), testPod2Info)
 	assert.Error(t, err, "failed to get pod's mtpnc from cache : mtpnc not found")
 
 	// Pod's MTPNC is not ready test
-	_, err = middleware.GetSWIFTv2IPConfig(context.TODO(), testPod3Info)
+	_, err = middleware.GetIPConfig(context.TODO(), testPod3Info)
 	assert.Error(t, err, ErrMTPNCNotReady.Error())
+}
+
+func TestSetRoutesSuccess(t *testing.T) {
+	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
+	os.Setenv(configuration.EnvPodCIDRv4, "10.0.1.10/24")
+	os.Setenv(configuration.EnvPodCIDRv6, "16A0:0010:AB00:001E::2/32")
+	podIPInfo := []cns.PodIpInfo{
+		{
+			PodIPConfig: cns.IPSubnet{
+				IPAddress:    "10.0.1.10",
+				PrefixLength: 32,
+			},
+			NICType: cns.InfraNIC,
+		},
+		{
+			PodIPConfig: cns.IPSubnet{
+				IPAddress:    "2001:0db8:abcd:0015::0",
+				PrefixLength: 64,
+			},
+			NICType: cns.InfraNIC,
+		},
+		{
+			PodIPConfig: cns.IPSubnet{
+				IPAddress:    "20.240.1.242",
+				PrefixLength: 32,
+			},
+			NICType:    cns.DelegatedVMNIC,
+			MacAddress: "12:34:56:78:9a:bc",
+		},
+	}
+	for i := range podIPInfo {
+		ipInfo := podIPInfo[i]
+		err := middleware.SetRoutes(&ipInfo)
+		assert.Equal(t, err, nil)
+	}
 }

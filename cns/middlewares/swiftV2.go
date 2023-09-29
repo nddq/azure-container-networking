@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 
 	"github.com/Azure/azure-container-networking/cns"
 	"github.com/Azure/azure-container-networking/cns/configuration"
@@ -14,15 +15,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var ErrMTPNCNotReady = errors.New("mtpnc is not ready")
+var (
+	ErrMTPNCNotReady         = errors.New("mtpnc is not ready")
+	ErrInvalidSWIFTv2NICType = errors.New("invalid NIC type for SWIFT v2 scenario")
+)
+
+const (
+	prefixLength     = 32
+	overlayGatewayv4 = "169.254.1.1"
+	overlayGatewayV6 = "fe80::1234:5678:9abc"
+)
 
 type SWIFTv2Middleware struct {
 	Cli client.Client
 }
 
-// validateMultitenantIPConfigsRequest validates if pod is multitenant by checking the pod labels, used in SWIFT V2 scenario.
+// ValidateIPConfigsRequest validates if pod is multitenant by checking the pod labels, used in SWIFT V2 scenario.
 // nolint
-func (m *SWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
+func (m *SWIFTv2Middleware) ValidateIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	// Retrieve the pod from the cluster
 	podInfo, err := cns.UnmarshalPodInfo(req.OrchestratorContext)
 	if err != nil {
@@ -43,8 +53,8 @@ func (m *SWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfi
 	return types.Success, ""
 }
 
-// GetMultitenantIPConfig returns the IP config for a multitenant pod from the MTPNC CRD
-func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(ctx context.Context, podInfo cns.PodInfo) (cns.PodIpInfo, error) {
+// GetIPConfig returns the pod's IP configuration, used in SWIFT V2 scenario.
+func (m *SWIFTv2Middleware) GetIPConfig(ctx context.Context, podInfo cns.PodInfo) (cns.PodIpInfo, error) {
 	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpnc := v1alpha1.MultitenantPodNetworkConfig{}
 	mtpncNamespacedName := k8stypes.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
@@ -58,39 +68,51 @@ func (m *SWIFTv2Middleware) GetSWIFTv2IPConfig(ctx context.Context, podInfo cns.
 	}
 	podIPInfo := cns.PodIpInfo{}
 	podIPInfo.PodIPConfig = cns.IPSubnet{
-		IPAddress: mtpnc.Status.PrimaryIP,
+		IPAddress:    mtpnc.Status.PrimaryIP,
+		PrefixLength: prefixLength,
 	}
 	podIPInfo.MacAddress = mtpnc.Status.MacAddress
 	podIPInfo.NICType = cns.DelegatedVMNIC
-	podIPInfo.SkipDefaultRoutes = true
+	podIPInfo.SkipDefaultRoutes = false
 	// podIPInfo.InterfaceName is empty for DelegatedVMNIC
 
-	defaultRoute := cns.Route{
-		IPAddress:        mtpnc.Status.PrimaryIP,
-		GatewayIPAddress: mtpnc.Status.GatewayIP,
-		InterfaceToUse:   "eth1",
-	}
-
-	podCIDR, err := configuration.PodCIDR()
-	if err != nil {
-		return cns.PodIpInfo{}, fmt.Errorf("failed to get pod CIDR from environment : %w", err)
-	}
-
-	podCIDRRoute := cns.Route{
-		IPAddress:      podCIDR,
-		InterfaceToUse: "eth0",
-	}
-
-	serviceCIDR, err := configuration.ServiceCIDR()
-	if err != nil {
-		return cns.PodIpInfo{}, fmt.Errorf("failed to get service CIDR from environment : %w", err)
-	}
-
-	serviceCIDRRoute := cns.Route{
-		IPAddress:      serviceCIDR,
-		InterfaceToUse: "eth0",
-	}
-	podIPInfo.Routes = []cns.Route{defaultRoute, podCIDRRoute, serviceCIDRRoute}
-
 	return podIPInfo, nil
+}
+
+func (m *SWIFTv2Middleware) SetRoutes(podIPInfo *cns.PodIpInfo) error {
+	switch podIPInfo.NICType {
+	case cns.DelegatedVMNIC:
+		route := cns.Route{
+			IPAddress: "0.0.0.0/0",
+		}
+		podIPInfo.Routes = []cns.Route{route}
+	case cns.InfraNIC:
+		// Check if IP is v4 or v6
+		if net.ParseIP(podIPInfo.PodIPConfig.IPAddress).To4() != nil {
+			// IPv4
+			podCIDRv4, err := configuration.PodCIDRv4()
+			if err != nil {
+				return fmt.Errorf("failed to get podCIDRv4 from env : %w", err)
+			}
+			podCIDRv4Route := cns.Route{
+				IPAddress:        podCIDRv4,
+				GatewayIPAddress: overlayGatewayv4,
+			}
+			podIPInfo.Routes = []cns.Route{podCIDRv4Route}
+		} else {
+			// IPv6
+			podCIDRv6, err := configuration.PodCIDRv6()
+			if err != nil {
+				return fmt.Errorf("failed to get podCIDRv6 from env : %w", err)
+			}
+			podCIDRv6Route := cns.Route{
+				IPAddress:        podCIDRv6,
+				GatewayIPAddress: overlayGatewayV6,
+			}
+			podIPInfo.Routes = []cns.Route{podCIDRv6Route}
+		}
+	default:
+		return ErrInvalidSWIFTv2NICType
+	}
+	return nil
 }

@@ -1587,5 +1587,5 @@ func TestIPAMGetSWIFTv2IP(t *testing.T) {
 	assert.Equal(t, SWIFTv2IP, podIPInfo[2].PodIPConfig.IPAddress)
 	assert.Equal(t, SWIFTv2MAC, podIPInfo[2].MacAddress)
 	assert.Equal(t, cns.DelegatedVMNIC, podIPInfo[2].NICType)
-	assert.True(t, podIPInfo[2].SkipDefaultRoutes)
+	assert.False(t, podIPInfo[2].SkipDefaultRoutes)
 }

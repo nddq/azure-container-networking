@@ -42,7 +42,7 @@ func NewMockSWIFTv2Middleware() *MockSWIFTv2Middleware {
 
 // validateMultitenantIPConfigsRequest validates if pod is multitenant
 // nolint
-func (m *MockSWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
+func (m *MockSWIFTv2Middleware) ValidateIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	// Retrieve the pod from the cluster
 	podInfo, err := cns.UnmarshalPodInfo(req.OrchestratorContext)
 	if err != nil {
@@ -64,7 +64,7 @@ func (m *MockSWIFTv2Middleware) ValidateMultitenantIPConfigsRequest(req *cns.IPC
 
 // GetSWIFTv2IPConfig(podInfo PodInfo) (*PodIpInfo, error)
 // GetMultitenantIPConfig returns the IP config for a multitenant pod from the MTPNC CRD
-func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(_ context.Context, podInfo cns.PodInfo) (cns.PodIpInfo, error) {
+func (m *MockSWIFTv2Middleware) GetIPConfig(_ context.Context, podInfo cns.PodInfo) (cns.PodIpInfo, error) {
 	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpncNamespacedName := k8types.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
 	mtpnc, ok := m.mtpncState[mtpncNamespacedName.String()]
@@ -82,23 +82,11 @@ func (m *MockSWIFTv2Middleware) GetSWIFTv2IPConfig(_ context.Context, podInfo cn
 	}
 	podIPInfo.MacAddress = mtpnc.Status.MacAddress
 	podIPInfo.NICType = cns.DelegatedVMNIC
-	podIPInfo.SkipDefaultRoutes = true
-
-	defaultRoute := cns.Route{
-		IPAddress:        mtpnc.Status.PrimaryIP,
-		GatewayIPAddress: mtpnc.Status.GatewayIP,
-		InterfaceToUse:   "eth1",
-	}
-	podCIDRRoute := cns.Route{
-		IPAddress:      "10.0.1.10/24",
-		InterfaceToUse: "eth0",
-	}
-
-	serviceCIDRRoute := cns.Route{
-		IPAddress:      "10.0.2.10/24",
-		InterfaceToUse: "eth0",
-	}
-	podIPInfo.Routes = []cns.Route{defaultRoute, podCIDRRoute, serviceCIDRRoute}
+	podIPInfo.SkipDefaultRoutes = false
 
 	return podIPInfo, nil
+}
+
+func (m *MockSWIFTv2Middleware) SetRoutes(_ *cns.PodIpInfo) error {
+	return nil
 }
