@@ -66,15 +66,16 @@ func (m *SWIFTv2Middleware) GetIPConfig(ctx context.Context, podInfo cns.PodInfo
 	if mtpnc.Status.PrimaryIP == "" || mtpnc.Status.MacAddress == "" || mtpnc.Status.NCID == "" || mtpnc.Status.GatewayIP == "" {
 		return cns.PodIpInfo{}, ErrMTPNCNotReady
 	}
-	podIPInfo := cns.PodIpInfo{}
-	podIPInfo.PodIPConfig = cns.IPSubnet{
-		IPAddress:    mtpnc.Status.PrimaryIP,
-		PrefixLength: prefixLength,
+	podIPInfo := cns.PodIpInfo{
+		PodIPConfig: cns.IPSubnet{
+			IPAddress:    mtpnc.Status.PrimaryIP,
+			PrefixLength: prefixLength,
+		},
+		MacAddress:        mtpnc.Status.MacAddress,
+		NICType:           cns.DelegatedVMNIC,
+		SkipDefaultRoutes: false,
+		// InterfaceName is empty for DelegatedVMNIC
 	}
-	podIPInfo.MacAddress = mtpnc.Status.MacAddress
-	podIPInfo.NICType = cns.DelegatedVMNIC
-	podIPInfo.SkipDefaultRoutes = false
-	// podIPInfo.InterfaceName is empty for DelegatedVMNIC
 
 	return podIPInfo, nil
 }
