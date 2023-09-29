@@ -18,12 +18,22 @@ func TestNodeName(t *testing.T) {
 	assert.Equal(t, "test", name)
 }
 
-func TestPodCIDRv4(t *testing.T) {
+func TestPodV4CIDR(t *testing.T) {
 	_, err := PodV4CIDR()
 	require.Error(t, err)
 	require.ErrorIs(t, err, ErrPodV4CIDRUnset)
 	os.Setenv(EnvPodV4CIDR, "test")
 	cidr, err := PodV4CIDR()
+	assert.NoError(t, err)
+	assert.Equal(t, "test", cidr)
+}
+
+func TestPodV6CIDR(t *testing.T) {
+	_, err := PodV6CIDR()
+	require.Error(t, err)
+	require.ErrorIs(t, err, ErrPodV6CIDRUnset)
+	os.Setenv(EnvPodV6CIDR, "test")
+	cidr, err := PodV6CIDR()
 	assert.NoError(t, err)
 	assert.Equal(t, "test", cidr)
 }
