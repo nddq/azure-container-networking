@@ -57,7 +57,7 @@ func (m *MockSWIFTv2Middleware) ValidateIPConfigsRequest(req *cns.IPConfigsReque
 	}
 	// check the pod labels for Swift V2, enrich the request with the multitenant flag. TBD on the label
 	if _, ok := pod.Labels[configuration.LabelSwiftV2]; ok {
-		req.SecondaryInterfaceSet = true
+		req.SecondaryInterfacesExist = true
 	}
 	return types.Success, ""
 }

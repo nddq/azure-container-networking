@@ -182,8 +182,8 @@ type PodInfo interface {
 	Equals(PodInfo) bool
 	// String implements string for logging PodInfos
 	String() string
-	// IsSecondaryInterfacesSet returns true if there exist a secondary interface for this pod
-	IsSecondaryInterfacesSet() bool
+	// SecondaryInterfacesExist returns true if there exist a secondary interface for this pod
+	SecondaryInterfacesExist() bool
 }
 
 type KubernetesPodInfo struct {
@@ -253,7 +253,7 @@ func (p *podInfo) OrchestratorContext() (json.RawMessage, error) {
 	return jsonContext, nil
 }
 
-func (p *podInfo) IsSecondaryInterfacesSet() bool {
+func (p *podInfo) SecondaryInterfacesExist() bool {
 	return p.SecondaryInterfaceSet
 }
 
@@ -294,7 +294,7 @@ func NewPodInfoFromIPConfigsRequest(req IPConfigsRequest) (PodInfo, error) {
 	}
 	p.(*podInfo).PodInfraContainerID = req.InfraContainerID
 	p.(*podInfo).PodInterfaceID = req.PodInterfaceID
-	p.(*podInfo).SecondaryInterfaceSet = req.SecondaryInterfaceSet
+	p.(*podInfo).SecondaryInterfaceSet = req.SecondaryInterfacesExist
 	return p, nil
 }
 
@@ -450,12 +450,12 @@ type IPConfigRequest struct {
 
 // Same as IPConfigRequest except that DesiredIPAddresses is passed in as a slice
 type IPConfigsRequest struct {
-	DesiredIPAddresses    []string        `json:"desiredIPAddresses"`
-	PodInterfaceID        string          `json:"podInterfaceID"`
-	InfraContainerID      string          `json:"infraContainerID"`
-	OrchestratorContext   json.RawMessage `json:"orchestratorContext"`
-	Ifname                string          `json:"ifname"`                // Used by delegated IPAM
-	SecondaryInterfaceSet bool            `json:"secondaryInterfaceSet"` // will be set by SWIFT v2 validator func
+	DesiredIPAddresses       []string        `json:"desiredIPAddresses"`
+	PodInterfaceID           string          `json:"podInterfaceID"`
+	InfraContainerID         string          `json:"infraContainerID"`
+	OrchestratorContext      json.RawMessage `json:"orchestratorContext"`
+	Ifname                   string          `json:"ifname"`                   // Used by delegated IPAM
+	SecondaryInterfacesExist bool            `json:"secondaryInterfacesExist"` // will be set by SWIFT v2 validator func
 }
 
 // IPConfigResponse is used in CNS IPAM mode as a response to CNI ADD

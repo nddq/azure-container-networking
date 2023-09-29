@@ -74,7 +74,7 @@ func (service *HTTPRestService) requestIPConfigHandlerHelper(ctx context.Context
 	}
 
 	// Check if request is for pod with secondary interface(s)
-	if podInfo.IsSecondaryInterfacesSet() {
+	if podInfo.SecondaryInterfacesExist() {
 		// In the future, if we have multiple scenario with secondary interfaces, we can add a switch case here
 		SWIFTv2PodIPInfo, err := service.SWIFTv2Middleware.GetIPConfig(ctx, podInfo)
 		if err != nil {
