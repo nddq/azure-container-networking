@@ -53,12 +53,12 @@ type HTTPService interface {
 
 // Middleware interface for testing later on
 type SWIFTv2Middleware interface {
-	ValidateIPConfigsRequest(*IPConfigsRequest) (types.ResponseCode, string)
+	ValidateIPConfigsRequest(context.Context, *IPConfigsRequest) (types.ResponseCode, string)
 	GetIPConfig(context.Context, PodInfo) (PodIpInfo, error)
 	SetRoutes(*PodIpInfo) error
 }
 
-type IPConfigValidator func(ipConfigsRequest *IPConfigsRequest) (types.ResponseCode, string)
+type IPConfigValidator func(context.Context, *IPConfigsRequest) (types.ResponseCode, string)
 
 // This is used for KubernetesCRD orchestrator Type where NC has multiple ips.
 // This struct captures the state for SecondaryIPs associated to a given NC

@@ -766,12 +766,10 @@ func (service *HTTPRestService) SendNCSnapShotPeriodically(ctx context.Context, 
 	}
 }
 
-func (service *HTTPRestService) validateIPConfigsRequest(
-	ipConfigsRequest cns.IPConfigsRequest,
-) (cns.PodInfo, types.ResponseCode, string) {
+func (service *HTTPRestService) validateIPConfigsRequest(ctx context.Context, ipConfigsRequest cns.IPConfigsRequest) (cns.PodInfo, types.ResponseCode, string) {
 	// looping through all the ipconfigs request validators, if any validator fails, return the error
-	for _, validator := range service.ipConfigsValidators {
-		respCode, message := validator(&ipConfigsRequest)
+	for _, validator := range service.ipConfigsRequestValidators {
+		respCode, message := validator(ctx, &ipConfigsRequest)
 		if respCode != types.Success {
 			return nil, respCode, message
 		}
@@ -786,7 +784,7 @@ func (service *HTTPRestService) validateIPConfigsRequest(
 }
 
 // validateDefaultIPConfigsRequest validates the request for default IP configs request
-func (service *HTTPRestService) validateDefaultIPConfigsRequest(ipConfigsRequest *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
+func (service *HTTPRestService) validateDefaultIPConfigsRequest(_ context.Context, ipConfigsRequest *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	if service.state.OrchestratorType != cns.KubernetesCRD && service.state.OrchestratorType != cns.Kubernetes {
 		return types.UnsupportedOrchestratorType, "ReleaseIPConfig API supported only for kubernetes orchestrator"
 	}
@@ -838,6 +836,7 @@ func (service *HTTPRestService) populateIPConfigInfoUntransacted(ipConfigStatus 
 	podIPInfo.HostPrimaryIPInfo.PrimaryIP = primaryHostInterface.PrimaryIP
 	podIPInfo.HostPrimaryIPInfo.Subnet = primaryHostInterface.Subnet
 	podIPInfo.HostPrimaryIPInfo.Gateway = primaryHostInterface.Gateway
+	podIPInfo.NICType = cns.InfraNIC
 
 	return nil
 }

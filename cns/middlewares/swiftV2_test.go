@@ -34,7 +34,7 @@ func TestValidateMultitenantIPConfigsRequestSuccess(t *testing.T) {
 	happyReq.OrchestratorContext = b
 	happyReq.SecondaryInterfacesExist = false
 
-	respCode, err := middleware.ValidateIPConfigsRequest(happyReq)
+	respCode, err := middleware.ValidateIPConfigsRequest(context.TODO(), happyReq)
 	assert.Equal(t, err, "")
 	assert.Equal(t, respCode, types.Success)
 	assert.Equal(t, happyReq.SecondaryInterfacesExist, true)
@@ -49,7 +49,7 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 		InfraContainerID: testPod1Info.InfraContainerID(),
 	}
 	failReq.OrchestratorContext = []byte("invalid")
-	respCode, _ := middleware.ValidateIPConfigsRequest(failReq)
+	respCode, _ := middleware.ValidateIPConfigsRequest(context.TODO(), failReq)
 	assert.Equal(t, respCode, types.UnexpectedError)
 
 	// Pod doesn't exist in cache test
@@ -59,7 +59,7 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 	}
 	b, _ := testPod2Info.OrchestratorContext()
 	failReq.OrchestratorContext = b
-	respCode, _ = middleware.ValidateIPConfigsRequest(failReq)
+	respCode, _ = middleware.ValidateIPConfigsRequest(context.TODO(), failReq)
 	assert.Equal(t, respCode, types.UnexpectedError)
 }
 
@@ -115,9 +115,53 @@ func TestSetRoutesSuccess(t *testing.T) {
 			MacAddress: "12:34:56:78:9a:bc",
 		},
 	}
+	desiredPodIPInfo := []cns.PodIpInfo{
+		{
+			PodIPConfig: cns.IPSubnet{
+				IPAddress:    "10.0.1.10",
+				PrefixLength: 32,
+			},
+			NICType: cns.InfraNIC,
+			Routes: []cns.Route{
+				{
+					IPAddress:        "10.0.1.10/24",
+					GatewayIPAddress: overlayGatewayv4,
+				},
+			},
+		},
+		{
+			PodIPConfig: cns.IPSubnet{
+				IPAddress:    "2001:0db8:abcd:0015::0",
+				PrefixLength: 64,
+			},
+			NICType: cns.InfraNIC,
+			Routes: []cns.Route{
+				{
+					IPAddress:        "16A0:0010:AB00:001E::2/32",
+					GatewayIPAddress: overlayGatewayV6,
+				},
+			},
+		},
+		{
+			PodIPConfig: cns.IPSubnet{
+				IPAddress:    "20.240.1.242",
+				PrefixLength: 32,
+			},
+			NICType:    cns.DelegatedVMNIC,
+			MacAddress: "12:34:56:78:9a:bc",
+			Routes: []cns.Route{
+				{
+					IPAddress: "0.0.0.0/0",
+				},
+			},
+		},
+	}
 	for i := range podIPInfo {
-		ipInfo := podIPInfo[i]
-		err := middleware.SetRoutes(&ipInfo)
+		ipInfo := &podIPInfo[i]
+		err := middleware.SetRoutes(ipInfo)
 		assert.Equal(t, err, nil)
+	}
+	for i := range podIPInfo {
+		assert.DeepEqual(t, podIPInfo[i].Routes, desiredPodIPInfo[i].Routes)
 	}
 }

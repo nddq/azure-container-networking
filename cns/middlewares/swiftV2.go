@@ -32,7 +32,7 @@ type SWIFTv2Middleware struct {
 
 // ValidateIPConfigsRequest validates if pod is multitenant by checking the pod labels, used in SWIFT V2 scenario.
 // nolint
-func (m *SWIFTv2Middleware) ValidateIPConfigsRequest(req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
+func (m *SWIFTv2Middleware) ValidateIPConfigsRequest(ctx context.Context, req *cns.IPConfigsRequest) (respCode types.ResponseCode, message string) {
 	// Retrieve the pod from the cluster
 	podInfo, err := cns.UnmarshalPodInfo(req.OrchestratorContext)
 	if err != nil {
@@ -41,7 +41,7 @@ func (m *SWIFTv2Middleware) ValidateIPConfigsRequest(req *cns.IPConfigsRequest) 
 	}
 	podNamespacedName := k8stypes.NamespacedName{Namespace: podInfo.Namespace(), Name: podInfo.Name()}
 	pod := v1.Pod{}
-	if err := m.Cli.Get(context.TODO(), podNamespacedName, &pod); err != nil {
+	if err := m.Cli.Get(ctx, podNamespacedName, &pod); err != nil {
 		errBuf := fmt.Sprintf("failed to get pod %v with error %v", podNamespacedName, err)
 		return types.UnexpectedError, errBuf
 	}
@@ -53,7 +53,7 @@ func (m *SWIFTv2Middleware) ValidateIPConfigsRequest(req *cns.IPConfigsRequest) 
 	return types.Success, ""
 }
 
-// GetIPConfig returns the pod's IP configuration, used in SWIFT V2 scenario.
+// GetIPConfig returns the pod's SWIFT V2 IP configuration.
 func (m *SWIFTv2Middleware) GetIPConfig(ctx context.Context, podInfo cns.PodInfo) (cns.PodIpInfo, error) {
 	// Check if the MTPNC CRD exists for the pod, if not, return error
 	mtpnc := v1alpha1.MultitenantPodNetworkConfig{}
@@ -80,9 +80,11 @@ func (m *SWIFTv2Middleware) GetIPConfig(ctx context.Context, podInfo cns.PodInfo
 	return podIPInfo, nil
 }
 
+// SetRoutes sets the routes for podIPInfo used in SWIFT V2 scenario.
 func (m *SWIFTv2Middleware) SetRoutes(podIPInfo *cns.PodIpInfo) error {
 	switch podIPInfo.NICType {
 	case cns.DelegatedVMNIC:
+		// default route via SWIFT v2 interface
 		route := cns.Route{
 			IPAddress: "0.0.0.0/0",
 		}
@@ -90,7 +92,7 @@ func (m *SWIFTv2Middleware) SetRoutes(podIPInfo *cns.PodIpInfo) error {
 	case cns.InfraNIC:
 		// Check if IP is v4 or v6
 		if net.ParseIP(podIPInfo.PodIPConfig.IPAddress).To4() != nil {
-			// IPv4
+			// route for IPv4 podCIDR traffic
 			podCIDRv4, err := configuration.PodV4CIDR()
 			if err != nil {
 				return fmt.Errorf("failed to get podCIDRv4 from env : %w", err)
@@ -101,7 +103,7 @@ func (m *SWIFTv2Middleware) SetRoutes(podIPInfo *cns.PodIpInfo) error {
 			}
 			podIPInfo.Routes = []cns.Route{podCIDRv4Route}
 		} else {
-			// IPv6
+			// route for IPv6 podCIDR traffic
 			podCIDRv6, err := configuration.PodV6CIDR()
 			if err != nil {
 				return fmt.Errorf("failed to get podCIDRv6 from env : %w", err)

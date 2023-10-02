@@ -67,13 +67,13 @@ type HTTPRestService struct {
 	state                    *httpRestServiceState
 	podsPendingIPAssignment  *bounded.TimedSet
 	sync.RWMutex
-	dncPartitionKey         string
-	EndpointState           map[string]*EndpointInfo // key : container id
-	EndpointStateStore      store.KeyValueStore
-	cniConflistGenerator    CNIConflistGenerator
-	generateCNIConflistOnce sync.Once
-	ipConfigsValidators     []cns.IPConfigValidator
-	SWIFTv2Middleware       cns.SWIFTv2Middleware
+	dncPartitionKey            string
+	EndpointState              map[string]*EndpointInfo // key : container id
+	EndpointStateStore         store.KeyValueStore
+	cniConflistGenerator       CNIConflistGenerator
+	generateCNIConflistOnce    sync.Once
+	ipConfigsRequestValidators []cns.IPConfigValidator
+	SWIFTv2Middleware          cns.SWIFTv2Middleware
 }
 
 type CNIConflistGenerator interface {
@@ -228,8 +228,8 @@ func (service *HTTPRestService) Init(config *common.ServiceConfig) error {
 		return err
 	}
 
-	// Adding ipConfigsValidators
-	service.ipConfigsValidators = []cns.IPConfigValidator{service.validateDefaultIPConfigsRequest}
+	// Adding the default ipconfigs request validator
+	service.ipConfigsRequestValidators = []cns.IPConfigValidator{service.validateDefaultIPConfigsRequest}
 
 	// Add handlers.
 	listener := service.Listener
@@ -355,6 +355,6 @@ func (service *HTTPRestService) MustGenerateCNIConflistOnce() {
 
 func (service *HTTPRestService) AttachSWIFTv2Middleware(middleware cns.SWIFTv2Middleware) {
 	service.SWIFTv2Middleware = middleware
-	// add multitenant ipconfig validator function
-	service.ipConfigsValidators = append(service.ipConfigsValidators, middleware.ValidateIPConfigsRequest)
+	// adding the SWIFT v2 ipconfigs request validator
+	service.ipConfigsRequestValidators = append(service.ipConfigsRequestValidators, middleware.ValidateIPConfigsRequest)
 }

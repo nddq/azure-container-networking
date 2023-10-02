@@ -67,7 +67,7 @@ func getTestService() *HTTPRestService {
 	var config common.ServiceConfig
 	httpsvc, _ := NewHTTPRestService(&config, &fakes.WireserverClientFake{}, &fakes.WireserverProxyFake{}, &fakes.NMAgentClientFake{}, store.NewMockStore(""), nil, nil)
 	svc = httpsvc
-	svc.ipConfigsValidators = append(svc.ipConfigsValidators, svc.validateDefaultIPConfigsRequest)
+	svc.ipConfigsRequestValidators = append(svc.ipConfigsRequestValidators, svc.validateDefaultIPConfigsRequest)
 	httpsvc.IPAMPoolMonitor = &fakes.MonitorFake{}
 	setOrchestratorTypeInternal(cns.KubernetesCRD)
 
