@@ -47,7 +47,7 @@ func (m *SWIFTv2Middleware) ValidateIPConfigsRequest(ctx context.Context, req *c
 	}
 
 	// check the pod labels for Swift V2, set the request's SecondaryInterfaceSet flag to true.
-	if _, ok := pod.Labels[configuration.LabelSwiftV2]; ok {
+	if _, ok := pod.Labels[configuration.LabelPodSwiftV2]; ok {
 		req.SecondaryInterfacesExist = true
 	}
 	return types.Success, ""

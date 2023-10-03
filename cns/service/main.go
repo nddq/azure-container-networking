@@ -1155,7 +1155,7 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 	}
 
 	// check the Node labels for Swift V2
-	if _, ok := node.Labels[configuration.LabelSwiftV2]; ok {
+	if _, ok := node.Labels[configuration.LabelNodeSwiftV2]; ok {
 		cnsconfig.EnableSwiftV2 = true
 		cnsconfig.WatchPods = true
 		// TODO(rbtr): create the NodeInfo for Swift V2

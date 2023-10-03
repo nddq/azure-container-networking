@@ -11,11 +11,12 @@ const (
 	EnvNodeName = "NODENAME"
 	// EnvNodeIP is the IP of the node running this CNS binary
 	EnvNodeIP = "NODE_IP"
-	// LabelSwiftV2 is the Node label for Swift V2
-	LabelSwiftV2   = "kubernetes.azure.com/podnetwork-multi-tenancy-enabled"
-	EnvPodV4CIDR   = "POD_V4_CIDR"
-	EnvPodV6CIDR   = "POD_V6_CIDR"
-	EnvServiceCIDR = "SERVICE_CIDR"
+	// LabelNodeSwiftV2 is the Node label for Swift V2
+	LabelNodeSwiftV2 = "kubernetes.azure.com/podnetwork-multi-tenancy-enabled"
+	LabelPodSwiftV2  = "kubernetes.azure.com/pod-network"
+	EnvPodV4CIDR     = "POD_V4_CIDR"
+	EnvPodV6CIDR     = "POD_V6_CIDR"
+	EnvServiceCIDR   = "SERVICE_CIDR"
 )
 
 // ErrNodeNameUnset indicates the the $EnvNodeName variable is unset in the environment.

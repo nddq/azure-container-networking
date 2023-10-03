@@ -26,7 +26,7 @@ type MockClient struct {
 func NewMockClient() *MockClient {
 	testPod1 := v1.Pod{}
 	testPod1.Labels = make(map[string]string)
-	testPod1.Labels[configuration.LabelSwiftV2] = "true"
+	testPod1.Labels[configuration.LabelNodeSwiftV2] = "true"
 
 	testMTPNC1 := v1alpha1.MultitenantPodNetworkConfig{}
 	testMTPNC1.Status.PrimaryIP = "192.168.0.1"

@@ -26,7 +26,7 @@ type MockSWIFTv2Middleware struct {
 func NewMockSWIFTv2Middleware() *MockSWIFTv2Middleware {
 	testPod1 := v1.Pod{}
 	testPod1.Labels = make(map[string]string)
-	testPod1.Labels[configuration.LabelSwiftV2] = "true"
+	testPod1.Labels[configuration.LabelPodSwiftV2] = "true"
 
 	testMTPNC1 := v1alpha1.MultitenantPodNetworkConfig{}
 	testMTPNC1.Status.PrimaryIP = "192.168.0.1"
@@ -55,8 +55,8 @@ func (m *MockSWIFTv2Middleware) ValidateIPConfigsRequest(_ context.Context, req 
 		errBuf := fmt.Sprintf("failed to get pod %v with error %v", podNamespacedName, err)
 		return types.UnexpectedError, errBuf
 	}
-	// check the pod labels for Swift V2, enrich the request with the multitenant flag. TBD on the label
-	if _, ok := pod.Labels[configuration.LabelSwiftV2]; ok {
+	// check the pod labels for Swift V2, enrich the request with the multitenant flag.
+	if _, ok := pod.Labels[configuration.LabelPodSwiftV2]; ok {
 		req.SecondaryInterfacesExist = true
 	}
 	return types.Success, ""

@@ -58,7 +58,7 @@ type SWIFTv2Middleware interface {
 	SetRoutes(*PodIpInfo) error
 }
 
-type IPConfigValidator func(context.Context, *IPConfigsRequest) (types.ResponseCode, string)
+type IPConfigsRequestValidator func(context.Context, *IPConfigsRequest) (types.ResponseCode, string)
 
 // This is used for KubernetesCRD orchestrator Type where NC has multiple ips.
 // This struct captures the state for SecondaryIPs associated to a given NC

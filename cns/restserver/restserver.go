@@ -72,7 +72,7 @@ type HTTPRestService struct {
 	EndpointStateStore         store.KeyValueStore
 	cniConflistGenerator       CNIConflistGenerator
 	generateCNIConflistOnce    sync.Once
-	ipConfigsRequestValidators []cns.IPConfigValidator
+	ipConfigsRequestValidators []cns.IPConfigsRequestValidator
 	SWIFTv2Middleware          cns.SWIFTv2Middleware
 }
 
@@ -229,7 +229,7 @@ func (service *HTTPRestService) Init(config *common.ServiceConfig) error {
 	}
 
 	// Adding the default ipconfigs request validator
-	service.ipConfigsRequestValidators = []cns.IPConfigValidator{service.validateDefaultIPConfigsRequest}
+	service.ipConfigsRequestValidators = []cns.IPConfigsRequestValidator{service.validateDefaultIPConfigsRequest}
 
 	// Add handlers.
 	listener := service.Listener
