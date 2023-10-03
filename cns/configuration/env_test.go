@@ -38,12 +38,22 @@ func TestPodV6CIDR(t *testing.T) {
 	assert.Equal(t, "test", cidr)
 }
 
-func TestServiceCIDR(t *testing.T) {
-	_, err := ServiceCIDR()
+func TestServiceV4CIDR(t *testing.T) {
+	_, err := ServiceV4CIDR()
 	require.Error(t, err)
-	require.ErrorIs(t, err, ErrServiceCIDRUnset)
-	os.Setenv(EnvServiceCIDR, "test")
-	cidr, err := ServiceCIDR()
+	require.ErrorIs(t, err, ErrServiceV4CIDRUnset)
+	os.Setenv(EnvServiceV4CIDR, "test")
+	cidr, err := ServiceV4CIDR()
+	assert.NoError(t, err)
+	assert.Equal(t, "test", cidr)
+}
+
+func TestServiceV6CIDR(t *testing.T) {
+	_, err := ServiceV6CIDR()
+	require.Error(t, err)
+	require.ErrorIs(t, err, ErrServiceV6CIDRUnset)
+	os.Setenv(EnvServiceV6CIDR, "test")
+	cidr, err := ServiceV6CIDR()
 	assert.NoError(t, err)
 	assert.Equal(t, "test", cidr)
 }

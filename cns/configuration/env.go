@@ -16,7 +16,8 @@ const (
 	LabelPodSwiftV2  = "kubernetes.azure.com/pod-network"
 	EnvPodV4CIDR     = "POD_V4_CIDR"
 	EnvPodV6CIDR     = "POD_V6_CIDR"
-	EnvServiceCIDR   = "SERVICE_CIDR"
+	EnvServiceV4CIDR = "SERVICE_V4_CIDR"
+	EnvServiceV6CIDR = "SERVICE_V6_CIDR"
 )
 
 // ErrNodeNameUnset indicates the the $EnvNodeName variable is unset in the environment.
@@ -28,8 +29,11 @@ var ErrPodV4CIDRUnset = errors.Errorf("must declare %s environment variable", En
 // ErrPodV6CIDRUnset indicates the the $EnvPodV6CIDR variable is unset in the environment.
 var ErrPodV6CIDRUnset = errors.Errorf("must declare %s environment variable", EnvPodV6CIDR)
 
-// ErrServiceCIDRUnset indicates the the $EnvServiceCIDR variable is unset in the environment.
-var ErrServiceCIDRUnset = errors.Errorf("must declare %s environment variable", EnvServiceCIDR)
+// ErrServiceV4CIDRUnset indicates the the $EnvServiceV4CIDR variable is unset in the environment.
+var ErrServiceV4CIDRUnset = errors.Errorf("must declare %s environment variable", EnvServiceV4CIDR)
+
+// ErrServiceV6CIDRUnset indicates the the $EnvServiceV6CIDR variable is unset in the environment.
+var ErrServiceV6CIDRUnset = errors.Errorf("must declare %s environment variable", EnvServiceV6CIDR)
 
 // NodeName checks the environment variables for the NODENAME and returns it or an error if unset.
 func NodeName() (string, error) {
@@ -61,10 +65,18 @@ func PodV6CIDR() (string, error) {
 	return podCIDRv6, nil
 }
 
-func ServiceCIDR() (string, error) {
-	serviceCIDR := os.Getenv(EnvServiceCIDR)
-	if serviceCIDR == "" {
-		return "", ErrServiceCIDRUnset
+func ServiceV4CIDR() (string, error) {
+	serviceV4CIDR := os.Getenv(EnvServiceV4CIDR)
+	if serviceV4CIDR == "" {
+		return "", ErrServiceV4CIDRUnset
 	}
-	return serviceCIDR, nil
+	return serviceV4CIDR, nil
+}
+
+func ServiceV6CIDR() (string, error) {
+	serviceV6CIDR := os.Getenv(EnvServiceV6CIDR)
+	if serviceV6CIDR == "" {
+		return "", ErrServiceV6CIDRUnset
+	}
+	return serviceV6CIDR, nil
 }

@@ -65,7 +65,7 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 
 func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
 	os.Setenv(configuration.EnvPodV4CIDR, "10.0.1.10/24")
-	os.Setenv(configuration.EnvServiceCIDR, "10.0.2.10/24")
+	os.Setenv(configuration.EnvServiceV4CIDR, "10.0.2.10/24")
 
 	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
 
