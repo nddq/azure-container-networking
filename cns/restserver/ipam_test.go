@@ -1583,7 +1583,7 @@ func TestIPAMGetSWIFTv2IP(t *testing.T) {
 		t.Fatalf("Expected to get 3 pod IP info (IPv4, IPv6, Multitenant IP), actual %d", len(podIPInfo))
 	}
 
-	// Asserting that multitenant IP is returned
+	// Asserting that SWIFT v2 IP is returned
 	assert.Equal(t, SWIFTv2IP, podIPInfo[2].PodIPConfig.IPAddress)
 	assert.Equal(t, SWIFTv2MAC, podIPInfo[2].MacAddress)
 	assert.Equal(t, cns.DelegatedVMNIC, podIPInfo[2].NICType)
