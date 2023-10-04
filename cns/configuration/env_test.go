@@ -19,21 +19,21 @@ func TestNodeName(t *testing.T) {
 }
 
 func TestPodV4CIDR(t *testing.T) {
-	_, err := PodV4CIDR()
+	_, err := PodV4CIDRs()
 	require.Error(t, err)
-	require.ErrorIs(t, err, ErrPodV4CIDRUnset)
-	os.Setenv(EnvPodV4CIDR, "test")
-	cidr, err := PodV4CIDR()
+	require.ErrorIs(t, err, ErrPodV4CIDRsUnset)
+	os.Setenv(EnvPodV4CIDRs, "test")
+	cidr, err := PodV4CIDRs()
 	assert.NoError(t, err)
 	assert.Equal(t, "test", cidr)
 }
 
 func TestPodV6CIDR(t *testing.T) {
-	_, err := PodV6CIDR()
+	_, err := PodV6CIDRs()
 	require.Error(t, err)
-	require.ErrorIs(t, err, ErrPodV6CIDRUnset)
-	os.Setenv(EnvPodV6CIDR, "test")
-	cidr, err := PodV6CIDR()
+	require.ErrorIs(t, err, ErrPodV6CIDRsUnset)
+	os.Setenv(EnvPodV6CIDRs, "test")
+	cidr, err := PodV6CIDRs()
 	assert.NoError(t, err)
 	assert.Equal(t, "test", cidr)
 }

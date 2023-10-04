@@ -93,7 +93,7 @@ func (m *SWIFTv2Middleware) SetRoutes(podIPInfo *cns.PodIpInfo) error {
 		// Check if IP is v4 or v6
 		if net.ParseIP(podIPInfo.PodIPConfig.IPAddress).To4() != nil {
 			// route for IPv4 podCIDR traffic
-			podCIDRv4, err := configuration.PodV4CIDR()
+			podCIDRv4, err := configuration.PodV4CIDRs()
 			if err != nil {
 				return fmt.Errorf("failed to get podCIDRv4 from env : %w", err)
 			}
@@ -104,7 +104,7 @@ func (m *SWIFTv2Middleware) SetRoutes(podIPInfo *cns.PodIpInfo) error {
 			podIPInfo.Routes = []cns.Route{podCIDRv4Route}
 		} else {
 			// route for IPv6 podCIDR traffic
-			podCIDRv6, err := configuration.PodV6CIDR()
+			podCIDRv6, err := configuration.PodV6CIDRs()
 			if err != nil {
 				return fmt.Errorf("failed to get podCIDRv6 from env : %w", err)
 			}
