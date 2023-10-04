@@ -1253,21 +1253,7 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 					"kube-system": {FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": nodeName})},
 				},
 			},
-			&corev1.Pod{}: { // nolint: typecheck
-				Field: fields.SelectorFromSet(fields.Set{"spec.nodeName": nodeName}),
-			},
 		},
-	}
-
-	crdSchemes := kuberuntime.NewScheme()
-	if err = v1alpha.AddToScheme(crdSchemes); err != nil {
-		return errors.Wrap(err, "failed to add nodenetworkconfig/v1alpha to scheme")
-	}
-	if err = v1alpha.AddToScheme(crdSchemes); err != nil {
-		return errors.Wrap(err, "failed to add clustersubnetstate/v1alpha1 to scheme")
-	}
-	if err = corev1.AddToScheme(crdSchemes); err != nil {
-		return errors.Wrap(err, "failed to add core/v1 to scheme")
 	}
 
 	if cnsconfig.WatchPods {
