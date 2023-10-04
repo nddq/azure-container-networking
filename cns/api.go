@@ -48,7 +48,6 @@ type HTTPService interface {
 	GetPendingReleaseIPConfigs() []IPConfigurationStatus
 	GetPodIPConfigState() map[string]IPConfigurationStatus
 	MarkIPAsPendingRelease(numberToMark int) (map[string]IPConfigurationStatus, error)
-<<<<<<< HEAD
 	AttachSWIFTv2Middleware(middleware SWIFTv2Middleware)
 }
 
@@ -60,18 +59,6 @@ type SWIFTv2Middleware interface {
 }
 
 type IPConfigsRequestValidator func(context.Context, *IPConfigsRequest) (types.ResponseCode, string)
-=======
-	AttachMultitenantMiddleware(middleware MultitenantMiddleware)
-}
-
-// Middleware interface for testing later on
-type MultitenantMiddleware interface {
-	Validator() IPConfigValidator
-	GetMultitenantIPConfig(podInfo PodInfo) (*PodIpInfo, error)
-}
-
-type IPConfigValidator func(ipConfigsRequest *IPConfigsRequest) (types.ResponseCode, string)
->>>>>>> 9e461501 (pod client placeholder)
 
 // This is used for KubernetesCRD orchestrator Type where NC has multiple ips.
 // This struct captures the state for SecondaryIPs associated to a given NC

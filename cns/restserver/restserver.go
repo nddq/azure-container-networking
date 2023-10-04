@@ -228,17 +228,8 @@ func (service *HTTPRestService) Init(config *common.ServiceConfig) error {
 		return err
 	}
 
-<<<<<<< HEAD
 	// Adding the default ipconfigs request validator
 	service.ipConfigsRequestValidators = []cns.IPConfigsRequestValidator{service.validateDefaultIPConfigsRequest}
-=======
-	// Adding ipConfigsValidators
-<<<<<<< HEAD
-	service.ipConfigsValidators = []middlewares.IPConfigValidator{service.validateDefaultIPConfigsRequest}
->>>>>>> ab16c636 (update IPAM branching)
-=======
-	service.ipConfigsValidators = []cns.IPConfigValidator{service.validateDefaultIPConfigsRequest}
->>>>>>> 9e461501 (pod client placeholder)
 
 	// Add handlers.
 	listener := service.Listener

@@ -37,6 +37,7 @@ import (
 	nncctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/nodenetworkconfig"
 	podctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/pod"
 	"github.com/Azure/azure-container-networking/cns/logger"
+	"github.com/Azure/azure-container-networking/cns/middlewares"
 	"github.com/Azure/azure-container-networking/cns/multitenantcontroller"
 	"github.com/Azure/azure-container-networking/cns/multitenantcontroller/multitenantoperator"
 	"github.com/Azure/azure-container-networking/cns/restserver"
