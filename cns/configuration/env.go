@@ -14,26 +14,18 @@ const (
 	// LabelNodeSwiftV2 is the Node label for Swift V2
 	LabelNodeSwiftV2 = "kubernetes.azure.com/podnetwork-multi-tenancy-enabled"
 	LabelPodSwiftV2  = "kubernetes.azure.com/pod-network"
-	EnvPodV4CIDRs    = "POD_V4_CIDRs"
-	EnvPodV6CIDRs    = "POD_V6_CIDRs"
-	EnvServiceV4CIDR = "SERVICE_V4_CIDR"
-	EnvServiceV6CIDR = "SERVICE_V6_CIDR"
+	EnvPodCIDRs      = "POD_CIDRs"
+	EnvServiceCIDRs  = "SERVICE_CIDRs"
 )
 
 // ErrNodeNameUnset indicates the the $EnvNodeName variable is unset in the environment.
 var ErrNodeNameUnset = errors.Errorf("must declare %s environment variable", EnvNodeName)
 
-// ErrPodV4CIDRsUnset indicates the the $EnvPodV4CIDRs variable is unset in the environment.
-var ErrPodV4CIDRsUnset = errors.Errorf("must declare %s environment variable", EnvPodV4CIDRs)
+// ErrPodCIDRsUnset indicates the the $EnvPodCIDRs variable is unset in the environment.
+var ErrPodCIDRsUnset = errors.Errorf("must declare %s environment variable", EnvPodCIDRs)
 
-// ErrPodV6CIDRsUnset indicates the the $EnvPodV6CIDRs variable is unset in the environment.
-var ErrPodV6CIDRsUnset = errors.Errorf("must declare %s environment variable", EnvPodV6CIDRs)
-
-// ErrServiceV4CIDRUnset indicates the the $EnvServiceV4CIDR variable is unset in the environment.
-var ErrServiceV4CIDRUnset = errors.Errorf("must declare %s environment variable", EnvServiceV4CIDR)
-
-// ErrServiceV6CIDRUnset indicates the the $EnvServiceV6CIDR variable is unset in the environment.
-var ErrServiceV6CIDRUnset = errors.Errorf("must declare %s environment variable", EnvServiceV6CIDR)
+// ErrServiceCIDRsUnset indicates the the $EnvServiceCIDRs variable is unset in the environment.
+var ErrServiceCIDRsUnset = errors.Errorf("must declare %s environment variable", EnvServiceCIDRs)
 
 // NodeName checks the environment variables for the NODENAME and returns it or an error if unset.
 func NodeName() (string, error) {
@@ -49,34 +41,18 @@ func NodeIP() string {
 	return os.Getenv(EnvNodeIP)
 }
 
-func PodV4CIDRs() (string, error) {
-	podCIDRsv4 := os.Getenv(EnvPodV4CIDRs)
-	if podCIDRsv4 == "" {
-		return "", ErrPodV4CIDRsUnset
+func PodCIDRs() (string, error) {
+	podCIDRs := os.Getenv(EnvPodCIDRs)
+	if podCIDRs == "" {
+		return "", ErrPodCIDRsUnset
 	}
-	return podCIDRsv4, nil
+	return podCIDRs, nil
 }
 
-func PodV6CIDRs() (string, error) {
-	podCIDRsv6 := os.Getenv(EnvPodV6CIDRs)
-	if podCIDRsv6 == "" {
-		return "", ErrPodV6CIDRsUnset
+func ServiceCIDRs() (string, error) {
+	serviceCIDRs := os.Getenv(EnvServiceCIDRs)
+	if serviceCIDRs == "" {
+		return "", ErrServiceCIDRsUnset
 	}
-	return podCIDRsv6, nil
-}
-
-func ServiceV4CIDR() (string, error) {
-	serviceV4CIDR := os.Getenv(EnvServiceV4CIDR)
-	if serviceV4CIDR == "" {
-		return "", ErrServiceV4CIDRUnset
-	}
-	return serviceV4CIDR, nil
-}
-
-func ServiceV6CIDR() (string, error) {
-	serviceV6CIDR := os.Getenv(EnvServiceV6CIDR)
-	if serviceV6CIDR == "" {
-		return "", ErrServiceV6CIDRUnset
-	}
-	return serviceV6CIDR, nil
+	return serviceCIDRs, nil
 }

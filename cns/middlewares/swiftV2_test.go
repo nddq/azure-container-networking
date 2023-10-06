@@ -64,8 +64,8 @@ func TestValidateMultitenantIPConfigsRequestFailure(t *testing.T) {
 }
 
 func TestGetSWIFTv2IPConfigSuccess(t *testing.T) {
-	os.Setenv(configuration.EnvPodV4CIDRs, "10.0.1.10/24")
-	os.Setenv(configuration.EnvServiceV4CIDR, "10.0.2.10/24")
+	os.Setenv(configuration.EnvPodCIDRs, "10.0.1.10/24")
+	os.Setenv(configuration.EnvServiceCIDRs, "10.0.2.10/24")
 
 	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
 
@@ -89,8 +89,8 @@ func TestGetSWIFTv2IPConfigFailure(t *testing.T) {
 
 func TestSetRoutesSuccess(t *testing.T) {
 	middleware := SWIFTv2Middleware{Cli: mock.NewMockClient()}
-	os.Setenv(configuration.EnvPodV4CIDRs, "10.0.1.10/24")
-	os.Setenv(configuration.EnvPodV6CIDRs, "16A0:0010:AB00:001E::2/32")
+	os.Setenv(configuration.EnvPodCIDRs, "10.0.1.10/24;16A0:0010:AB00:001E::2/32")
+	os.Setenv(configuration.EnvServiceCIDRs, "10.0.0.0/16;16A0:0010:AB00:0000::/32")
 	podIPInfo := []cns.PodIpInfo{
 		{
 			PodIPConfig: cns.IPSubnet{
@@ -127,6 +127,10 @@ func TestSetRoutesSuccess(t *testing.T) {
 					IPAddress:        "10.0.1.10/24",
 					GatewayIPAddress: overlayGatewayv4,
 				},
+				{
+					IPAddress:        "10.0.0.0/16",
+					GatewayIPAddress: overlayGatewayv4,
+				},
 			},
 		},
 		{
@@ -138,6 +142,10 @@ func TestSetRoutesSuccess(t *testing.T) {
 			Routes: []cns.Route{
 				{
 					IPAddress:        "16A0:0010:AB00:001E::2/32",
+					GatewayIPAddress: overlayGatewayV6,
+				},
+				{
+					IPAddress:        "16A0:0010:AB00:0000::/32",
 					GatewayIPAddress: overlayGatewayV6,
 				},
 			},
