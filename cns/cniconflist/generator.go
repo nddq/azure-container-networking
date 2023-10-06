@@ -25,6 +25,7 @@ const (
 type cniConflist struct { //nolint:unused,deadcode // used in linux
 	CNIVersion   string `json:"cniVersion,omitempty"`
 	Name         string `json:"name,omitempty"`
+	AdapterName  string `json:"adapterName,omitempty"`
 	DisableCheck bool   `json:"disableCheck,omitempty"`
 	Plugins      []any  `json:"plugins,omitempty"`
 }

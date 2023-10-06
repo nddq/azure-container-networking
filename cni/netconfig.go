@@ -59,6 +59,7 @@ type NetworkConfig struct {
 	Master                        string          `json:"master,omitempty"`
 	AdapterName                   string          `json:"adapterName,omitempty"`
 	Bridge                        string          `json:"bridge,omitempty"`
+	Capabilities                  map[string]bool `json:"capabilities,omitempty"`
 	LogLevel                      string          `json:"logLevel,omitempty"`
 	LogTarget                     string          `json:"logTarget,omitempty"`
 	InfraVnetAddressSpace         string          `json:"infraVnetAddressSpace,omitempty"`
