@@ -117,7 +117,7 @@ func (v *SWIFTGenerator) Generate() error {
 					},
 				},
 				WindowsSettings: cni.WindowsSettings{
-					HnsTimeoutDurationInSeconds: 120,
+					HnsTimeoutDurationInSeconds: 120, //nolint:gomnd // ignore timeout magic number
 				},
 			},
 		},
