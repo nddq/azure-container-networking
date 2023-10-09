@@ -1,5 +1,14 @@
 package cniconflist_test
 
+import (
+	"bytes"
+	"os"
+	"testing"
+
+	"github.com/Azure/azure-container-networking/cns/cniconflist"
+	"github.com/stretchr/testify/assert"
+)
+
 type bufferWriteCloser struct {
 	*bytes.Buffer
 }

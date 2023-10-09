@@ -45,19 +45,19 @@ func (v *OverlayGenerator) Generate() error {
 					{
 						Name: "EndpointPolicy",
 						Value: json.RawMessage(`{
-							Type: OutBoundNAT,
-                        	ExceptionList: [
-                            	10.240.0.0/16,
-                            	10.0.0.0/8
+							"Type": "OutBoundNAT",
+                        	"ExceptionList": [
+                            	"10.240.0.0/16",
+                            	"10.0.0.0/8"
                         	]
 						}`),
 					},
 					{
 						Name: "EndpointPolicy",
 						Value: json.RawMessage(`{
-							Type: ROUTE,
-							DestinationPrefix: 10.0.0.0/8,
-                        	NeedEncap: true,
+							"Type": "ROUTE",
+							"DestinationPrefix": "10.0.0.0/8",
+                        	"NeedEncap": true
 						}`),
 					},
 				},
@@ -99,20 +99,20 @@ func (v *SWIFTGenerator) Generate() error {
 				AdditionalArgs: []cni.KVPair{
 					{
 						Name: "EndpointPolicy",
-						Value: json.RawMessage(`{
-							Type: OutBoundNAT,
-                        	ExceptionList: [
-                            	10.240.0.0/16,
-                            	10.0.0.0/8
+						Value: []byte(`{
+							"Type": "OutBoundNAT",
+                        	"ExceptionList": [
+                            	"10.240.0.0/16",
+                            	"10.0.0.0/8"
                         	]
 						}`),
 					},
 					{
 						Name: "EndpointPolicy",
-						Value: json.RawMessage(`{
-							Type: ROUTE,
-							DestinationPrefix: 10.0.0.0/8,
-                        	NeedEncap: true,
+						Value: []byte(`{
+							"Type": "ROUTE",
+							"DestinationPrefix": "10.0.0.0/8",
+                        	"NeedEncap": true
 						}`),
 					},
 				},
