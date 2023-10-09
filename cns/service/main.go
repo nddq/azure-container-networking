@@ -32,6 +32,7 @@ import (
 	"github.com/Azure/azure-container-networking/cns/healthserver"
 	"github.com/Azure/azure-container-networking/cns/hnsclient"
 	"github.com/Azure/azure-container-networking/cns/ipampool"
+	ipampoolv2 "github.com/Azure/azure-container-networking/cns/ipampool/v2"
 	cssctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/clustersubnetstate"
 	mtpncctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/multitenantpodnetworkconfig"
 	nncctrl "github.com/Azure/azure-container-networking/cns/kubecontroller/nodenetworkconfig"
@@ -1284,13 +1285,27 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 	// reconciler has pushed the Monitor a NodeNetworkConfig.
 	cachedscopedcli := nncctrl.NewScopedClient(nodenetworkconfig.NewClient(manager.GetClient()), types.NamespacedName{Namespace: "kube-system", Name: nodeName})
 
+	// Start building the NNC Reconciler
+
+	// initialize the ipam pool monitor
 	poolOpts := ipampool.Options{
 		RefreshDelay: poolIPAMRefreshRateInMilliseconds * time.Millisecond,
 	}
-	poolMonitor := ipampool.NewMonitor(httpRestServiceImplementation, cachedscopedcli, clusterSubnetStateChan, &poolOpts)
-	httpRestServiceImplementation.IPAMPoolMonitor = poolMonitor
 
-	// Start building the NNC Reconciler
+	var poolMonitor cns.IPAMPoolMonitor
+
+	// TODO: add pod listeners based on Swift V1 vs MT/V2 configuration
+	if cnsconfig.WatchPods {
+		pw := podctrl.New(nodeName)
+		if err := pw.SetupWithManager(manager); err != nil {
+			return errors.Wrapf(err, "failed to setup pod watcher with manager")
+		}
+		poolMonitor = ipampoolv2.NewMonitor(httpRestServiceImplementation, cachedscopedcli, clusterSubnetStateChan, &poolOpts)
+	} else {
+		poolMonitor = ipampool.NewMonitor(httpRestServiceImplementation, cachedscopedcli, clusterSubnetStateChan, &poolOpts)
+	}
+
+	httpRestServiceImplementation.IPAMPoolMonitor = poolMonitor
 
 	// get CNS Node IP to compare NC Node IP with this Node IP to ensure NCs were created for this node
 	nodeIP := configuration.NodeIP()
@@ -1307,14 +1322,6 @@ func InitializeCRDState(ctx context.Context, httpRestService cns.HTTPService, cn
 		cssReconciler := cssctrl.New(clusterSubnetStateChan)
 		if err := cssReconciler.SetupWithManager(manager); err != nil {
 			return errors.Wrapf(err, "failed to setup css reconciler with manager")
-		}
-	}
-
-	// TODO: add pod listeners based on Swift V1 vs MT/V2 configuration
-	if cnsconfig.WatchPods {
-		pw := podctrl.New(nodeName)
-		if err := pw.SetupWithManager(manager); err != nil {
-			return errors.Wrapf(err, "failed to setup pod watcher with manager")
 		}
 	}
 
