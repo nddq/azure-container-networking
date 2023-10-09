@@ -11,7 +11,7 @@
 				"portMappings": true
 			},
 			"ipam": {
-				"mode": "v4overlay",
+				"mode": "overlay",
 				"type": "azure-cns"
 			},
 			"dns": {
