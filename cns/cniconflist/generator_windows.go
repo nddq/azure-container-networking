@@ -44,7 +44,7 @@ func (v *OverlayGenerator) Generate() error {
 				AdditionalArgs: []cni.KVPair{
 					{
 						Name: "EndpointPolicy",
-						Value: json.RawMessage(`{
+						Value: []byte(`{
 							"Type": "OutBoundNAT",
                         	"ExceptionList": [
                             	"10.240.0.0/16",
@@ -54,7 +54,7 @@ func (v *OverlayGenerator) Generate() error {
 					},
 					{
 						Name: "EndpointPolicy",
-						Value: json.RawMessage(`{
+						Value: []byte(`{
 							"Type": "ROUTE",
 							"DestinationPrefix": "10.0.0.0/8",
                         	"NeedEncap": true
