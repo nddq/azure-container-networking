@@ -13,9 +13,10 @@ const (
 	EnvNodeIP = "NODE_IP"
 	// LabelNodeSwiftV2 is the Node label for Swift V2
 	LabelNodeSwiftV2 = "kubernetes.azure.com/podnetwork-multi-tenancy-enabled"
-	LabelPodSwiftV2  = "kubernetes.azure.com/pod-network"
-	EnvPodCIDRs      = "POD_CIDRs"
-	EnvServiceCIDRs  = "SERVICE_CIDRs"
+	// LabelPodSwiftV2 is the Pod label for Swift V2
+	LabelPodSwiftV2 = "kubernetes.azure.com/pod-network"
+	EnvPodCIDRs     = "POD_CIDRs"
+	EnvServiceCIDRs = "SERVICE_CIDRs"
 )
 
 // ErrNodeNameUnset indicates the the $EnvNodeName variable is unset in the environment.
