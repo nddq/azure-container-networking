@@ -33,7 +33,7 @@ type nodeNetworkConfigSpecUpdater interface {
 	PatchSpec(context.Context, *v1alpha.NodeNetworkConfigSpec, string) (*v1alpha.NodeNetworkConfig, error)
 }
 
-type stateService interface {
+type stateService interface { // nolint:unused,deadcode,varcheck // Not implemented.
 	GetPodIPConfigState() map[string]cns.IPConfigurationStatus
 	GetPendingReleaseIPConfigs() map[string]cns.IPConfigurationStatus
 	MarkNIPsPendingRelease(int) (map[string]cns.IPConfigurationStatus, error)
@@ -122,7 +122,8 @@ func (pm *Monitor) Start(ctx context.Context) error {
 				pm.subnet.Name = nnc.Status.NetworkContainers[0].SubnetName
 				pm.subnet.CIDR = nnc.Status.NetworkContainers[0].SubnetAddressSpace
 				pm.subnet.ARMID = generateARMID(&nnc.Status.NetworkContainers[0])
-				for _, nc := range nnc.Status.NetworkContainers {
+				for i := 0; i < len(nnc.Status.NetworkContainers); i++ {
+					nc := nnc.Status.NetworkContainers[i]
 					primaryIPs := 0
 					if nc.Type == "" || nc.Type == v1alpha.VNET {
 						primaryIPs++
@@ -175,7 +176,7 @@ func (pm *Monitor) reconcile(ctx context.Context) error {
 	// if the subnet is exhausted, locally overwrite the batch/minfree/maxfree in the meta copy for this iteration
 	// (until the controlplane owns this and modifies the scaler values for us directly instead of writing "exhausted")
 	// TODO(rbtr)
-	scaler := pm.scaler
+	scaler := pm.scaler //nolint:govet // ok to shadow
 	if scaler.exhausted {
 		scaler.batch = 1
 		scaler.buffer = 1
@@ -226,7 +227,7 @@ func (pm *Monitor) decreasePoolSize(ctx context.Context, previous, target pool) 
 	decrease := previous.requested - target.requested
 	logger.Printf("[ipam-pool-monitor] Marking %d IPs as PendingRelease", decrease)
 	if _, err := pm.httpService.MarkNIPsPendingRelease(int(decrease)); err != nil {
-		return errors.Wrapf(err, "failed to mark sufficent IPs as PendingRelease, wanted %d", decrease)
+		return errors.Wrapf(err, "failed to mark sufficient IPs as PendingRelease, wanted %d", decrease)
 	}
 	spec := pm.buildNNCSpec(target.requested)
 	_, err := pm.nnccli.PatchSpec(ctx, &spec, fieldManager)

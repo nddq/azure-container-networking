@@ -6,7 +6,7 @@ var (
 	subnetLabel                = "subnet"
 	subnetCIDRLabel            = "subnet_cidr"
 	podnetARMIDLabel           = "podnet_arm_id"
-	customerMetricLabel        = "customer_metric"
+	customerMetricLabel        = "customer_metric" // nolint:deadcode,unused,varcheck // Not implemented.
 	subnetExhaustionStateLabel = "subnet_exhaustion_state"
 	ipamAllocatedIPCount       = ipampool.IpamAllocatedIPCount
 	ipamAvailableIPCount       = ipampool.IpamAvailableIPCount

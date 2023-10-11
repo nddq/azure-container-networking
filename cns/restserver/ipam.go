@@ -396,9 +396,9 @@ func (service *HTTPRestService) MarkIPAsPendingRelease(totalIpsToRelease int) (m
 	}
 
 	// if not all expected IPs are set to PendingRelease, then check the Available IPs
-	for uuid, existingIpConfig := range service.PodIPConfigState {
-		if existingIpConfig.GetState() == types.Available {
-			updatedIPConfig, err := service.updateIPConfigState(uuid, types.PendingRelease, existingIpConfig.PodInfo)
+	for uuid, existingIPConfig := range service.PodIPConfigState { // nolint:gocritic
+		if existingIPConfig.GetState() == types.Available {
+			updatedIPConfig, err := service.updateIPConfigState(uuid, types.PendingRelease, existingIPConfig.PodInfo)
 			if err != nil {
 				return nil, err
 			}
@@ -426,7 +426,7 @@ func (service *HTTPRestService) MarkNIPsPendingRelease(n int) (map[string]cns.IP
 
 	// try to release from PendingProgramming
 	pendingProgrammingIPs := make(map[string]cns.IPConfigurationStatus)
-	for uuid, ipConfig := range service.PodIPConfigState {
+	for uuid, ipConfig := range service.PodIPConfigState { // nolint:gocritic
 		if n == 0 {
 			break
 		}
@@ -443,7 +443,7 @@ func (service *HTTPRestService) MarkNIPsPendingRelease(n int) (map[string]cns.IP
 
 	// try to release from Available
 	availableIPs := make(map[string]cns.IPConfigurationStatus)
-	for uuid, ipConfig := range service.PodIPConfigState {
+	for uuid, ipConfig := range service.PodIPConfigState { // nolint:gocritic
 		if n == 0 {
 			break
 		}
@@ -465,11 +465,17 @@ func (service *HTTPRestService) MarkNIPsPendingRelease(n int) (map[string]cns.IP
 	}
 
 	// else revert changes
-	for uuid, ipConfig := range pendingProgrammingIPs {
-		service.updateIPConfigState(uuid, types.PendingProgramming, ipConfig.PodInfo)
+	for uuid, ipConfig := range pendingProgrammingIPs { // nolint:gocritic
+		_, err := service.updateIPConfigState(uuid, types.PendingProgramming, ipConfig.PodInfo)
+		if err != nil {
+			return nil, err
+		}
 	}
-	for uuid, ipConfig := range availableIPs {
-		service.updateIPConfigState(uuid, types.Available, ipConfig.PodInfo)
+	for uuid, ipConfig := range availableIPs { // nolint:gocritic
+		_, err := service.updateIPConfigState(uuid, types.Available, ipConfig.PodInfo)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return nil, errors.New("unable to release requested number of IPs")
 }
