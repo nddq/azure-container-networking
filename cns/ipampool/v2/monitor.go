@@ -23,12 +23,14 @@ const (
 	DefaultRefreshDelay = 1 * time.Second
 	// DefaultMaxIPs default maximum allocatable IPs
 	DefaultMaxIPs = 250
+	// fieldManager is the field manager used when patching the NodeNetworkConfig.
+	fieldManager = "azure-cns"
 	// Subnet ARM ID /subscriptions/$(SUB)/resourceGroups/$(GROUP)/providers/Microsoft.Network/virtualNetworks/$(VNET)/subnets/$(SUBNET)
 	subnetARMIDTemplate = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/virtualNetworks/%s/subnets/%s"
 )
 
 type nodeNetworkConfigSpecUpdater interface {
-	UpdateSpec(context.Context, *v1alpha.NodeNetworkConfigSpec) (*v1alpha.NodeNetworkConfig, error)
+	PatchSpec(context.Context, *v1alpha.NodeNetworkConfigSpec, string) (*v1alpha.NodeNetworkConfig, error)
 }
 
 type stateService interface {
@@ -208,7 +210,7 @@ func (pm *Monitor) reconcile(ctx context.Context) error {
 
 func (pm *Monitor) increasePoolSize(ctx context.Context, target pool) error {
 	spec := pm.buildNNCSpec(target.requested)
-	if _, err := pm.nnccli.UpdateSpec(ctx, &spec); err != nil {
+	if _, err := pm.nnccli.PatchSpec(ctx, &spec, fieldManager); err != nil {
 		return errors.Wrap(err, "failed to UpdateSpec with NNC client")
 	}
 	logger.Printf("[ipam-pool-monitor] Increased pool size: UpdateCRDSpec succeeded for spec %+v", spec)
@@ -227,7 +229,7 @@ func (pm *Monitor) decreasePoolSize(ctx context.Context, previous, target pool) 
 		return errors.Wrapf(err, "failed to mark sufficent IPs as PendingRelease, wanted %d", decrease)
 	}
 	spec := pm.buildNNCSpec(target.requested)
-	_, err := pm.nnccli.UpdateSpec(ctx, &spec)
+	_, err := pm.nnccli.PatchSpec(ctx, &spec, fieldManager)
 	if err != nil {
 		return errors.Wrap(err, "failed to UpdateSpec with NNC client")
 	}
@@ -242,7 +244,7 @@ func (pm *Monitor) decreasePoolSize(ctx context.Context, previous, target pool) 
 // CNS state and the pending IP release map is empty.
 func (pm *Monitor) cleanPendingRelease(ctx context.Context, target pool) error {
 	spec := pm.buildNNCSpec(target.requested)
-	_, err := pm.nnccli.UpdateSpec(ctx, &spec)
+	_, err := pm.nnccli.PatchSpec(ctx, &spec, fieldManager)
 	if err != nil {
 		return errors.Wrap(err, "executing UpdateSpec with NNC client")
 	}
