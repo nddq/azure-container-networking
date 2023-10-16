@@ -154,7 +154,7 @@ func (m *SWIFTv2Middleware) SetRoutes(podIPInfo *cns.PodIpInfo) error {
 
 // parseCIDRs parses the semicolons separated CIDRs string and returns the IPv4 and IPv6 CIDRs.
 func parseCIDRs(cidrs string) (v4IPs, v6IPs []string, err error) {
-	for _, cidr := range strings.Split(cidrs, ";") {
+	for _, cidr := range strings.Split(cidrs, ",") {
 		ip, _, err := net.ParseCIDR(cidr)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to parse cidr %s : %w", cidr, err)
